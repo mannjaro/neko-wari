@@ -41,6 +41,7 @@ export class LineBotSampleStack extends cdk.Stack {
       entry: "lambda/handler.ts", // Path to your Lambda function code
       handler: "handler", // The exported function name in your code
       runtime: lambda.Runtime.NODEJS_22_X, // Specify the Node.js runtime version
+      memorySize: 512,
       timeout: cdk.Duration.minutes(1), // Set a timeout for the function
       logGroup: new logs.LogGroup(this, "LineBotLogGroup", {
         retention: logs.RetentionDays.ONE_DAY, // Set log retention policy

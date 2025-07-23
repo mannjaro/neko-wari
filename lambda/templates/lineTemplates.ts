@@ -1,6 +1,19 @@
-import { TemplateButtons, TemplateCarousel, TemplateConfirm, QuickReply, QuickReplyItem } from "@line/bot-sdk";
-import type { PaymentCategory } from "../types.js";
-import { CATEGORY_NAMES, CATEGORY_IMAGES, CATEGORY_DESCRIPTIONS, BOT_MESSAGES, POSTBACK_DATA, MEMO_QUICK_REPLIES } from "../constants.js";
+import {
+  TemplateButtons,
+  TemplateCarousel,
+  TemplateConfirm,
+  QuickReply,
+  QuickReplyItem,
+} from "@line/bot-sdk";
+import type { PaymentCategory } from "../types";
+import {
+  CATEGORY_NAMES,
+  CATEGORY_IMAGES,
+  CATEGORY_DESCRIPTIONS,
+  BOT_MESSAGES,
+  POSTBACK_DATA,
+  MEMO_QUICK_REPLIES,
+} from "../constants";
 
 /**
  * Creates initial user selection button template
@@ -15,7 +28,7 @@ export const createUserSelectionTemplate = (): TemplateButtons => ({
       data: "payment_user=****",
     },
     {
-      type: "postback", 
+      type: "postback",
       label: "****",
       data: "payment_user=****",
     },
@@ -30,7 +43,9 @@ export const createUserSelectionTemplate = (): TemplateButtons => ({
 /**
  * Creates category selection carousel template
  */
-export const createCategoryCarouselTemplate = (selectedUser: string): TemplateCarousel => ({
+export const createCategoryCarouselTemplate = (
+  selectedUser: string
+): TemplateCarousel => ({
   type: "carousel",
   columns: Object.entries(CATEGORY_NAMES).map(([category, name]) => ({
     thumbnailImageUrl: CATEGORY_IMAGES[category as PaymentCategory],
@@ -44,7 +59,7 @@ export const createCategoryCarouselTemplate = (selectedUser: string): TemplateCa
       },
       {
         type: "postback",
-        label: "キャンセル", 
+        label: "キャンセル",
         data: POSTBACK_DATA.CANCEL,
       },
     ],
@@ -55,14 +70,16 @@ export const createCategoryCarouselTemplate = (selectedUser: string): TemplateCa
  * Creates quick reply for memo input
  */
 export const createMemoQuickReply = (): QuickReply => ({
-  items: MEMO_QUICK_REPLIES.map((memo): QuickReplyItem => ({
-    type: "action",
-    action: {
-      type: "message",
-      label: memo,
-      text: memo,
-    },
-  })),
+  items: MEMO_QUICK_REPLIES.map(
+    (memo): QuickReplyItem => ({
+      type: "action",
+      action: {
+        type: "message",
+        label: memo,
+        text: memo,
+      },
+    })
+  ),
 });
 
 /**
@@ -75,7 +92,9 @@ export const createConfirmationTemplate = (
   price: number
 ): TemplateConfirm => ({
   type: "confirm",
-  text: `以下の内容で登録しますか？\n\n👤 ${user}さん\n📋 ${CATEGORY_NAMES[category]}\n📝 ${memo || "なし"}\n💰 ${price.toLocaleString()}円`,
+  text: `以下の内容で登録しますか？\n\n👤 ${user}さん\n📋 ${
+    CATEGORY_NAMES[category]
+  }\n📝 ${memo || "なし"}\n💰 ${price.toLocaleString()}円`,
   actions: [
     {
       type: "postback",
