@@ -1,8 +1,24 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, PutCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  GetCommand,
+  PutCommand,
+  DeleteCommand,
+  QueryCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { Logger } from "@aws-lambda-powertools/logger";
 
-import type { UserState, CostDataItem, UserStateItem } from "../types.js";
+import type {
+  UserState,
+  CostDataItem,
+  UserStateItem,
+  PaymentCategory,
+  UserSummary,
+  MonthlySummaryResponse,
+  UserDetailResponse,
+  CategorySummaryResponse,
+  CategorySummaryItem,
+} from "../types.js";
 import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../constants.js";
 
 const logger = new Logger({ serviceName: "lineBotDynamoDB" });
@@ -15,7 +31,9 @@ const TABLE_NAME = process.env.TABLE_NAME || "";
 /**
  * Retrieves user state from DynamoDB
  */
-export const getUserState = async (userId: string): Promise<UserState | null> => {
+export const getUserState = async (
+  userId: string
+): Promise<UserState | null> => {
   try {
     const result = await docClient.send(
       new GetCommand({
@@ -48,7 +66,10 @@ export const getUserState = async (userId: string): Promise<UserState | null> =>
 /**
  * Saves user state to DynamoDB with TTL
  */
-export const saveUserState = async (userId: string, state: UserState): Promise<void> => {
+export const saveUserState = async (
+  userId: string,
+  state: UserState
+): Promise<void> => {
   try {
     const now = new Date().toISOString();
     const ttl = Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS;
@@ -104,12 +125,17 @@ export const deleteUserState = async (userId: string): Promise<void> => {
 /**
  * Saves cost data permanently to DynamoDB
  */
-export const saveCostData = async (userId: string, state: UserState): Promise<void> => {
+export const saveCostData = async (
+  userId: string,
+  state: UserState
+): Promise<void> => {
   try {
     const timestamp = Date.now();
     const now = new Date().toISOString();
     const date = new Date(timestamp);
-    const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const yearMonth = `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}`;
 
     const costItem: CostDataItem = {
       PK: `${DYNAMO_KEYS.USER_PREFIX}${userId}`,
@@ -146,4 +172,204 @@ export const saveCostData = async (userId: string, state: UserState): Promise<vo
     logger.error("Error saving cost data", { error, userId, state });
     throw error;
   }
+};
+
+/**
+ * Get monthly cost data for dashboard
+ */
+export const getMonthlyCostData = async (
+  yearMonth: string
+): Promise<CostDataItem[]> => {
+  try {
+    const result = await docClient.send(
+      new QueryCommand({
+        TableName: TABLE_NAME,
+        IndexName: "GSI1",
+        KeyConditionExpression: "GSI1PK = :gsi1pk",
+        ExpressionAttributeValues: {
+          ":gsi1pk": `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
+        },
+      })
+    );
+
+    return (result.Items || []) as CostDataItem[];
+  } catch (error) {
+    logger.error("Error getting monthly cost data", { error, yearMonth });
+    throw error;
+  }
+};
+
+/**
+ * Get cost data for specific user and month
+ */
+export const getUserMonthlyCostData = async (
+  userId: string,
+  yearMonth: string
+): Promise<CostDataItem[]> => {
+  try {
+    const result = await docClient.send(
+      new QueryCommand({
+        TableName: TABLE_NAME,
+        IndexName: "GSI1",
+        KeyConditionExpression:
+          "GSI1PK = :gsi1pk AND begins_with(GSI1SK, :gsi1sk)",
+        ExpressionAttributeValues: {
+          ":gsi1pk": `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
+          ":gsi1sk": `${DYNAMO_KEYS.USER_PREFIX}${userId}#`,
+        },
+      })
+    );
+
+    return (result.Items || []) as CostDataItem[];
+  } catch (error) {
+    logger.error("Error getting user monthly cost data", {
+      error,
+      userId,
+      yearMonth,
+    });
+    throw error;
+  }
+};
+
+/**
+ * Generate monthly summary from cost data
+ */
+export const generateMonthlySummary = async (
+  yearMonth: string
+): Promise<MonthlySummaryResponse> => {
+  const costData = await getMonthlyCostData(yearMonth);
+
+  const userSummaryMap = new Map<string, UserSummary>();
+  let totalAmount = 0;
+  let totalTransactions = 0;
+
+  for (const item of costData) {
+    totalAmount += item.Price;
+    totalTransactions++;
+
+    const userId = item.PK.replace(`${DYNAMO_KEYS.USER_PREFIX}`, "");
+    const existing = userSummaryMap.get(userId);
+
+    if (existing) {
+      existing.totalAmount += item.Price;
+      existing.transactionCount++;
+      
+      if (existing.categoryBreakdown[item.Category]) {
+        existing.categoryBreakdown[item.Category].push({
+          amount: item.Price,
+          memo: item.Memo || ""
+        });
+      } else {
+        existing.categoryBreakdown[item.Category] = [{
+          amount: item.Price,
+          memo: item.Memo || ""
+        }];
+      }
+    } else {
+      const categoryBreakdown = {} as Record<PaymentCategory, Array<{ amount: number; memo: string }>>;
+      categoryBreakdown[item.Category] = [{
+        amount: item.Price,
+        memo: item.Memo || ""
+      }];
+
+      userSummaryMap.set(userId, {
+        userId,
+        user: item.User,
+        totalAmount: item.Price,
+        transactionCount: 1,
+        categoryBreakdown,
+      });
+    }
+  }
+
+  return {
+    yearMonth,
+    totalAmount,
+    totalTransactions,
+    userSummaries: Array.from(userSummaryMap.values()),
+  };
+};
+
+/**
+ * Get user detail data for dashboard
+ */
+export const getUserDetailData = async (
+  userId: string,
+  yearMonth: string
+): Promise<UserDetailResponse> => {
+  const transactions = await getUserMonthlyCostData(userId, yearMonth);
+
+  if (transactions.length === 0) {
+    throw new Error(`No data found for user ${userId} in ${yearMonth}`);
+  }
+
+  let totalAmount = 0;
+  const categoryBreakdown = {} as Record<PaymentCategory, Array<{ amount: number; memo: string }>>;
+
+  for (const transaction of transactions) {
+    totalAmount += transaction.Price;
+    
+    if (categoryBreakdown[transaction.Category]) {
+      categoryBreakdown[transaction.Category].push({
+        amount: transaction.Price,
+        memo: transaction.Memo || ""
+      });
+    } else {
+      categoryBreakdown[transaction.Category] = [{
+        amount: transaction.Price,
+        memo: transaction.Memo || ""
+      }];
+    }
+  }
+
+  return {
+    userId,
+    user: transactions[0].User,
+    yearMonth,
+    transactions: transactions.sort((a, b) => b.Timestamp - a.Timestamp),
+    summary: {
+      totalAmount,
+      transactionCount: transactions.length,
+      categoryBreakdown,
+    },
+  };
+};
+
+/**
+ * Generate category summary for dashboard
+ */
+export const generateCategorySummary = async (
+  yearMonth: string
+): Promise<CategorySummaryResponse> => {
+  const costData = await getMonthlyCostData(yearMonth);
+
+  const categoryMap = new Map<PaymentCategory, CategorySummaryItem>();
+
+  for (const item of costData) {
+    const existing = categoryMap.get(item.Category);
+
+    if (existing) {
+      existing.totalAmount += item.Price;
+      existing.transactionCount++;
+      existing.userBreakdown[item.User] =
+        (existing.userBreakdown[item.User] || 0) + item.Price;
+    } else {
+      const userBreakdown = {} as Record<string, number>;
+      userBreakdown[item.User] = item.Price;
+
+      categoryMap.set(item.Category, {
+        category: item.Category,
+        totalAmount: item.Price,
+        transactionCount: 1,
+        userBreakdown,
+      });
+    }
+  }
+
+  return {
+    yearMonth,
+    categories: Array.from(categoryMap.values()).sort(
+      (a, b) => b.totalAmount - a.totalAmount
+    ),
+  };
 };

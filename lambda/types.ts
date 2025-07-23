@@ -108,3 +108,43 @@ export interface WebhookEventContext {
   userId: string;
   replyToken: string;
 }
+
+// Dashboard API response types
+export interface UserSummary {
+  userId: string;
+  user: string;
+  totalAmount: number;
+  transactionCount: number;
+  categoryBreakdown: Record<PaymentCategory, Array<{ amount: number; memo: string }>>;
+}
+
+export interface MonthlySummaryResponse {
+  yearMonth: string;
+  totalAmount: number;
+  totalTransactions: number;
+  userSummaries: UserSummary[];
+}
+
+export interface UserDetailResponse {
+  userId: string;
+  user: string;
+  yearMonth: string;
+  transactions: CostDataItem[];
+  summary: {
+    totalAmount: number;
+    transactionCount: number;
+    categoryBreakdown: Record<PaymentCategory, Array<{ amount: number; memo: string }>>;
+  };
+}
+
+export interface CategorySummaryItem {
+  category: PaymentCategory;
+  totalAmount: number;
+  transactionCount: number;
+  userBreakdown: Record<string, number>;
+}
+
+export interface CategorySummaryResponse {
+  yearMonth: string;
+  categories: CategorySummaryItem[];
+}
