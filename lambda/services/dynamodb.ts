@@ -19,7 +19,7 @@ import type {
   CategorySummaryResponse,
   CategorySummaryItem,
 } from "../types.js";
-import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../constants.js";
+import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../constants";
 
 const logger = new Logger({ serviceName: "lineBotDynamoDB" });
 
@@ -181,18 +181,30 @@ export const getMonthlyCostData = async (
   yearMonth: string
 ): Promise<CostDataItem[]> => {
   try {
-    const result = await docClient.send(
-      new QueryCommand({
-        TableName: TABLE_NAME,
-        IndexName: "GSI1",
-        KeyConditionExpression: "GSI1PK = :gsi1pk",
-        ExpressionAttributeValues: {
-          ":gsi1pk": `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
-        },
-      })
-    );
+    const allItems: CostDataItem[] = [];
+    let lastEvaluatedKey: Record<string, any> | undefined;
 
-    return (result.Items || []) as CostDataItem[];
+    do {
+      const result = await docClient.send(
+        new QueryCommand({
+          TableName: TABLE_NAME,
+          IndexName: "GSI1",
+          KeyConditionExpression: "GSI1PK = :gsi1pk",
+          ExpressionAttributeValues: {
+            ":gsi1pk": `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
+          },
+          ExclusiveStartKey: lastEvaluatedKey,
+        })
+      );
+
+      if (result.Items) {
+        allItems.push(...(result.Items as CostDataItem[]));
+      }
+
+      lastEvaluatedKey = result.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return allItems;
   } catch (error) {
     logger.error("Error getting monthly cost data", { error, yearMonth });
     throw error;
@@ -207,20 +219,32 @@ export const getUserMonthlyCostData = async (
   yearMonth: string
 ): Promise<CostDataItem[]> => {
   try {
-    const result = await docClient.send(
-      new QueryCommand({
-        TableName: TABLE_NAME,
-        IndexName: "GSI1",
-        KeyConditionExpression:
-          "GSI1PK = :gsi1pk AND begins_with(GSI1SK, :gsi1sk)",
-        ExpressionAttributeValues: {
-          ":gsi1pk": `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
-          ":gsi1sk": `${DYNAMO_KEYS.USER_PREFIX}${userId}#`,
-        },
-      })
-    );
+    const allItems: CostDataItem[] = [];
+    let lastEvaluatedKey: Record<string, any> | undefined;
 
-    return (result.Items || []) as CostDataItem[];
+    do {
+      const result = await docClient.send(
+        new QueryCommand({
+          TableName: TABLE_NAME,
+          IndexName: "GSI1",
+          KeyConditionExpression:
+            "GSI1PK = :gsi1pk AND begins_with(GSI1SK, :gsi1sk)",
+          ExpressionAttributeValues: {
+            ":gsi1pk": `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
+            ":gsi1sk": `${DYNAMO_KEYS.USER_PREFIX}${userId}#`,
+          },
+          ExclusiveStartKey: lastEvaluatedKey,
+        })
+      );
+
+      if (result.Items) {
+        allItems.push(...(result.Items as CostDataItem[]));
+      }
+
+      lastEvaluatedKey = result.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return allItems;
   } catch (error) {
     logger.error("Error getting user monthly cost data", {
       error,
@@ -253,24 +277,31 @@ export const generateMonthlySummary = async (
     if (existing) {
       existing.totalAmount += item.Price;
       existing.transactionCount++;
-      
+
       if (existing.categoryBreakdown[item.Category]) {
         existing.categoryBreakdown[item.Category].push({
           amount: item.Price,
-          memo: item.Memo || ""
+          memo: item.Memo || "",
         });
       } else {
-        existing.categoryBreakdown[item.Category] = [{
-          amount: item.Price,
-          memo: item.Memo || ""
-        }];
+        existing.categoryBreakdown[item.Category] = [
+          {
+            amount: item.Price,
+            memo: item.Memo || "",
+          },
+        ];
       }
     } else {
-      const categoryBreakdown = {} as Record<PaymentCategory, Array<{ amount: number; memo: string }>>;
-      categoryBreakdown[item.Category] = [{
-        amount: item.Price,
-        memo: item.Memo || ""
-      }];
+      const categoryBreakdown = {} as Record<
+        PaymentCategory,
+        Array<{ amount: number; memo: string }>
+      >;
+      categoryBreakdown[item.Category] = [
+        {
+          amount: item.Price,
+          memo: item.Memo || "",
+        },
+      ];
 
       userSummaryMap.set(userId, {
         userId,
@@ -304,21 +335,26 @@ export const getUserDetailData = async (
   }
 
   let totalAmount = 0;
-  const categoryBreakdown = {} as Record<PaymentCategory, Array<{ amount: number; memo: string }>>;
+  const categoryBreakdown = {} as Record<
+    PaymentCategory,
+    Array<{ amount: number; memo: string }>
+  >;
 
   for (const transaction of transactions) {
     totalAmount += transaction.Price;
-    
+
     if (categoryBreakdown[transaction.Category]) {
       categoryBreakdown[transaction.Category].push({
         amount: transaction.Price,
-        memo: transaction.Memo || ""
+        memo: transaction.Memo || "",
       });
     } else {
-      categoryBreakdown[transaction.Category] = [{
-        amount: transaction.Price,
-        memo: transaction.Memo || ""
-      }];
+      categoryBreakdown[transaction.Category] = [
+        {
+          amount: transaction.Price,
+          memo: transaction.Memo || "",
+        },
+      ];
     }
   }
 
