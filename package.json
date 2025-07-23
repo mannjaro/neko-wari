@@ -27,11 +27,13 @@
     "@aws-sdk/client-dynamodb": "^3.665.0",
     "@aws-sdk/lib-dynamodb": "^3.665.0",
     "@hono/node-server": "^1.17.1",
+    "@hono/zod-validator": "^0.7.2",
     "@line/bot-sdk": "^10.0.0",
     "@types/aws-lambda": "^8.10.152",
     "aws-cdk-lib": "2.205.0",
     "constructs": "^10.0.0",
     "esbuild": "^0.25.8",
-    "hono": "^4.8.5"
+    "hono": "^4.8.5",
+    "zod": "^4.0.5"
   }
 }
