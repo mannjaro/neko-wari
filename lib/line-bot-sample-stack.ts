@@ -18,7 +18,9 @@ export class LineBotSampleStack extends cdk.Stack {
       partitionKey: { name: "PK", type: dynamodb.AttributeType.STRING },
       sortKey: { name: "SK", type: dynamodb.AttributeType.STRING },
       timeToLiveAttribute: "TTL", // Updated to match facet pattern
-      pointInTimeRecovery: false,
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: false,
+      },
       deletionProtection: false,
     });
     db.addGlobalSecondaryIndex({
@@ -92,5 +94,10 @@ export class LineBotSampleStack extends cdk.Stack {
     });
     // Grant permissions to Lambda function
     db.grantReadWriteData(fn);
+    db.grantReadWriteData(webhookFn);
+
+    new cdk.CfnOutput(this, "ApiEndpoint", {
+      value: api.url ?? "",
+    });
   }
 }
