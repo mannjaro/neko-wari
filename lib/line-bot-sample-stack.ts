@@ -2,7 +2,8 @@ import * as cdk from "aws-cdk-lib";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
-import * as apigw from "aws-cdk-lib/aws-apigateway";
+import * as apigwv2 from "aws-cdk-lib/aws-apigatewayv2";
+import * as apigwIntegv2 from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 
 import { Construct } from "constructs";
@@ -13,10 +14,9 @@ export class LineBotSampleStack extends cdk.Stack {
 
     cdk.RemovalPolicies.of(this).destroy();
 
-    const db = new dynamodb.Table(this, "LineBotTable", {
+    const db = new dynamodb.Table(this, "Table", {
       partitionKey: { name: "PK", type: dynamodb.AttributeType.STRING },
       sortKey: { name: "SK", type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       timeToLiveAttribute: "TTL", // Updated to match facet pattern
       pointInTimeRecovery: false,
       deletionProtection: false,
@@ -37,13 +37,13 @@ export class LineBotSampleStack extends cdk.Stack {
       }:094274105915:layer:AWSLambdaPowertoolsTypeScriptV2:31`
     );
 
-    const fn = new NodejsFunction(this, "LineBotHandler", {
-      entry: "lambda/handler.ts", // Path to your Lambda function code
+    const fn = new NodejsFunction(this, "Handler", {
+      entry: "lambda/backend/handler.ts", // Path to your Lambda function code
       handler: "handler", // The exported function name in your code
       runtime: lambda.Runtime.NODEJS_22_X, // Specify the Node.js runtime version
-      memorySize: 512,
+      memorySize: 256,
       timeout: cdk.Duration.minutes(1), // Set a timeout for the function
-      logGroup: new logs.LogGroup(this, "LineBotLogGroup", {
+      logGroup: new logs.LogGroup(this, "BackendLogGroup", {
         retention: logs.RetentionDays.ONE_DAY, // Set log retention policy
       }),
       layers: [powertoolsLayer],
@@ -57,14 +57,39 @@ export class LineBotSampleStack extends cdk.Stack {
       },
     });
 
-    const api = new apigw.LambdaRestApi(this, "LineBotApi", {
-      handler: fn,
-      description: "LINE Bot API with faceted DynamoDB backend",
-      deployOptions: {
-        stageName: "prod",
+    const webhookFn = new NodejsFunction(this, "WebhookHandler", {
+      entry: "lambda/webhook/handler.ts", // Path to your Lambda function code
+      handler: "handler", // The exported function name in your code
+      runtime: lambda.Runtime.NODEJS_22_X, // Specify the Node.js runtime version
+      memorySize: 256,
+      timeout: cdk.Duration.minutes(1), // Set a timeout for the function
+      logGroup: new logs.LogGroup(this, "WebhookLogGroup", {
+        retention: logs.RetentionDays.ONE_DAY, // Set log retention policy
+      }),
+      layers: [powertoolsLayer],
+      environment: {
+        TABLE_NAME: db.tableName,
+        LINE_CHANNEL_ACCESS_TOKEN: process.env.LINE_CHANNEL_ACCESS_TOKEN || "",
+        LINE_CHANNEL_SECRET: process.env.LINE_CHANNEL_SECRET || "",
+      },
+      bundling: {
+        externalModules: ["@aws-lambda-powertools/*", "@aws-sdk/*"],
       },
     });
 
+    const api = new apigwv2.HttpApi(this, "Api", {
+      defaultIntegration: new apigwIntegv2.HttpLambdaIntegration("Integ", fn),
+    });
+
+    const webhookInteg = new apigwIntegv2.HttpLambdaIntegration(
+      "WebhookInteg",
+      webhookFn
+    );
+
+    api.addRoutes({
+      path: "/webhook",
+      integration: webhookInteg,
+    });
     // Grant permissions to Lambda function
     db.grantReadWriteData(fn);
   }

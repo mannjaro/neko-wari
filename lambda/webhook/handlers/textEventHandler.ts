@@ -1,11 +1,11 @@
 import * as line from "@line/bot-sdk";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { BOT_MESSAGES } from "../constants";
+import { BOT_MESSAGES } from "../../backend/constants";
 import {
   getUserState,
   saveUserState,
   deleteUserState,
-} from "../services/dynamodb";
+} from "../../backend/services/dynamodb";
 import {
   createUserSelectionTemplate,
   createConfirmationTemplate,

@@ -1,13 +1,17 @@
 import * as line from "@line/bot-sdk";
 import { Logger } from "@aws-lambda-powertools/logger";
-import type { PaymentCategory } from "../types";
-import { CATEGORY_NAMES, BOT_MESSAGES, POSTBACK_DATA } from "../constants";
+import type { PaymentCategory } from "../../backend/types";
+import {
+  CATEGORY_NAMES,
+  BOT_MESSAGES,
+  POSTBACK_DATA,
+} from "../../backend/constants";
 import {
   getUserState,
   saveUserState,
   deleteUserState,
   saveCostData,
-} from "../services/dynamodb";
+} from "../../backend/services/dynamodb";
 import {
   createCategoryCarouselTemplate,
   createMemoQuickReply,
