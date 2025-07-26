@@ -45,4 +45,6 @@ app.post("/webhook", async (c) => {
   }
 });
 
+export type AppType = typeof app;
+
 export default app;
