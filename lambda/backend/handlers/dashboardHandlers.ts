@@ -62,49 +62,8 @@ export const categorySummaryHandler = async (
   year: string,
   month: string
 ) => {
+  const yearMonth = `${year}-${month}`;
   try {
-    const year = c.req.query("year");
-    const month = c.req.query("month");
-
-    if (!year || !month) {
-      const errorResponse = errorResponseSchema.parse({
-        error: "yearMonth must be in ?year=YYYY&month=MM format",
-      });
-      return c.json(errorResponse, 400);
-    }
-
-    // Validate yearMonth format (YYYY)
-    if (!/^\d{4}$/.test(year)) {
-      const errorResponse = errorResponseSchema.parse({
-        error: "yearMonth must be in ?year=YYYY&month=MM format",
-      });
-      return c.json(errorResponse, 400);
-    }
-    // Validate yearMonth format (MM)
-    if (!/^\d{2}$/.test(month)) {
-      const errorResponse = errorResponseSchema.parse({
-        error: "yearMonth must be in ?year=YYYY&month=MM format",
-      });
-      return c.json(errorResponse, 400);
-    }
-
-    const yearMonth = `${year}-${month}`;
-
-    if (!yearMonth) {
-      const errorResponse = errorResponseSchema.parse({
-        error: "yearMonth parameter is required",
-      });
-      return c.json(errorResponse, 400);
-    }
-
-    // Validate yearMonth format (YYYY-MM)
-    if (!/^\d{4}-\d{2}$/.test(yearMonth)) {
-      const errorResponse = errorResponseSchema.parse({
-        error: "yearMonth must be in YYYY-MM format",
-      });
-      return c.json(errorResponse, 400);
-    }
-
     const categorySummary = await generateCategorySummary(yearMonth);
     const validatedCategorySummary =
       categorySummaryResponseSchema.parse(categorySummary);
