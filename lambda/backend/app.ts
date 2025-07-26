@@ -1,11 +1,9 @@
 import { Hono } from "hono";
-import { env } from "hono/adapter";
 import type { LambdaEvent, LambdaContext } from "hono/aws-lambda";
 import { zValidator } from "@hono/zod-validator";
 
 import { z } from "zod";
 
-import { webhookHandler } from "./handlers/webhookHandler";
 import {
   monthlyDashboardHandler,
   userDetailsHandler,
@@ -66,28 +64,6 @@ app.get(
     return categorySummaryHandler(c, year, month);
   }
 );
-
-app.post("/webhook", async (c) => {
-  try {
-    const reqBody = c.env.event.body || "";
-    const { LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET } = env<{
-      LINE_CHANNEL_ACCESS_TOKEN: string;
-      LINE_CHANNEL_SECRET: string;
-    }>(c);
-
-    const result = await webhookHandler(
-      reqBody,
-      LINE_CHANNEL_ACCESS_TOKEN,
-      LINE_CHANNEL_SECRET
-    );
-
-    c.status(200);
-    return c.text(result);
-  } catch (error) {
-    c.status(500);
-    return c.text("Error processing webhook");
-  }
-});
 
 export type AppType = typeof app;
 
