@@ -18,8 +18,8 @@ import type {
   UserDetailResponse,
   CategorySummaryResponse,
   CategorySummaryItem,
-} from "../types.js";
-import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../constants";
+} from "../../shared/types.js";
+import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../../shared/constants";
 
 const logger = new Logger({ serviceName: "lineBotDynamoDB" });
 

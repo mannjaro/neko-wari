@@ -5,7 +5,7 @@ import {
   QuickReply,
   QuickReplyItem,
 } from "@line/bot-sdk";
-import type { PaymentCategory } from "../../backend/types";
+import type { PaymentCategory } from "../../shared/types";
 import {
   CATEGORY_NAMES,
   CATEGORY_IMAGES,
@@ -13,7 +13,7 @@ import {
   BOT_MESSAGES,
   POSTBACK_DATA,
   MEMO_QUICK_REPLIES,
-} from "../../backend/constants";
+} from "../../shared/constants";
 
 /**
  * Creates initial user selection button template

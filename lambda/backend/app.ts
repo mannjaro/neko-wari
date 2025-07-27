@@ -20,7 +20,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.get("/", (c) => c.text("Status: OK"));
 
 // Dashboard API endpoints
-app.get(
+const route = app.get(
   "/dashboard/monthly",
   zValidator(
     "query",
@@ -65,6 +65,6 @@ app.get(
   }
 );
 
-export type AppType = typeof app;
+export type AppType = typeof route;
 
 export default app;

@@ -5,6 +5,11 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as apigwv2 from "aws-cdk-lib/aws-apigatewayv2";
 import * as apigwIntegv2 from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import {
+  DockerImageFunction,
+  FunctionUrlAuthType,
+} from "aws-cdk-lib/aws-lambda";
+import { Platform } from "aws-cdk-lib/aws-ecr-assets";
 
 import { Construct } from "constructs";
 
@@ -17,6 +22,9 @@ export class LineBotSampleStack extends cdk.Stack {
     const db = new dynamodb.Table(this, "Table", {
       partitionKey: { name: "PK", type: dynamodb.AttributeType.STRING },
       sortKey: { name: "SK", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PROVISIONED,
+      writeCapacity: 1,
+      readCapacity: 1,
       timeToLiveAttribute: "TTL", // Updated to match facet pattern
       pointInTimeRecoverySpecification: {
         pointInTimeRecoveryEnabled: false,
@@ -28,6 +36,8 @@ export class LineBotSampleStack extends cdk.Stack {
       partitionKey: { name: "GSI1PK", type: dynamodb.AttributeType.STRING },
       sortKey: { name: "GSI1SK", type: dynamodb.AttributeType.STRING },
       projectionType: dynamodb.ProjectionType.ALL,
+      writeCapacity: 1,
+      readCapacity: 1,
     });
 
     // Create a Layer with Powertools for AWS Lambda (TypeScript)

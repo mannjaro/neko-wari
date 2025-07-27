@@ -1,11 +1,11 @@
 import * as line from "@line/bot-sdk";
 import { Logger } from "@aws-lambda-powertools/logger";
-import type { PaymentCategory } from "../../backend/types";
+import type { PaymentCategory } from "../../shared/types";
 import {
   CATEGORY_NAMES,
   BOT_MESSAGES,
   POSTBACK_DATA,
-} from "../../backend/constants";
+} from "../../shared/constants";
 import {
   getUserState,
   saveUserState,

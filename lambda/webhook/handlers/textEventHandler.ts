@@ -1,6 +1,6 @@
 import * as line from "@line/bot-sdk";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { BOT_MESSAGES } from "../../backend/constants";
+import { BOT_MESSAGES } from "../../shared/constants";
 import {
   getUserState,
   saveUserState,
