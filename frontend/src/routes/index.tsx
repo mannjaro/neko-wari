@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { QueryClient } from "@tanstack/react-query";
 import { hc } from "hono/client";
 
-import  type {AppType} from "../../../lambda/backend/app.js"
+import type { AppType } from "../../../lambda/backend/app.js";
 
 export const Route = createFileRoute("/")({
   component: Home,
