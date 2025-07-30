@@ -5,11 +5,6 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as apigwv2 from "aws-cdk-lib/aws-apigatewayv2";
 import * as apigwIntegv2 from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
-import {
-  DockerImageFunction,
-  FunctionUrlAuthType,
-} from "aws-cdk-lib/aws-lambda";
-import { Platform } from "aws-cdk-lib/aws-ecr-assets";
 
 import { Construct } from "constructs";
 
