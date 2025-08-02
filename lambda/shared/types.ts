@@ -1,12 +1,18 @@
 // Shared type definitions for the LINE Bot application
 
 // Payment category type definition
-export type PaymentCategory = "rent" | "utilities" | "furniture" | "daily" | "other";
+export type PaymentCategory =
+  | "rent"
+  | "utilities"
+  | "furniture"
+  | "daily"
+  | "transportation"
+  | "other";
 
-// User flow step type definition  
-export type UserStep = 
+// User flow step type definition
+export type UserStep =
   | "idle"
-  | "user_selected" 
+  | "user_selected"
   | "category_selected"
   | "waiting_memo"
   | "waiting_price"
@@ -22,7 +28,11 @@ export interface UserState {
 }
 
 // Facet types for DynamoDB single table design
-export type FacetType = "USER_STATE" | "COST_DATA" | "USER_PROFILE" | "MONTHLY_SUMMARY";
+export type FacetType =
+  | "USER_STATE"
+  | "COST_DATA"
+  | "USER_PROFILE"
+  | "MONTHLY_SUMMARY";
 
 // Base interface for all DynamoDB items
 export interface BaseDynamoItem {
@@ -80,7 +90,7 @@ export interface UserProfileItem extends BaseDynamoItem {
   LastActivityAt: string;
 }
 
-// Monthly summary facet  
+// Monthly summary facet
 export interface MonthlySummaryItem extends BaseDynamoItem {
   EntityType: "MONTHLY_SUMMARY";
   PK: string; // USER#{userId}
@@ -96,7 +106,11 @@ export interface MonthlySummaryItem extends BaseDynamoItem {
 }
 
 // Union type for all DynamoDB items
-export type DynamoItem = UserStateItem | CostDataItem | UserProfileItem | MonthlySummaryItem;
+export type DynamoItem =
+  | UserStateItem
+  | CostDataItem
+  | UserProfileItem
+  | MonthlySummaryItem;
 
 // LINE Bot specific types
 export interface LineBotConfig {
@@ -115,7 +129,10 @@ export interface UserSummary {
   user: string;
   totalAmount: number;
   transactionCount: number;
-  categoryBreakdown: Record<PaymentCategory, Array<{ amount: number; memo: string }>>;
+  categoryBreakdown: Record<
+    PaymentCategory,
+    Array<{ amount: number; memo: string }>
+  >;
 }
 
 export interface MonthlySummaryResponse {
@@ -133,7 +150,10 @@ export interface UserDetailResponse {
   summary: {
     totalAmount: number;
     transactionCount: number;
-    categoryBreakdown: Record<PaymentCategory, Array<{ amount: number; memo: string }>>;
+    categoryBreakdown: Record<
+      PaymentCategory,
+      Array<{ amount: number; memo: string }>
+    >;
   };
 }
 

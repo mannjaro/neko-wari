@@ -6,6 +6,7 @@ export const CATEGORY_NAMES: Record<PaymentCategory, string> = {
   utilities: "光熱費など",
   furniture: "家具/家電",
   daily: "日用品/食品",
+  transportation: "交通費",
   other: "その他",
 };
 
@@ -18,6 +19,8 @@ export const CATEGORY_IMAGES: Record<PaymentCategory, string> = {
     "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=300&h=200&fit=crop",
   daily:
     "https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&h=200&fit=crop",
+  transportation:
+    "https://images.unsplash.com/photo-1465447142348-e9952c393450?w=300&h=200&fit=crop",
   other:
     "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=300&h=200&fit=crop",
 };
@@ -28,6 +31,7 @@ export const CATEGORY_DESCRIPTIONS: Record<PaymentCategory, string> = {
   utilities: "電気・ガス・水道代",
   furniture: "家具・家電製品",
   daily: "食材・生活用品",
+  transportation: "新幹線・レンタカー",
   other: "その他の支払い",
 };
 
@@ -60,6 +64,7 @@ export const POSTBACK_DATA = {
   CANCEL: "payment_user=cancel",
   CONFIRM_YES: "confirm=yes",
   CONFIRM_NO: "confirm=no",
+  BACK: "navigation=back",
 } as const;
 
 // DynamoDB constants
@@ -89,16 +94,15 @@ export const DYNAMO_KEYS = {
 // Session TTL in seconds (24 hours)
 export const SESSION_TTL_SECONDS = 24 * 60 * 60;
 
-// Quick reply options for memo input
-export const MEMO_QUICK_REPLIES = [
-  "なし",
-  "電気代",
-  "ガス代",
-  "水道代",
-  "食費",
-  "日用品",
-  "交通費",
-  "医療費",
-  "娯楽費",
-  "その他",
-] as const;
+// Quick reply options for memo input by category
+export const MEMO_QUICK_REPLIES_BY_CATEGORY: Record<PaymentCategory, readonly string[]> = {
+  rent: ["なし", "家賃", "管理費", "更新料", "その他"],
+  utilities: ["なし", "電気代", "ガス代", "水道代", "その他"],
+  furniture: ["なし", "家具", "家電", "リフォーム", "その他"],
+  daily: ["なし", "食費", "日用品", "生活用品", "その他"],
+  transportation: ["なし", "新幹線", "レンタカー", "電車", "タクシー", "その他"],
+  other: ["なし", "医療費", "娯楽費", "その他"],
+} as const;
+
+// Default quick reply options for backward compatibility
+export const MEMO_QUICK_REPLIES = MEMO_QUICK_REPLIES_BY_CATEGORY.other;

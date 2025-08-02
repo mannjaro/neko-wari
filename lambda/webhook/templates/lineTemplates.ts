@@ -12,7 +12,7 @@ import {
   CATEGORY_DESCRIPTIONS,
   BOT_MESSAGES,
   POSTBACK_DATA,
-  MEMO_QUICK_REPLIES,
+  MEMO_QUICK_REPLIES_BY_CATEGORY,
 } from "../../shared/constants";
 
 /**
@@ -59,28 +59,32 @@ export const createCategoryCarouselTemplate = (
       },
       {
         type: "postback",
-        label: "キャンセル",
-        data: POSTBACK_DATA.CANCEL,
+        label: "戻る",
+        data: POSTBACK_DATA.BACK,
       },
     ],
   })),
 });
 
 /**
- * Creates quick reply for memo input
+ * Creates quick reply for memo input based on selected category
  */
-export const createMemoQuickReply = (): QuickReply => ({
-  items: MEMO_QUICK_REPLIES.map(
-    (memo): QuickReplyItem => ({
-      type: "action",
-      action: {
-        type: "message",
-        label: memo,
-        text: memo,
-      },
-    })
-  ),
-});
+export const createMemoQuickReply = (category?: PaymentCategory): QuickReply => {
+  const memoOptions = category ? MEMO_QUICK_REPLIES_BY_CATEGORY[category] : MEMO_QUICK_REPLIES_BY_CATEGORY.other;
+  
+  return {
+    items: memoOptions.map(
+      (memo): QuickReplyItem => ({
+        type: "action",
+        action: {
+          type: "message",
+          label: memo,
+          text: memo,
+        },
+      })
+    ),
+  };
+};
 
 /**
  * Creates confirmation template for final review
@@ -103,8 +107,8 @@ export const createConfirmationTemplate = (
     },
     {
       type: "postback",
-      label: "キャンセル",
-      data: POSTBACK_DATA.CONFIRM_NO,
+      label: "戻る",
+      data: POSTBACK_DATA.BACK,
     },
   ],
 });
