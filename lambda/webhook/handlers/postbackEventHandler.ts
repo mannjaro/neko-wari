@@ -15,6 +15,7 @@ import {
 import {
   createCategoryCarouselTemplate,
   createMemoQuickReply,
+  createUserSelectionTemplate,
 } from "../templates/lineTemplates";
 
 const logger = new Logger({ serviceName: "postbackEventHandler" });
@@ -40,6 +41,69 @@ export const postbackEventHandler = async (
       type: "text",
       text: BOT_MESSAGES.OPERATION_CANCELLED,
     };
+  } else if (data === POSTBACK_DATA.BACK) {
+    // Handle back navigation
+    if (!currentState) {
+      response = {
+        type: "text",
+        text: BOT_MESSAGES.INVALID_OPERATION,
+      };
+    } else {
+      switch (currentState.step) {
+        case "user_selected":
+          // Go back to user selection
+          await saveUserState(userId, { step: "idle" });
+          response = {
+            type: "template",
+            altText: "支払い情報を選択してください",
+            template: createUserSelectionTemplate(),
+          };
+          break;
+        case "waiting_memo":
+          // Go back to category selection
+          await saveUserState(userId, {
+            step: "user_selected",
+            user: currentState.user || "",
+          });
+          response = {
+            type: "template",
+            altText: "支払いカテゴリを選択してください",
+            template: createCategoryCarouselTemplate(currentState.user || ""),
+          };
+          break;
+        case "waiting_price":
+          // Go back to memo input
+          await saveUserState(userId, {
+            step: "waiting_memo",
+            user: currentState.user || "",
+            category: currentState.category,
+          });
+          response = {
+            type: "text",
+            text: `${currentState.user}さんの${CATEGORY_NAMES[currentState.category!]}を選択しました。\n\n📝 備考があれば入力してください（下から選択または直接入力）。`,
+            quickReply: createMemoQuickReply(currentState.category),
+          };
+          break;
+        case "confirming":
+          // Go back to price input
+          await saveUserState(userId, {
+            step: "waiting_price",
+            user: currentState.user || "",
+            category: currentState.category,
+            memo: currentState.memo,
+          });
+          response = {
+            type: "text",
+            text: BOT_MESSAGES.MEMO_SAVED,
+          };
+          break;
+        default:
+          response = {
+            type: "text",
+            text: BOT_MESSAGES.INVALID_OPERATION,
+          };
+      }
+    }
   } else if (
     data === "payment_user=****" ||
     data === "payment_user=****"
@@ -97,7 +161,7 @@ export const postbackEventHandler = async (
         response = {
           type: "text",
           text: `${user}さんの${CATEGORY_NAMES[category]}を選択しました。\n\n📝 備考があれば入力してください（下から選択または直接入力）。`,
-          quickReply: createMemoQuickReply(),
+          quickReply: createMemoQuickReply(category),
         };
       }
     }
