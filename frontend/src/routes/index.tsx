@@ -13,16 +13,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getMonthlyCost } from "@/server/getMonthly";
 import { Suspense } from "react";
 
-const deferredQueryOptions = () =>
+const deferredQueryOptions = (year: number, month: number) =>
   queryOptions({
-    queryKey: ["monthly", "cost"],
-    queryFn: () => getMonthlyCost(),
+    queryKey: ["monthly", "cost", year, month],
+    queryFn: () => getMonthlyCost({ data: { year, month } }),
   });
 
 export const Route = createFileRoute("/")({
   component: Home,
   loader: ({ context }) => {
-    context.queryClient.prefetchQuery(deferredQueryOptions());
+    const now = new Date();
+    context.queryClient.prefetchQuery(
+      deferredQueryOptions(now.getFullYear(), now.getMonth() + 1),
+    );
   },
   errorComponent: () => (
     <div>
@@ -42,7 +45,10 @@ function Home() {
 }
 
 function DeferredCostTable() {
-  const deferredQuery = useSuspenseQuery(deferredQueryOptions());
+  const now = new Date();
+  const deferredQuery = useSuspenseQuery(
+    deferredQueryOptions(now.getFullYear(), now.getMonth() + 1),
+  );
 
   return (
     <Table>
