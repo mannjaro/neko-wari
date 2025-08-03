@@ -8,12 +8,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { getMonthlyCost } from "@/server/getMonthly";
+import { Suspense } from "react";
+
+const deferredQueryOptions = () =>
+  queryOptions({
+    queryKey: ["monthly", "cost"],
+    queryFn: () => getMonthlyCost(),
+  });
 
 export const Route = createFileRoute("/")({
   component: Home,
-  loader: async () => await getMonthlyCost(),
+  loader: ({ context }) => {
+    context.queryClient.prefetchQuery(deferredQueryOptions());
+  },
   errorComponent: () => (
     <div>
       <p>error</p>
@@ -22,7 +32,17 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const state = Route.useLoaderData();
+  return (
+    <div className="p-2">
+      <Suspense fallback="Loading Middleman...">
+        <DeferredCostTable />
+      </Suspense>
+    </div>
+  );
+}
+
+function DeferredCostTable() {
+  const deferredQuery = useSuspenseQuery(deferredQueryOptions());
 
   return (
     <Table>
@@ -34,7 +54,7 @@ function Home() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {state.userSummaries.map((user) => (
+        {deferredQuery.data.userSummaries.map((user) => (
           <TableRow key={user.userId}>
             <TableCell>{user.user}</TableCell>
             <TableCell>{user.totalAmount}</TableCell>

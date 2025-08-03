@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import {
   Outlet,
-  createRootRoute,
   createRootRouteWithContext,
   HeadContent,
   Scripts,
