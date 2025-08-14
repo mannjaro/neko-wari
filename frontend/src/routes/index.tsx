@@ -8,10 +8,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { getMonthlyCost } from "@/server/getMonthly";
-import { Suspense } from "react";
+import { Suspense, useCallback, useState, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -20,6 +23,15 @@ import {
   CardDescription,
   CardFooter,
 } from "@/components/ui/card";
+import { z } from "zod";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 
 type DiffAmount = {
   amount: number;
@@ -27,18 +39,54 @@ type DiffAmount = {
   to: string;
 };
 
+// 検索パラメータのスキーマ定義
+const searchSchema = z.object({
+  year: z.number().optional(),
+  month: z.number().min(1).max(12).optional(),
+});
+
 const deferredQueryOptions = (year: number, month: number) =>
   queryOptions({
     queryKey: ["monthly", "cost", year, month],
     queryFn: () => getMonthlyCost({ data: { year, month } }),
   });
 
+// 年間全体のクエリオプション
+const yearlyQueryOptions = (year: number) =>
+  queryOptions({
+    queryKey: ["yearly", "cost", year],
+    queryFn: async () => {
+      // 1-12月を並行して取得
+      const promises = Array.from({ length: 12 }, (_, i) =>
+        getMonthlyCost({ data: { year, month: i + 1 } }),
+      );
+      const results = await Promise.all(promises);
+
+      // 月をキーとした Map に変換
+      const monthlyData = new Map<
+        number,
+        Awaited<ReturnType<typeof getMonthlyCost>>
+      >();
+      results.forEach((data, index) => {
+        monthlyData.set(index + 1, data);
+      });
+
+      return monthlyData;
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+
 export const Route = createFileRoute("/")({
+  validateSearch: searchSchema,
   component: Home,
-  loader: ({ context }) => {
+  loaderDeps: ({ search: { year, month } }) => ({ year, month }),
+  loader: ({ context, deps: { year, month } }) => {
     const now = new Date();
+    const currentYear = year ?? now.getFullYear();
+    const currentMonth = month ?? now.getMonth() + 1;
+    context.queryClient.prefetchQuery(yearlyQueryOptions(currentYear));
     context.queryClient.prefetchQuery(
-      deferredQueryOptions(now.getFullYear(), now.getMonth() + 1),
+      deferredQueryOptions(currentYear, currentMonth),
     );
   },
   errorComponent: () => (
@@ -77,6 +125,21 @@ function calcDiff(payments: Map<string, number>): DiffAmount {
   }
 }
 
+// 月の前後を計算するヘルパー関数
+function getPreviousMonth(year: number, month: number) {
+  if (month === 1) {
+    return { year: year - 1, month: 12 };
+  }
+  return { year, month: month - 1 };
+}
+
+function getNextMonth(year: number, month: number) {
+  if (month === 12) {
+    return { year: year + 1, month: 1 };
+  }
+  return { year, month: month + 1 };
+}
+
 function Price({ amount }: { amount: number }) {
   const formatted = new Intl.NumberFormat("ja-JP", {
     style: "currency",
@@ -86,44 +149,187 @@ function Price({ amount }: { amount: number }) {
   return <span>{formatted}</span>;
 }
 
-function Home() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
+function SkeletonDemo() {
   return (
-    <div className="p-2">
-      <Suspense fallback="Loading Middleman...">
-        <DeferredCostTable year={year} month={month} />
-      </Suspense>
+    <div className="flex items-center space-x-4">
+      <Skeleton className="h-12 w-12 rounded-full" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-[250px]" />
+        <Skeleton className="h-4 w-[200px]" />
+      </div>
     </div>
   );
 }
 
-function DeferredCostTable({ year, month }: { year: number; month: number }) {
-  const deferredQuery = useSuspenseQuery(deferredQueryOptions(year, month));
+function Home() {
+  const { year, month } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const [api, setApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(1); // 真ん中のスライドから開始
+
+  const now = new Date();
+  const currentYear = year ?? now.getFullYear();
+  const currentMonth = month ?? now.getMonth() + 1;
+  const prev = getPreviousMonth(currentYear, currentMonth);
+  const next = getNextMonth(currentYear, currentMonth);
+
+  // Carousel APIの設定
+  // Carousel APIの設定
+  useEffect(() => {
+    if (!api) return;
+
+    // 初期位置を現在の月に設定（0ベースなので-1）
+    api.scrollTo(currentMonth - 1, false);
+
+    api.on("select", () => {
+      const selected = api.selectedScrollSnap();
+      const newMonth = selected + 1; // 0ベースから1ベースに変換
+
+      if (newMonth !== currentMonth) {
+        navigate({
+          to: "/",
+          search: { year: currentYear, month: newMonth },
+          replace: true,
+        });
+      }
+    });
+  }, [api, currentMonth, currentYear, navigate]);
+
+  // URLが変更された時にスライドを対応する月に移動
+  useEffect(() => {
+    if (api) {
+      const targetSlide = currentMonth - 1; // 0ベースに変換
+      if (api.selectedScrollSnap() !== targetSlide) {
+        api.scrollTo(targetSlide, false);
+      }
+    }
+  }, [currentMonth, api]);
+
+  const handleMonthChange = useCallback(
+    (newMonth: number) => {
+      if (api) {
+        api.scrollTo(newMonth - 1);
+      } else {
+        navigate({
+          to: "/",
+          search: { year: currentYear, month: newMonth },
+          replace: true,
+        });
+      }
+    },
+    [api, navigate, currentYear],
+  );
+
+  const goToPrevious = () => {
+    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    handleMonthChange(prevMonth);
+  };
+
+  const goToNext = () => {
+    const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+    handleMonthChange(nextMonth);
+  };
+
+  // 12ヶ月分のデータを配列で作成
+  const monthsData = Array.from({ length: 12 }, (_, i) => ({
+    year: currentYear,
+    month: i + 1,
+    label: `${currentYear}年${i + 1}月`,
+  }));
+
+  return (
+    <Suspense fallback={<SkeletonDemo />}>
+      <YearlyCarousel
+        year={currentYear}
+        currentMonth={currentMonth}
+        setApi={setApi}
+      />
+    </Suspense>
+  );
+}
+
+function YearlyCarousel({
+  year,
+  currentMonth,
+  setApi,
+}: {
+  year: number;
+  currentMonth: number;
+  setApi: (api: CarouselApi) => void;
+}) {
+  // 年間データを取得
+  const yearlyQuery = useSuspenseQuery(yearlyQueryOptions(year));
+
+  return (
+    <Carousel setApi={setApi} className="max-w-4xl mx-auto">
+      <CarouselContent>
+        {Array.from({ length: 12 }, (_, index) => {
+          const month = index + 1;
+          const monthData = yearlyQuery.data.get(month);
+
+          return (
+            <CarouselItem key={month}>
+              <div className="p-1">
+                <MonthlyCostTable
+                  year={year}
+                  month={month}
+                  data={monthData}
+                  isActive={month === currentMonth}
+                />
+              </div>
+            </CarouselItem>
+          );
+        })}
+      </CarouselContent>
+      <CarouselPrevious className="hidden md:flex" />
+      <CarouselNext className="hidden md:flex" />
+    </Carousel>
+  );
+}
+
+function MonthlyCostTable({
+  year,
+  month,
+  data,
+  isActive = true,
+}: {
+  year: number;
+  month: number;
+  data: Awaited<ReturnType<typeof getMonthlyCost>> | undefined;
+  isActive?: boolean;
+}) {
+  if (!data || !data.userSummaries) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        {month}月のデータがありません
+      </div>
+    );
+  }
+
   const paymentsMap = new Map(
-    deferredQuery.data.userSummaries.map((user) => [
-      user.user,
-      user.totalAmount,
-    ]),
+    data.userSummaries.map((user) => [user.user, user.totalAmount]),
   );
   const diffResult = paymentsMap.size === 2 ? calcDiff(paymentsMap) : null;
 
   return (
-    <div>
+    <div
+      className={`transition-opacity ${isActive ? "opacity-100" : "opacity-70"}`}
+    >
       {diffResult && (
-        <Card>
+        <Card className="mb-6">
           <CardHeader>
             <CardTitle>{month}月 支払い金額</CardTitle>
             <CardDescription> （多い方 - 少ない方） / 2</CardDescription>
           </CardHeader>
           <CardContent>
-            <Price amount={diffResult.amount} />
+            <div className="text-2xl font-bold">
+              <Price amount={diffResult.amount} />
+            </div>
           </CardContent>
           <CardFooter>
             <div>
-              <p>From to</p>
-              <span>
+              <p className="text-sm text-gray-600 mb-1">From to</p>
+              <span className="font-medium">
                 {diffResult.from} → {diffResult.to}
               </span>
             </div>
@@ -131,18 +337,22 @@ function DeferredCostTable({ year, month }: { year: number; month: number }) {
         </Card>
       )}
       <Table>
-        <TableCaption>Monthly Cost</TableCaption>
+        <TableCaption>
+          Monthly Cost - {year}年{month}月
+        </TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>User name</TableHead>
-            <TableHead>Total amount</TableHead>
+            <TableHead className="text-right">Total amount</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {deferredQuery.data.userSummaries.map((user) => (
+          {data.userSummaries.map((user) => (
             <TableRow key={user.userId}>
-              <TableCell>{user.user}</TableCell>
-              <TableCell>{user.totalAmount}</TableCell>
+              <TableCell className="font-medium">{user.user}</TableCell>
+              <TableCell className="text-right">
+                <Price amount={user.totalAmount} />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
