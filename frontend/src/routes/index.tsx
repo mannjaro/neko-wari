@@ -35,20 +35,20 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
   return (
     <div className="p-2">
       <Suspense fallback="Loading Middleman...">
-        <DeferredCostTable />
+        <DeferredCostTable year={year} month={month} />
       </Suspense>
     </div>
   );
 }
 
-function DeferredCostTable() {
-  const now = new Date();
-  const deferredQuery = useSuspenseQuery(
-    deferredQueryOptions(now.getFullYear(), now.getMonth() + 1),
-  );
+function DeferredCostTable({ year, month }: { year: number; month: number }) {
+  const deferredQuery = useSuspenseQuery(deferredQueryOptions(year, month));
 
   return (
     <Table>
