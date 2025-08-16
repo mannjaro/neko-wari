@@ -1,4 +1,14 @@
 // src/routes/index.tsx
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import {
   Table,
   TableBody,
@@ -235,6 +245,44 @@ function YearlyCarousel({
   );
 }
 
+interface DetailDrawerProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  user?: {
+    userId: string;
+    user: string;
+    totalAmount: number;
+  };
+}
+
+function DetailDrawer({ isOpen, onOpenChange, user }: DetailDrawerProps) {
+  if (!user) return null;
+
+  return (
+    <Drawer open={isOpen} onOpenChange={onOpenChange}>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>{user.user}の詳細</DrawerTitle>
+          <DrawerDescription>{user.userId}</DrawerDescription>
+        </DrawerHeader>
+        <div className="px-4">
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-600">合計金額</h3>
+            <div className="text-2xl font-bold">
+              <Price amount={user.totalAmount} />
+            </div>
+          </div>
+        </div>
+        <DrawerFooter>
+          <DrawerClose>
+            <Button variant="outline" className="w-full">閉じる</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
 function MonthlyCostTable({
   year,
   month,
@@ -246,6 +294,13 @@ function MonthlyCostTable({
   data: Awaited<ReturnType<typeof getMonthlyCost>> | undefined;
   isActive?: boolean;
 }) {
+  const [selectedUser, setSelectedUser] = useState<{
+    userId: string;
+    user: string;
+    totalAmount: number;
+  } | undefined>(undefined);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
   if (!data || !data.userSummaries) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -258,6 +313,11 @@ function MonthlyCostTable({
     data.userSummaries.map((user) => [user.user, user.totalAmount]),
   );
   const diffResult = paymentsMap.size === 2 ? calcDiff(paymentsMap) : null;
+
+  const handleRowClick = (user: typeof data.userSummaries[0]) => {
+    setSelectedUser(user);
+    setIsDrawerOpen(true);
+  };
 
   return (
     <div
@@ -296,7 +356,11 @@ function MonthlyCostTable({
         </TableHeader>
         <TableBody>
           {data.userSummaries.map((user) => (
-            <TableRow key={user.userId}>
+            <TableRow 
+              key={user.userId}
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => handleRowClick(user)}
+            >
               <TableCell className="font-medium">{user.user}</TableCell>
               <TableCell className="text-right">
                 <Price amount={user.totalAmount} />
@@ -305,6 +369,11 @@ function MonthlyCostTable({
           ))}
         </TableBody>
       </Table>
+      <DetailDrawer
+        isOpen={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        user={selectedUser}
+      />
     </div>
   );
 }
