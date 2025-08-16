@@ -8,13 +8,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { getMonthlyCost } from "@/server/getMonthly";
-import { Suspense, useCallback, useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -125,21 +124,6 @@ function calcDiff(payments: Map<string, number>): DiffAmount {
   }
 }
 
-// 月の前後を計算するヘルパー関数
-function getPreviousMonth(year: number, month: number) {
-  if (month === 1) {
-    return { year: year - 1, month: 12 };
-  }
-  return { year, month: month - 1 };
-}
-
-function getNextMonth(year: number, month: number) {
-  if (month === 12) {
-    return { year: year + 1, month: 1 };
-  }
-  return { year, month: month + 1 };
-}
-
 function Price({ amount }: { amount: number }) {
   const formatted = new Intl.NumberFormat("ja-JP", {
     style: "currency",
@@ -165,13 +149,10 @@ function Home() {
   const { year, month } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [api, setApi] = useState<CarouselApi>();
-  const [currentSlide, setCurrentSlide] = useState(1); // 真ん中のスライドから開始
 
   const now = new Date();
   const currentYear = year ?? now.getFullYear();
   const currentMonth = month ?? now.getMonth() + 1;
-  const prev = getPreviousMonth(currentYear, currentMonth);
-  const next = getNextMonth(currentYear, currentMonth);
 
   // Carousel APIの設定
   // Carousel APIの設定
@@ -204,38 +185,6 @@ function Home() {
       }
     }
   }, [currentMonth, api]);
-
-  const handleMonthChange = useCallback(
-    (newMonth: number) => {
-      if (api) {
-        api.scrollTo(newMonth - 1);
-      } else {
-        navigate({
-          to: "/",
-          search: { year: currentYear, month: newMonth },
-          replace: true,
-        });
-      }
-    },
-    [api, navigate, currentYear],
-  );
-
-  const goToPrevious = () => {
-    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-    handleMonthChange(prevMonth);
-  };
-
-  const goToNext = () => {
-    const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
-    handleMonthChange(nextMonth);
-  };
-
-  // 12ヶ月分のデータを配列で作成
-  const monthsData = Array.from({ length: 12 }, (_, i) => ({
-    year: currentYear,
-    month: i + 1,
-    label: `${currentYear}年${i + 1}月`,
-  }));
 
   return (
     <Suspense fallback={<SkeletonDemo />}>
