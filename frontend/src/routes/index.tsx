@@ -155,11 +155,10 @@ function Home() {
   const currentMonth = month ?? now.getMonth() + 1;
 
   // Carousel APIの設定
-  // Carousel APIの設定
   useEffect(() => {
     if (!api) return;
 
-    // 初期位置を現在の月に設定（0ベースなので-1）
+    // 初期位置を設定（滑らかに）
     api.scrollTo(currentMonth - 1, false);
 
     api.on("select", () => {
@@ -174,14 +173,14 @@ function Home() {
         });
       }
     });
-  }, [api, currentMonth, currentYear, navigate]);
+  }, [api, currentYear, currentMonth, navigate]);
 
   // URLが変更された時にスライドを対応する月に移動
   useEffect(() => {
     if (api) {
       const targetSlide = currentMonth - 1; // 0ベースに変換
       if (api.selectedScrollSnap() !== targetSlide) {
-        api.scrollTo(targetSlide, false);
+        api.scrollTo(targetSlide, true); // 滑らかなアニメーションを有効化
       }
     }
   }, [currentMonth, api]);

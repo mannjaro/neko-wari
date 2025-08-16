@@ -24,7 +24,6 @@ export const getMonthlyCost = createServerFn({
   .handler(async ({ data: { year, month } }) => {
     const env = getBindings();
     const client = hc<AppType>(env.BACKEND_API);
-    console.log(year, month);
     const response = await client.dashboard.monthly.$get({
       query: {
         month,
