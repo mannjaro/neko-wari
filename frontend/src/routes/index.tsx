@@ -23,7 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { getMonthlyCost } from "@/server/getMonthly";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import {
   Card,
   CardHeader,
@@ -159,6 +159,7 @@ function Home() {
   const { year, month } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [api, setApi] = useState<CarouselApi>();
+  const initialSetRef = useRef(false);
 
   const now = new Date();
   const currentYear = year ?? now.getFullYear();
@@ -166,10 +167,11 @@ function Home() {
 
   // Carousel APIの設定
   useEffect(() => {
-    if (!api) return;
+    if (!api || initialSetRef.current) return;
 
     // 初期位置を設定（滑らかに）
-    api.scrollTo(currentMonth - 1, false);
+    api.scrollTo(currentMonth - 1, true);
+    initialSetRef.current = true;
 
     api.on("select", () => {
       const selected = api.selectedScrollSnap();
@@ -190,7 +192,7 @@ function Home() {
     if (api) {
       const targetSlide = currentMonth - 1; // 0ベースに変換
       if (api.selectedScrollSnap() !== targetSlide) {
-        api.scrollTo(targetSlide, true); // 滑らかなアニメーションを有効化
+        api.scrollTo(targetSlide, false); // 滑らかなアニメーションを有効化
       }
     }
   }, [currentMonth, api]);
@@ -252,6 +254,13 @@ interface DetailDrawerProps {
     userId: string;
     user: string;
     totalAmount: number;
+    transactionCount: number;
+    categoryBreakdown: {
+      [x: string]: {
+        amount: number;
+        memo: string;
+      }[];
+    };
   };
 }
 
@@ -263,8 +272,31 @@ function DetailDrawer({ isOpen, onOpenChange, user }: DetailDrawerProps) {
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{user.user}の詳細</DrawerTitle>
-          <DrawerDescription>{user.userId}</DrawerDescription>
+          <DrawerDescription>内訳</DrawerDescription>
         </DrawerHeader>
+        <Table>
+          <TableCaption>Details</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Category</TableHead>
+              <TableHead>Memo</TableHead>
+              <TableHead>Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Object.entries(user.categoryBreakdown).map(([category, items]) =>
+              items.map((item, _) => (
+                <TableRow key={`${category}-${item.memo}`}>
+                  <TableCell>{category}</TableCell>
+                  <TableCell>{item.memo}</TableCell>
+                  <TableCell>
+                    <Price amount={item.amount} />
+                  </TableCell>
+                </TableRow>
+              )),
+            )}
+          </TableBody>
+        </Table>
         <div className="px-4">
           <div className="mb-4">
             <h3 className="text-sm font-medium text-gray-600">合計金額</h3>
@@ -274,8 +306,10 @@ function DetailDrawer({ isOpen, onOpenChange, user }: DetailDrawerProps) {
           </div>
         </div>
         <DrawerFooter>
-          <DrawerClose>
-            <Button variant="outline" className="w-full">閉じる</Button>
+          <DrawerClose asChild>
+            <Button variant="outline" className="w-full">
+              閉じる
+            </Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
@@ -298,7 +332,14 @@ function MonthlyCostTable({
     userId: string;
     user: string;
     totalAmount: number;
-  } | undefined>(undefined);
+    transactionCount: number;
+    categoryBreakdown: {
+      [x: string]: {
+        amount: number;
+        memo: string;
+      }[];
+    };
+  }>();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   if (!data || !data.userSummaries) {
@@ -314,7 +355,7 @@ function MonthlyCostTable({
   );
   const diffResult = paymentsMap.size === 2 ? calcDiff(paymentsMap) : null;
 
-  const handleRowClick = (user: typeof data.userSummaries[0]) => {
+  const handleRowClick = (user: (typeof data.userSummaries)[0]) => {
     setSelectedUser(user);
     setIsDrawerOpen(true);
   };
@@ -356,7 +397,7 @@ function MonthlyCostTable({
         </TableHeader>
         <TableBody>
           {data.userSummaries.map((user) => (
-            <TableRow 
+            <TableRow
               key={user.userId}
               className="cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={() => handleRowClick(user)}
