@@ -8,6 +8,11 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  build: {
+    rollupOptions: {
+      external: ["hono/client"],
+    },
+  },
   plugins: [
     tsConfigPaths(),
     tanstackStart({ customViteReactPlugin: true, target: "cloudflare-module" }),
