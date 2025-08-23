@@ -1,3 +1,4 @@
+// src/hooks/useQueryOptions.ts
 import { queryOptions } from "@tanstack/react-query";
 import { getMonthlyCost } from "@/server/getMonthly";
 
@@ -12,7 +13,7 @@ export const yearlyQueryOptions = (year: number) =>
     queryKey: ["yearly", "cost", year],
     queryFn: async () => {
       const promises = Array.from({ length: 12 }, (_, i) =>
-        getMonthlyCost({ data: { year, month: i + 1 } }),
+        getMonthlyCost({ data: { year, month: i + 1 } })
       );
       const results = await Promise.all(promises);
 

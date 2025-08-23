@@ -41,6 +41,7 @@ export function DetailDrawer({
               <TableHead>Category</TableHead>
               <TableHead>Memo</TableHead>
               <TableHead>Amount</TableHead>
+              <TableHead>Edit</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
