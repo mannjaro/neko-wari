@@ -20,7 +20,11 @@ import {
 import { Price } from "./Price";
 import type { DetailDrawerProps } from "@/types";
 
-export function DetailDrawer({ isOpen, onOpenChange, user }: DetailDrawerProps) {
+export function DetailDrawer({
+  isOpen,
+  onOpenChange,
+  user,
+}: DetailDrawerProps) {
   if (!user) return null;
 
   return (
