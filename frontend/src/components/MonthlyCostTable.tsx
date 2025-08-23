@@ -1,25 +1,9 @@
 import { useState } from "react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-  CardFooter,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { getMonthlyCost } from "@/server/getMonthly";
 import { calcDiff } from "@/utils/calculations";
-import { Price } from "./Price";
 import { DetailDrawer } from "./DetailDrawer";
+import { PaymentSummaryCard } from "./PaymentSummaryCard";
+import { UserSummaryTable } from "./UserSummaryTable";
+import type { getMonthlyCost } from "@/server/getMonthly";
 
 export function MonthlyCostTable({
   year,
@@ -69,51 +53,14 @@ export function MonthlyCostTable({
       className={`transition-opacity ${isActive ? "opacity-100" : "opacity-70"}`}
     >
       {diffResult && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>{month}月 支払い金額</CardTitle>
-            <CardDescription> （多い方 - 少ない方） / 2</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              <Price amount={diffResult.amount} />
-            </div>
-          </CardContent>
-          <CardFooter>
-            <div>
-              <p className="text-sm text-gray-600 mb-1">From to</p>
-              <span className="font-medium">
-                {diffResult.from} → {diffResult.to}
-              </span>
-            </div>
-          </CardFooter>
-        </Card>
+        <PaymentSummaryCard month={month} diffResult={diffResult} />
       )}
-      <Table>
-        <TableCaption>
-          Monthly Cost - {year}年{month}月
-        </TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead>User name</TableHead>
-            <TableHead className="text-right">Total amount</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.userSummaries.map((user) => (
-            <TableRow
-              key={user.userId}
-              className="cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => handleRowClick(user)}
-            >
-              <TableCell className="font-medium">{user.user}</TableCell>
-              <TableCell className="text-right">
-                <Price amount={user.totalAmount} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <UserSummaryTable
+        year={year}
+        month={month}
+        userSummaries={data.userSummaries}
+        onRowClick={handleRowClick}
+      />
       <DetailDrawer
         isOpen={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}

@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { NotFound } from "@/components/NotFound";
 import type { QueryClient } from "@tanstack/react-query";
 
 import appCss from "@/styles/app.css?url";
@@ -35,6 +36,7 @@ export const Route = createRootRouteWithContext<{
     ],
   }),
   component: RootComponent,
+  notFoundComponent: NotFound,
 });
 
 function RootComponent() {
