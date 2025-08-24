@@ -3,9 +3,9 @@ import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
-  UpdateCommand,
   DeleteCommand,
   QueryCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { Logger } from "@aws-lambda-powertools/logger";
 
@@ -19,6 +19,8 @@ import type {
   UserDetailResponse,
   CategorySummaryResponse,
   CategorySummaryItem,
+  UpdateCostData,
+  UpdateExpressionResult,
 } from "../../shared/types.js";
 import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../../shared/constants";
 
@@ -424,7 +426,7 @@ export const generateCategorySummary = async (
 export const updateCostData = async (
   userId: string,
   timestamp: number,
-  state: UserState
+  state: UpdateCostData
 ): Promise<void> => {
   const prevCostItem = await (async () => {
     try {
@@ -462,32 +464,67 @@ export const updateCostData = async (
     }
   })();
 
-  const now = new Date().toISOString();
-  const costItem: CostDataItem = {
-    PK: prevCostItem.PK,
-    SK: prevCostItem.SK,
-    GSI1PK: prevCostItem.GSI1PK,
-    GSI1SK: prevCostItem.GSI1SK,
-    EntityType: prevCostItem.EntityType,
-    CreatedAt: prevCostItem.CreatedAt,
-    UpdatedAt: now,
-    User: state.user,
-    Category: state.category,
-    Memo: state.memo || "",
-    Price: state.price || 0,
-    Timestamp: timestamp,
-    YearMonth: prevCostItem.YearMonth,
-  };
+  const updateExpressions = buildUpdateExpression(state);
 
-  try {
-    docClient.send(
-      new PutCommand({
-        TableName: TABLE_NAME,
-        Item: costItem,
-      })
-    );
-  } catch (error) {
-    logger.error("Error getting cost detail", { error, userId, timestamp });
-    throw error;
-  }
+  const currentCostItem = await (async () => {
+    try {
+      const result = await docClient.send(
+        new UpdateCommand({
+          TableName: TABLE_NAME,
+          Key: {
+            PK: prevCostItem.PK,
+            SK: prevCostItem.SK,
+          },
+          UpdateExpression: updateExpressions.UpdateExpression,
+          ExpressionAttributeNames: updateExpressions.ExpressionAttributeNames,
+          ExpressionAttributeValues:
+            updateExpressions.ExpressionAttributeValues,
+          ReturnValues: "ALL_NEW",
+        })
+      );
+      if (!result.Attributes) {
+        throw new Error("Updated item is null");
+      }
+      return result.Attributes;
+    } catch (error) {
+      logger.error("Error getting cost detail", { error, userId, timestamp });
+      throw error;
+    }
+  })();
 };
+
+export function buildUpdateExpression(
+  updateData: UpdateCostData
+): UpdateExpressionResult {
+  const updateExpressions: string[] = [];
+  const expressionAttributeNames: Record<string, string> = {};
+  const expressionAttributeValues: Record<string, string | number> = {};
+
+  // 各フィールドをチェックして、値が存在する場合のみ更新対象に追加
+  Object.entries(updateData).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      const attributeName = `#${key}`;
+      const attributeValue = `:${key}`;
+
+      // SET句に追加
+      updateExpressions.push(`${attributeName} = ${attributeValue}`);
+
+      // ExpressionAttributeNames に追加
+      expressionAttributeNames[attributeName] = key;
+
+      // ExpressionAttributeValues に追加
+      expressionAttributeValues[attributeValue] = value;
+    }
+  });
+
+  // UpdateExpressionが空の場合はエラー
+  if (updateExpressions.length === 0) {
+    throw new Error("更新するデータが指定されていません");
+  }
+
+  return {
+    UpdateExpression: `SET ${updateExpressions.join(", ")}`,
+    ExpressionAttributeNames: expressionAttributeNames,
+    ExpressionAttributeValues: expressionAttributeValues,
+  };
+}

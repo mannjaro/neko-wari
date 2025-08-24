@@ -10,6 +10,9 @@ import {
   categorySummaryHandler,
 } from "./handlers/dashboardHandlers";
 
+import { updateCostHandler } from "./handlers/updateHandlers";
+import { time } from "console";
+
 type Bindings = {
   event: LambdaEvent;
   lambdaContext: LambdaContext;
@@ -36,9 +39,34 @@ const monthlyGet = app.get(
   }
 );
 
-const detailUpdate = app.put("/user/:uid/detail/:timestamp", async (c) => {
-  const { uid, timestamp } = c.req.param();
-});
+const detailUpdate = app.put(
+  "/user/:uid/detail/:timestamp",
+  zValidator(
+    "json",
+    z
+      .object({
+        userId: z.string(),
+        category: z.union([
+          z.literal("rent"),
+          z.literal("utilities"),
+          z.literal("furniture"),
+          z.literal("daily"),
+          z.literal("transportation"),
+          z.literal("other"),
+        ]),
+        memo: z.string(),
+        price: z.number(),
+      })
+      .partial()
+  ),
+  async (c) => {
+    const { uid, timestamp } = c.req.param();
+    const body = await c.req.valid("json");
+    const now = new Date().toISOString();
+    const req = { ...body, updatedAt: now };
+    updateCostHandler(c, uid, timestamp, req);
+  }
+);
 
 app.get(
   "/dashboard/user/details",
