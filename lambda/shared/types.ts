@@ -21,10 +21,10 @@ export type UserStep =
 // User state interface for session management
 export interface UserState {
   step: UserStep;
-  user?: string;
-  category?: PaymentCategory;
-  memo?: string;
-  price?: number;
+  user: string;
+  category: PaymentCategory;
+  memo: string;
+  price: number;
 }
 
 // Facet types for DynamoDB single table design
