@@ -1,7 +1,7 @@
 // getServerTime.ts
 import { createServerFn } from "@tanstack/react-start";
 import { hc } from "hono/client";
-import type { AppType } from "../../../lambda/backend/app";
+import type { MonthlyGetType } from "../../../lambda/backend/app";
 import { getBindings } from "@/utils/binding";
 
 import { z } from "zod";
@@ -23,7 +23,7 @@ export const getMonthlyCost = createServerFn({
   })
   .handler(async ({ data: { year, month } }) => {
     const env = getBindings();
-    const client = hc<AppType>(env.BACKEND_API);
+    const client = hc<MonthlyGetType>(env.BACKEND_API);
     const response = await client.dashboard.monthly.$get({
       query: {
         month,

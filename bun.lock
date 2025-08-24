@@ -16,7 +16,7 @@
         "aws-cdk-lib": "2.208.0",
         "constructs": "^10.4.2",
         "esbuild": "^0.25.8",
-        "hono": "^4.8.11",
+        "hono": "^4.9.4",
         "react": "^19.1.1",
         "vite": "^7.0.6",
         "zod": "^4.0.14",
@@ -1169,7 +1169,7 @@
 
     "hasown": ["hasown@2.0.2", "", { "dependencies": { "function-bind": "^1.1.2" } }, "sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ=="],
 
-    "hono": ["hono@4.8.11", "", {}, "sha512-o9G+3myW7osYoDsa+8UKwScJ3+KjFJVcaDwjsY7pC1/4Hu1LV8l5SGpSM0H9RYAji2Vg/CxfX7hCx3Nj0cd3uw=="],
+    "hono": ["hono@4.9.4", "", {}, "sha512-61hl6MF6ojTl/8QSRu5ran6GXt+6zsngIUN95KzF5v5UjiX/xnrLR358BNRawwIRO49JwUqJqQe3Rb2v559R8Q=="],
 
     "hookable": ["hookable@5.5.3", "", {}, "sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ=="],
 
