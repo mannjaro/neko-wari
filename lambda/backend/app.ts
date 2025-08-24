@@ -36,7 +36,9 @@ const monthlyGet = app.get(
   }
 );
 
-const detailUpdate = app.put("/user/:uid/detail/:id");
+const detailUpdate = app.put("/user/:uid/detail/:timestamp", async (c) => {
+  const { uid, timestamp } = c.req.param();
+});
 
 app.get(
   "/dashboard/user/details",

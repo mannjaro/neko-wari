@@ -3,6 +3,7 @@ import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
+  UpdateCommand,
   DeleteCommand,
   QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
@@ -137,6 +138,13 @@ export const saveCostData = async (
       date.getMonth() + 1
     ).padStart(2, "0")}`;
 
+    if (state.user === undefined) {
+      throw new Error("user is not provided");
+    }
+    if (state.category === undefined) {
+      throw new Error("category is not provided");
+    }
+
     const costItem: CostDataItem = {
       PK: `${DYNAMO_KEYS.USER_PREFIX}${userId}`,
       SK: `${DYNAMO_KEYS.COST_PREFIX}${timestamp}`,
@@ -145,8 +153,8 @@ export const saveCostData = async (
       EntityType: DYNAMO_KEYS.ENTITY_COST_DATA as "COST_DATA",
       CreatedAt: now,
       UpdatedAt: now,
-      User: state.user!,
-      Category: state.category!,
+      User: state.user,
+      Category: state.category,
       Memo: state.memo || "",
       Price: state.price || 0,
       Timestamp: timestamp,
@@ -408,4 +416,78 @@ export const generateCategorySummary = async (
       (a, b) => b.totalAmount - a.totalAmount
     ),
   };
+};
+
+/**
+ * Update existing cost data
+ */
+export const updateCostData = async (
+  userId: string,
+  timestamp: number,
+  state: UserState
+): Promise<void> => {
+  const prevCostItem = await (async () => {
+    try {
+      const result = await docClient.send(
+        new GetCommand({
+          TableName: TABLE_NAME,
+          Key: {
+            PK: `${DYNAMO_KEYS.USER_PREFIX}${userId}`,
+            SK: `${DYNAMO_KEYS.COST_PREFIX}${timestamp}`,
+          },
+        })
+      );
+      if (!result.Item) {
+        throw new Error("Selected item is not exist");
+      }
+      const item: CostDataItem = {
+        PK: result.Item.PK,
+        SK: result.Item.SK,
+        GSI1PK: result.Item.GSI1PK,
+        GSI1SK: result.Item.GSI1SK,
+        Category: result.Item.Category,
+        CreatedAt: result.Item.CreatedAt,
+        EntityType: result.Item.EntityType,
+        Memo: result.Item.Memo,
+        Price: result.Item.Price,
+        Timestamp: result.Item.Timestamp,
+        UpdatedAt: result.Item.UpdatedAt,
+        User: result.Item.User,
+        YearMonth: result.Item.YearMonth,
+      };
+      return item;
+    } catch (error) {
+      logger.error("Error getting cost detail", { error, userId, timestamp });
+      throw error;
+    }
+  })();
+
+  const now = new Date().toISOString();
+  const costItem: CostDataItem = {
+    PK: prevCostItem.PK,
+    SK: prevCostItem.SK,
+    GSI1PK: prevCostItem.GSI1PK,
+    GSI1SK: prevCostItem.GSI1SK,
+    EntityType: prevCostItem.EntityType,
+    CreatedAt: prevCostItem.CreatedAt,
+    UpdatedAt: now,
+    User: state.user,
+    Category: state.category,
+    Memo: state.memo || "",
+    Price: state.price || 0,
+    Timestamp: timestamp,
+    YearMonth: prevCostItem.YearMonth,
+  };
+
+  try {
+    docClient.send(
+      new PutCommand({
+        TableName: TABLE_NAME,
+        Item: costItem,
+      })
+    );
+  } catch (error) {
+    logger.error("Error getting cost detail", { error, userId, timestamp });
+    throw error;
+  }
 };
