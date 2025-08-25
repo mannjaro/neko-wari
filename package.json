@@ -5,7 +5,7 @@
     "line-bot-sample": "bin/line-bot-sample.js"
   },
   "scripts": {
-    "dev": "tsx watch lambda/index.ts",
+    "dev": "tsx watch lambda/backend/index.ts",
     "build": "tsc --noEmit",
     "watch": "tsc -w",
     "test": "jest",
@@ -20,8 +20,9 @@
     "jest": "^30.0.5",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
-    "tsx": "^4.20.4",
-    "typescript": "~5.9.2"
+    "tsx": "^4.20.5",
+    "typescript": "~5.9.2",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.873.0",
@@ -34,6 +35,7 @@
     "@tanstack/react-start": "^1.131.27",
     "@types/aws-lambda": "^8.10.152",
     "aws-cdk-lib": "2.212.0",
+    "change-case": "^5.4.4",
     "constructs": "^10.4.2",
     "esbuild": "^0.25.9",
     "hono": "^4.9.4",

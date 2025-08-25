@@ -11,7 +11,6 @@ import {
 } from "./handlers/dashboardHandlers";
 
 import { updateCostHandler } from "./handlers/updateHandlers";
-import { time } from "console";
 
 type Bindings = {
   event: LambdaEvent;
@@ -23,7 +22,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.get("/", (c) => c.text("Status: OK"));
 
 // Dashboard API endpoints
-const monthlyGet = app.get(
+export const monthlyGet = app.get(
   "/dashboard/monthly",
   zValidator(
     "query",
@@ -39,7 +38,7 @@ const monthlyGet = app.get(
   }
 );
 
-const detailUpdate = app.put(
+export const detailUpdate = app.put(
   "/user/:uid/detail/:timestamp",
   zValidator(
     "json",
@@ -64,7 +63,8 @@ const detailUpdate = app.put(
     const body = await c.req.valid("json");
     const now = new Date().toISOString();
     const req = { ...body, updatedAt: now };
-    updateCostHandler(c, uid, timestamp, req);
+    console.log(uid, timestamp, body);
+    return updateCostHandler(c, uid, timestamp, req);
   }
 );
 
@@ -99,5 +99,6 @@ app.get(
 );
 
 export type MonthlyGetType = typeof monthlyGet;
+export type DetailUpdateType = typeof detailUpdate;
 
 export default app;
