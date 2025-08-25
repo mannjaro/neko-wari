@@ -23,13 +23,15 @@ import type {
   UpdateExpressionResult,
 } from "../../shared/types.js";
 import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../../shared/constants";
+import * as changeCase from "change-case";
 
 const logger = new Logger({ serviceName: "lineBotDynamoDB" });
 
 // DynamoDB client setup
 const dynamoDbClient = new DynamoDBClient({ region: process.env.AWS_REGION });
 const docClient = DynamoDBDocumentClient.from(dynamoDbClient);
-const TABLE_NAME = process.env.TABLE_NAME || "";
+const TABLE_NAME =
+  process.env.TABLE_NAME || "LineBotStack-BackendTable11108670-E0MIZ2H6G0AW";
 
 /**
  * Retrieves user state from DynamoDB
@@ -427,7 +429,8 @@ export const updateCostData = async (
   userId: string,
   timestamp: number,
   state: UpdateCostData
-): Promise<void> => {
+): Promise<Record<string, any>> => {
+  logger.debug(userId);
   const prevCostItem = await (async () => {
     try {
       const result = await docClient.send(
@@ -491,6 +494,7 @@ export const updateCostData = async (
       throw error;
     }
   })();
+  return currentCostItem;
 };
 
 export function buildUpdateExpression(
@@ -501,8 +505,9 @@ export function buildUpdateExpression(
   const expressionAttributeValues: Record<string, string | number> = {};
 
   // 各フィールドをチェックして、値が存在する場合のみ更新対象に追加
-  Object.entries(updateData).forEach(([key, value]) => {
+  Object.entries(updateData).forEach(([_key, value]) => {
     if (value !== undefined && value !== null) {
+      const key = changeCase.pascalCase(_key);
       const attributeName = `#${key}`;
       const attributeValue = `:${key}`;
 

@@ -8,7 +8,8 @@ export const updateCostHandler = async (
   req: UpdateCostData
 ) => {
   try {
-    await updateCostData(userId, Number(timestamp), req);
+    const result = await updateCostData(userId, Number(timestamp), req);
+    return c.json(result);
   } catch (error) {
     throw error;
   }
