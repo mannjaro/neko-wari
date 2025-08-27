@@ -19,6 +19,7 @@ export const paymentCategorySchema = z.enum([
 const transactionItemSchema = z.object({
   amount: z.number(),
   memo: z.string(),
+  timestamp: z.number(),
 });
 
 // Cost data item schema for user details

@@ -16,6 +16,7 @@ export interface DetailDrawerProps {
       [x: string]: {
         amount: number;
         memo: string;
+        timestamp: number;
       }[];
     };
   };
