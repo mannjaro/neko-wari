@@ -22,6 +22,10 @@ import type {
   UpdateCostData,
   UpdateExpressionResult,
 } from "../../shared/types.js";
+import {
+  CostDataItemResponse,
+  costDataItemSchema,
+} from "../schemas/responseSchemas";
 import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../../shared/constants";
 import * as changeCase from "change-case";
 
@@ -429,7 +433,7 @@ export const updateCostData = async (
   userId: string,
   timestamp: number,
   state: UpdateCostData
-): Promise<Record<string, any>> => {
+): Promise<CostDataItemResponse> => {
   logger.debug(userId);
   const prevCostItem = await (async () => {
     try {
@@ -488,7 +492,7 @@ export const updateCostData = async (
       if (!result.Attributes) {
         throw new Error("Updated item is null");
       }
-      return result.Attributes;
+      return costDataItemSchema.parse(result.Attributes);
     } catch (error) {
       logger.error("Error getting cost detail", { error, userId, timestamp });
       throw error;
