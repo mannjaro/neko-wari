@@ -8,10 +8,11 @@ export const errorResponseSchema = z.object({
 // Payment category enum schema
 export const paymentCategorySchema = z.enum([
   "rent",
-  "utilities", 
+  "transportation",
+  "utilities",
   "furniture",
   "daily",
-  "other"
+  "other",
 ]);
 
 // Transaction item schema for category breakdown
@@ -21,7 +22,7 @@ const transactionItemSchema = z.object({
 });
 
 // Cost data item schema for user details
-const costDataItemSchema = z.object({
+export const costDataItemSchema = z.object({
   PK: z.string(),
   SK: z.string(),
   GSI1PK: z.string().optional(),
@@ -83,6 +84,11 @@ export const categorySummaryResponseSchema = z.object({
 
 // Type exports for use in handlers
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
-export type MonthlySummaryResponse = z.infer<typeof monthlySummaryResponseSchema>;
+export type MonthlySummaryResponse = z.infer<
+  typeof monthlySummaryResponseSchema
+>;
 export type UserDetailResponse = z.infer<typeof userDetailResponseSchema>;
-export type CategorySummaryResponse = z.infer<typeof categorySummaryResponseSchema>;
+export type CategorySummaryResponse = z.infer<
+  typeof categorySummaryResponseSchema
+>;
+export type CostDataItemResponse = z.infer<typeof costDataItemSchema>;

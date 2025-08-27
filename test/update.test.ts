@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { testClient } from "hono/testing";
 import { describe, it, expect } from "vitest"; // Or your preferred test runner
 import { detailUpdate, monthlyGet } from "../lambda/backend/app";
-("../lambda/backend/app");
+import { costDataItemSchema } from "../lambda/backend/schemas/responseSchemas";
 
 describe("Get monthly data", () => {
   const client = testClient(monthlyGet);
@@ -38,8 +38,9 @@ describe("Search Endpoint", () => {
         memo: "新幹線1",
       },
     });
-    console.log(await res.json());
+    const parsedRes = costDataItemSchema.parse(await res.json());
 
+    expect(parsedRes.Memo).toBe("新幹線1");
     // Assertions
     expect(res.status).toBe(200);
   });
