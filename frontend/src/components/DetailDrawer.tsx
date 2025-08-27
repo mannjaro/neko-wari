@@ -62,7 +62,7 @@ export function DetailDrawer({
                     <Price amount={item.amount} />
                   </TableCell>
                   <TableCell>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => {}}>
                       <PenLine />
                     </Button>
                   </TableCell>
