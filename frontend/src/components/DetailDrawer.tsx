@@ -18,6 +18,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Price } from "./Price";
+import { NotebookPen, DollarSign, PenLine, PiggyBank } from "lucide-react";
+
 import type { DetailDrawerProps } from "@/types";
 
 export function DetailDrawer({
@@ -38,20 +40,31 @@ export function DetailDrawer({
           <TableCaption>Details</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead>Category</TableHead>
-              <TableHead>Memo</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Edit</TableHead>
+              <TableHead>
+                <DollarSign size={20} />
+              </TableHead>
+              <TableHead>
+                <NotebookPen size={20} />
+              </TableHead>
+              <TableHead>
+                <PiggyBank />
+              </TableHead>
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {Object.entries(user.categoryBreakdown).map(([category, items]) =>
               items.map((item, _) => (
-                <TableRow key={`${category}-${item.memo}`}>
+                <TableRow key={`${item.timestamp}-${item.memo}-`}>
                   <TableCell>{category}</TableCell>
                   <TableCell>{item.memo}</TableCell>
                   <TableCell>
                     <Price amount={item.amount} />
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="outline">
+                      <PenLine />
+                    </Button>
                   </TableCell>
                 </TableRow>
               )),
