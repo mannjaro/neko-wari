@@ -10,6 +10,8 @@ import {
   categorySummaryHandler,
 } from "./handlers/dashboardHandlers";
 
+import { UpdateCostDetailSchema } from "./schemas/requestSchema";
+
 import { updateCostHandler } from "./handlers/updateHandlers";
 
 type Bindings = {
@@ -40,24 +42,7 @@ export const monthlyGet = app.get(
 
 export const detailUpdate = app.put(
   "/user/:uid/detail/:timestamp",
-  zValidator(
-    "json",
-    z
-      .object({
-        userId: z.string(),
-        category: z.union([
-          z.literal("rent"),
-          z.literal("utilities"),
-          z.literal("furniture"),
-          z.literal("daily"),
-          z.literal("transportation"),
-          z.literal("other"),
-        ]),
-        memo: z.string(),
-        price: z.number(),
-      })
-      .partial()
-  ),
+  zValidator("json", UpdateCostDetailSchema),
   async (c) => {
     const { uid, timestamp } = c.req.param();
     const body = await c.req.valid("json");
