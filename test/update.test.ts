@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { testClient } from "hono/testing";
 import { describe, it, expect } from "vitest"; // Or your preferred test runner
 import { detailUpdate, monthlyGet } from "../lambda/backend/app";
-import { costDataItemSchema } from "../lambda/backend/schemas/responseSchemas";
+import { costDataItemSchema } from "../lambda/backend/schemas/responseSchema";
 
 describe("Get monthly data", () => {
   const client = testClient(monthlyGet);

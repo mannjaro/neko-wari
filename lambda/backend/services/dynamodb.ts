@@ -25,7 +25,7 @@ import type {
 import {
   CostDataItemResponse,
   costDataItemSchema,
-} from "../schemas/responseSchemas";
+} from "../schemas/responseSchema.js";
 import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../../shared/constants";
 import * as changeCase from "change-case";
 
