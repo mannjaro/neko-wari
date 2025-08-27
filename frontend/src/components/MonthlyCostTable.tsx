@@ -25,6 +25,7 @@ export function MonthlyCostTable({
       [x: string]: {
         amount: number;
         memo: string;
+        timestamp: number;
       }[];
     };
   }>();

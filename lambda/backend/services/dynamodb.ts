@@ -298,24 +298,27 @@ export const generateMonthlySummary = async (
         existing.categoryBreakdown[item.Category].push({
           amount: item.Price,
           memo: item.Memo || "",
+          timestamp: item.Timestamp,
         });
       } else {
         existing.categoryBreakdown[item.Category] = [
           {
             amount: item.Price,
             memo: item.Memo || "",
+            timestamp: item.Timestamp,
           },
         ];
       }
     } else {
       const categoryBreakdown = {} as Record<
         PaymentCategory,
-        Array<{ amount: number; memo: string }>
+        Array<{ amount: number; memo: string; timestamp: number }>
       >;
       categoryBreakdown[item.Category] = [
         {
           amount: item.Price,
           memo: item.Memo || "",
+          timestamp: item.Timestamp,
         },
       ];
 
