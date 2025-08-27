@@ -10,7 +10,7 @@ import {
   userDetailResponseSchema,
   categorySummaryResponseSchema,
   errorResponseSchema,
-} from "../schemas/responseSchemas";
+} from "../schemas/responseSchema";
 
 const logger = new Logger({ serviceName: "dashboardHandlers" });
 
