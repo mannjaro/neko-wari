@@ -26,6 +26,19 @@ export class DashboardService {
     let totalAmount = 0;
     let totalTransactions = 0;
 
+    // Helper function to create empty category breakdown
+    const createEmptyCategoryBreakdown = (): Record<
+      PaymentCategory,
+      Array<{ amount: number; memo: string; timestamp: number }>
+    > => ({
+      rent: [],
+      utilities: [],
+      furniture: [],
+      daily: [],
+      transportation: [],
+      other: [],
+    });
+
     for (const item of costData) {
       totalAmount += item.Price;
       totalTransactions++;
@@ -37,26 +50,13 @@ export class DashboardService {
         existing.totalAmount += item.Price;
         existing.transactionCount++;
 
-        if (existing.categoryBreakdown[item.Category]) {
-          existing.categoryBreakdown[item.Category].push({
-            amount: item.Price,
-            memo: item.Memo || "",
-            timestamp: item.Timestamp,
-          });
-        } else {
-          existing.categoryBreakdown[item.Category] = [
-            {
-              amount: item.Price,
-              memo: item.Memo || "",
-              timestamp: item.Timestamp,
-            },
-          ];
-        }
+        existing.categoryBreakdown[item.Category].push({
+          amount: item.Price,
+          memo: item.Memo || "",
+          timestamp: item.Timestamp,
+        });
       } else {
-        const categoryBreakdown = {} as Record<
-          PaymentCategory,
-          Array<{ amount: number; memo: string; timestamp: number }>
-        >;
+        const categoryBreakdown = createEmptyCategoryBreakdown();
         categoryBreakdown[item.Category] = [
           {
             amount: item.Price,
@@ -100,27 +100,25 @@ export class DashboardService {
     }
 
     let totalAmount = 0;
-    const categoryBreakdown = {} as Record<
+    const categoryBreakdown: Record<
       PaymentCategory,
       Array<{ amount: number; memo: string }>
-    >;
+    > = {
+      rent: [],
+      utilities: [],
+      furniture: [],
+      daily: [],
+      transportation: [],
+      other: [],
+    };
 
     for (const transaction of transactions) {
       totalAmount += transaction.Price;
 
-      if (categoryBreakdown[transaction.Category]) {
-        categoryBreakdown[transaction.Category].push({
-          amount: transaction.Price,
-          memo: transaction.Memo || "",
-        });
-      } else {
-        categoryBreakdown[transaction.Category] = [
-          {
-            amount: transaction.Price,
-            memo: transaction.Memo || "",
-          },
-        ];
-      }
+      categoryBreakdown[transaction.Category].push({
+        amount: transaction.Price,
+        memo: transaction.Memo || "",
+      });
     }
 
     return {
