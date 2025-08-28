@@ -11,3 +11,5 @@ cdk.out
 **/.output
 **/.tanstack
 **/.nitro
+
+.serena

@@ -6,12 +6,8 @@ import {
   BOT_MESSAGES,
   POSTBACK_DATA,
 } from "../../shared/constants";
-import {
-  getUserState,
-  saveUserState,
-  deleteUserState,
-  saveCostData,
-} from "../../backend/services/dynamodb";
+import { userStateRepository } from "../../backend/repositories/userStateRepository";
+import { costDataRepository } from "../../backend/repositories/costDataRepository";
 import {
   createCategoryCarouselTemplate,
   createMemoQuickReply,
@@ -32,11 +28,11 @@ export const postbackEventHandler = async (
   const userId = source?.userId || "unknown";
 
   let response: line.Message;
-  const currentState = await getUserState(userId);
+  const currentState = await userStateRepository.getUserState(userId);
 
   if (data === POSTBACK_DATA.CANCEL) {
     // Clear state when cancel is clicked
-    await deleteUserState(userId);
+    await userStateRepository.deleteUserState(userId);
     response = {
       type: "text",
       text: BOT_MESSAGES.OPERATION_CANCELLED,
@@ -52,7 +48,7 @@ export const postbackEventHandler = async (
       switch (currentState.step) {
         case "user_selected":
           // Go back to user selection
-          await saveUserState(userId, { step: "idle" });
+          await userStateRepository.saveUserState(userId, { step: "idle" });
           response = {
             type: "template",
             altText: "支払い情報を選択してください",
@@ -61,7 +57,7 @@ export const postbackEventHandler = async (
           break;
         case "waiting_memo":
           // Go back to category selection
-          await saveUserState(userId, {
+          await userStateRepository.saveUserState(userId, {
             step: "user_selected",
             user: currentState.user || "",
           });
@@ -73,7 +69,7 @@ export const postbackEventHandler = async (
           break;
         case "waiting_price":
           // Go back to memo input
-          await saveUserState(userId, {
+          await userStateRepository.saveUserState(userId, {
             step: "waiting_memo",
             user: currentState.user || "",
             category: currentState.category,
@@ -86,7 +82,7 @@ export const postbackEventHandler = async (
           break;
         case "confirming":
           // Go back to price input
-          await saveUserState(userId, {
+          await userStateRepository.saveUserState(userId, {
             step: "waiting_price",
             user: currentState.user || "",
             category: currentState.category,
@@ -119,7 +115,7 @@ export const postbackEventHandler = async (
         data === "payment_user=****" ? "****" : "****";
 
       // Update state to user_selected
-      await saveUserState(userId, {
+      await userStateRepository.saveUserState(userId, {
         step: "user_selected",
         user: selectedUser,
       });
@@ -152,7 +148,7 @@ export const postbackEventHandler = async (
         };
       } else {
         // Set user state to wait for memo input
-        await saveUserState(userId, {
+        await userStateRepository.saveUserState(userId, {
           step: "waiting_memo",
           user: user || "",
           category: category,
@@ -176,7 +172,7 @@ export const postbackEventHandler = async (
       if (data === POSTBACK_DATA.CONFIRM_YES) {
         try {
           // Save cost data to DynamoDB
-          await saveCostData(userId, currentState);
+          await costDataRepository.saveCostData(userId, currentState);
 
           response = {
             type: "text",
@@ -190,7 +186,7 @@ export const postbackEventHandler = async (
           };
 
           // Clear user state after successful registration
-          await deleteUserState(userId);
+          await userStateRepository.deleteUserState(userId);
         } catch (error) {
           logger.error("Error saving cost data during confirmation", {
             error,
@@ -209,7 +205,7 @@ export const postbackEventHandler = async (
         };
 
         // Clear user state after cancellation
-        await deleteUserState(userId);
+        await userStateRepository.deleteUserState(userId);
       }
     }
   } else {

@@ -1,11 +1,7 @@
 import * as line from "@line/bot-sdk";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { BOT_MESSAGES } from "../../shared/constants";
-import {
-  getUserState,
-  saveUserState,
-  deleteUserState,
-} from "../../backend/services/dynamodb";
+import { userStateRepository } from "../../backend/repositories/userStateRepository";
 import {
   createUserSelectionTemplate,
   createConfirmationTemplate,
@@ -28,7 +24,7 @@ export const textEventHandler = async (
 
   if (text === "入力を始める") {
     // Reset user state and start fresh
-    await saveUserState(userId, { step: "idle" });
+    await userStateRepository.saveUserState(userId, { step: "idle" });
 
     const buttonTemplate = createUserSelectionTemplate();
 
@@ -39,7 +35,7 @@ export const textEventHandler = async (
     };
   } else if (text === "やめる" || text === "キャンセル" || text === "終了") {
     // Cancel current session and clear state
-    await deleteUserState(userId);
+    await userStateRepository.deleteUserState(userId);
 
     response = {
       type: "text",
@@ -47,11 +43,11 @@ export const textEventHandler = async (
     };
   } else {
     // Check current state and validate step order
-    const currentState = await getUserState(userId);
+    const currentState = await userStateRepository.getUserState(userId);
 
     if (currentState?.step === "waiting_memo") {
       // Save memo and move to price input
-      await saveUserState(userId, {
+      await userStateRepository.saveUserState(userId, {
         ...currentState,
         step: "waiting_price",
         memo: text || "",
@@ -71,7 +67,7 @@ export const textEventHandler = async (
         };
       } else {
         // Save price and show confirmation
-        await saveUserState(userId, {
+        await userStateRepository.saveUserState(userId, {
           ...currentState,
           step: "confirming",
           price: price,
