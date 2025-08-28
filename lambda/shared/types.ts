@@ -75,8 +75,8 @@ export const CostDataItemSchema = BaseDynamoItemSchema.extend({
   EntityType: z.literal("COST_DATA"),
   PK: z.string(), // USER#{userId}
   SK: z.string(), // COST#{timestamp}
-  GSI1PK: z.string(), // COST#{YYYY-MM}
-  GSI1SK: z.string(), // USER#{userId}#{timestamp}
+  GSI1PK: z.string().optional(), // COST#{YYYY-MM}
+  GSI1SK: z.string().optional(), // USER#{userId}#{timestamp}
   User: z.string(),
   Category: PaymentCategorySchema,
   Memo: z.string(),

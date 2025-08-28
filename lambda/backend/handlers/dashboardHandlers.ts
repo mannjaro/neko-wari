@@ -1,10 +1,6 @@
 import type { Context } from "hono";
 import { Logger } from "@aws-lambda-powertools/logger";
-import {
-  generateMonthlySummary,
-  getUserDetailData,
-  generateCategorySummary,
-} from "../services/dynamodb";
+import { dashboardService } from "../services/dashboardService";
 import {
   monthlySummaryResponseSchema,
   userDetailResponseSchema,
@@ -21,7 +17,7 @@ export const monthlyDashboardHandler = async (
 ) => {
   const yearMonth = `${year}-${month}`;
   try {
-    const summary = await generateMonthlySummary(yearMonth);
+    const summary = await dashboardService.generateMonthlySummary(yearMonth);
     const validatedSummary = monthlySummaryResponseSchema.parse(summary);
     return c.json(validatedSummary);
   } catch (error) {
@@ -41,7 +37,7 @@ export const userDetailsHandler = async (
 ) => {
   const yearMonth = `${year}-${month}`;
   try {
-    const userDetails = await getUserDetailData(userId, yearMonth);
+    const userDetails = await dashboardService.getUserDetailData(userId, yearMonth);
     const validatedUserDetails = userDetailResponseSchema.parse(userDetails);
     return c.json(validatedUserDetails);
   } catch (error) {
@@ -64,7 +60,7 @@ export const categorySummaryHandler = async (
 ) => {
   const yearMonth = `${year}-${month}`;
   try {
-    const categorySummary = await generateCategorySummary(yearMonth);
+    const categorySummary = await dashboardService.generateCategorySummary(yearMonth);
     const validatedCategorySummary =
       categorySummaryResponseSchema.parse(categorySummary);
     return c.json(validatedCategorySummary);
