@@ -1,3 +1,7 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
 import { Button } from "@/components/ui/button";
 
 import {
@@ -11,7 +15,52 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+
 import { PenLine } from "lucide-react";
+
+import { ExtendedUpdateCostDataSchema } from "@/server/updateDetail";
+
+function SubmitForm() {
+  // TODO: Implement form submission logic
+  const form = useForm<z.infer<typeof ExtendedUpdateCostDataSchema>>({
+    resolver: zodResolver(ExtendedUpdateCostDataSchema),
+  });
+
+  function onSubmit(data: z.infer<typeof ExtendedUpdateCostDataSchema>) {
+    console.log(data);
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>カテゴリ</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormDescription>カテゴリを入力してください</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  );
+}
 
 interface EditDetailDialogCloseButtonProps {
   timestamp?: number;
@@ -39,10 +88,7 @@ export function EditDetailDialogCloseButton({
           <DialogDescription>カテゴリ、金額、メモの修正</DialogDescription>
         </DialogHeader>
         <div>
-          <span>{timestamp}</span>
-          <span>{category}</span>
-          <span>{memo}</span>
-          <span>{amount}</span>
+          <SubmitForm />
         </div>
         <DialogFooter className="sm:justify-start">
           <DialogClose asChild>
