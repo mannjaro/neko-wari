@@ -17,8 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { EditDetailDialogCloseButton } from "./EditDetailDialog";
 import { Price } from "./Price";
-import { NotebookPen, DollarSign, PenLine, PiggyBank } from "lucide-react";
+import { NotebookPen, DollarSign, PiggyBank } from "lucide-react";
 
 import type { DetailDrawerProps } from "@/types";
 
@@ -62,9 +63,12 @@ export function DetailDrawer({
                     <Price amount={item.amount} />
                   </TableCell>
                   <TableCell>
-                    <Button variant="outline" onClick={() => {}}>
-                      <PenLine />
-                    </Button>
+                    <EditDetailDialogCloseButton
+                      amount={item.amount}
+                      timestamp={item.timestamp}
+                      memo={item.memo}
+                      category={category}
+                    />
                   </TableCell>
                 </TableRow>
               )),
