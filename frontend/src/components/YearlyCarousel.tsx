@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 import {
   Carousel,
   CarouselContent,
@@ -7,7 +7,7 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { yearlyQueryOptions } from "@/hooks/useQueryOptions";
+import { monthlyQueryOptions } from "@/hooks/useQueryOptions";
 import { MonthlyCostTable } from "./MonthlyCostTable";
 
 export function YearlyCarousel({
@@ -19,14 +19,20 @@ export function YearlyCarousel({
   currentMonth: number;
   setApi: (api: CarouselApi) => void;
 }) {
-  const yearlyQuery = useSuspenseQuery(yearlyQueryOptions(year));
+  const monthlyQueries = useSuspenseQueries({
+    queries: Array.from({ length: 12 }, (_, index) => {
+      const month = index + 1;
+      return monthlyQueryOptions(year, month);
+    }),
+  });
 
   return (
     <Carousel setApi={setApi} className="max-w-4xl mx-auto">
       <CarouselContent>
         {Array.from({ length: 12 }, (_, index) => {
           const month = index + 1;
-          const monthData = yearlyQuery.data.get(month);
+          const monthQuery = monthlyQueries[index];
+          const monthData = monthQuery?.data;
 
           return (
             <CarouselItem key={month}>
