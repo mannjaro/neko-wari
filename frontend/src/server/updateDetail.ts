@@ -6,16 +6,19 @@ import type { DetailUpdateType } from "../../../lambda/backend/app";
 
 import { getBindings } from "@/utils/binding";
 
+const extendedUpdateCostDataSchema = UpdateCostDataSchema.extend({
+  uid: z.string(),
+  timestamp: z.string(),
+});
+
+export type ExtendedUpdateCostData = z.infer<
+  typeof extendedUpdateCostDataSchema
+>;
+
 export const updateCostDetail = createServerFn({
   method: "POST",
 })
-  .validator((req: unknown) => {
-    const extendedSchema = UpdateCostDataSchema.extend({
-      uid: z.string(),
-      timestamp: z.string(),
-    });
-    return extendedSchema.parse(req);
-  })
+  .validator(extendedUpdateCostDataSchema)
   .handler(async ({ data }) => {
     const env = getBindings();
     const client = hc<DetailUpdateType>(env.BACKEND_API);

@@ -7,7 +7,7 @@ import type { CarouselApi } from "@/components/ui/carousel";
 import { YearlyCarousel } from "@/components/YearlyCarousel";
 import {
   deferredQueryOptions,
-  yearlyQueryOptions,
+  monthlyQueryOptions,
 } from "@/hooks/useQueryOptions";
 
 const searchSchema = z.object({
@@ -23,7 +23,12 @@ export const Route = createFileRoute("/")({
     const now = new Date();
     const currentYear = year ?? now.getFullYear();
     const currentMonth = month ?? now.getMonth() + 1;
-    context.queryClient.prefetchQuery(yearlyQueryOptions(currentYear));
+    
+    // Prefetch all 12 months for the current year
+    for (let monthIndex = 1; monthIndex <= 12; monthIndex++) {
+      context.queryClient.prefetchQuery(monthlyQueryOptions(currentYear, monthIndex));
+    }
+    
     context.queryClient.prefetchQuery(
       deferredQueryOptions(currentYear, currentMonth),
     );
