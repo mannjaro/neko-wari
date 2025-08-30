@@ -43,7 +43,7 @@ export function UserSummaryTable({
             className="cursor-pointer hover:bg-muted/50 transition-colors"
             onClick={() => onRowClick(user)}
           >
-            <TableCell className="font-medium">{user.user}</TableCell>
+            <TableCell className="font-medium">{user.userName}</TableCell>
             <TableCell className="text-right">
               <Price amount={user.totalAmount} />
             </TableCell>

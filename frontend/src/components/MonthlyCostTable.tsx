@@ -4,6 +4,7 @@ import { DetailDrawer } from "./DetailDrawer";
 import { PaymentSummaryCard } from "./PaymentSummaryCard";
 import { UserSummaryTable } from "./UserSummaryTable";
 import type { getMonthlyCost } from "@/server/getMonthly";
+import type { UserSummary } from "@/types";
 
 export function MonthlyCostTable({
   year,
@@ -16,19 +17,7 @@ export function MonthlyCostTable({
   data: Awaited<ReturnType<typeof getMonthlyCost>> | undefined;
   isActive?: boolean;
 }) {
-  const [selectedUser, setSelectedUser] = useState<{
-    userId: string;
-    user: string;
-    totalAmount: number;
-    transactionCount: number;
-    categoryBreakdown: {
-      [x: string]: {
-        amount: number;
-        memo: string;
-        timestamp: number;
-      }[];
-    };
-  }>();
+  const [selectedUser, setSelectedUser] = useState<UserSummary>();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   if (!data || !data.userSummaries) {
@@ -40,7 +29,7 @@ export function MonthlyCostTable({
   }
 
   const paymentsMap = new Map(
-    data.userSummaries.map((user) => [user.user, user.totalAmount]),
+    data.userSummaries.map((user) => [user.userName, user.totalAmount]),
   );
   const diffResult = paymentsMap.size === 2 ? calcDiff(paymentsMap) : null;
 

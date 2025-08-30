@@ -162,7 +162,7 @@ export type WebhookEventContext = z.infer<typeof WebhookEventContextSchema>;
 // Dashboard API response schemas
 export const UserSummarySchema = z.object({
   userId: z.string(),
-  user: z.string(),
+  userName: z.string(),
   totalAmount: z.number(),
   transactionCount: z.number(),
   categoryBreakdown: z.record(
@@ -190,7 +190,7 @@ export type MonthlySummaryResponse = z.infer<
 
 export const UserDetailResponseSchema = z.object({
   userId: z.string(),
-  user: z.string(),
+  userName: z.string(),
   yearMonth: z.string(),
   transactions: z.array(CostDataItemSchema),
   summary: z.object({

@@ -35,7 +35,7 @@ export function DetailDrawer({
     <Drawer open={isOpen} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{user.user}の詳細</DrawerTitle>
+          <DrawerTitle>{user.userName}の詳細</DrawerTitle>
           <DrawerDescription>内訳</DrawerDescription>
         </DrawerHeader>
         <Table>
@@ -65,6 +65,7 @@ export function DetailDrawer({
                   </TableCell>
                   <TableCell>
                     <EditDetailDialogCloseButton
+                      userId={user.userId}
                       amount={item.amount}
                       timestamp={item.timestamp}
                       memo={item.memo}
