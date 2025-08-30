@@ -29,6 +29,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@shared/*": [
+        "../lambda/shared/*"
       ]
     }
   }
