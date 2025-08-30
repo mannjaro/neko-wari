@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { hc } from "hono/client";
-import { UpdateCostDataSchema } from "@shared/types";
+import { UpdateCostDataSchema } from "@/types/shared";
 import type { DetailUpdateType } from "../../../lambda/backend/app";
 
 import { getBindings } from "@/utils/binding";
