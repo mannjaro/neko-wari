@@ -13,6 +13,12 @@ export default defineConfig({
       external: ["hono/client"],
     },
   },
+  resolve: {
+    alias: {
+      // Ensure zod resolves to the frontend node_modules
+      "zod": new URL("./node_modules/zod", import.meta.url).pathname,
+    },
+  },
   plugins: [
     tsConfigPaths(),
     tanstackStart({ customViteReactPlugin: true, target: "cloudflare-module" }),
