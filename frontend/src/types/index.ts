@@ -1,3 +1,4 @@
+import { PaymentCategorySchema, type PaymentCategory } from "@shared/types";
 export type DiffAmount = {
   amount: number;
   from: string;
@@ -13,7 +14,7 @@ export interface DetailDrawerProps {
     totalAmount: number;
     transactionCount: number;
     categoryBreakdown: {
-      [x: string]: {
+      [K in PaymentCategory]: {
         amount: number;
         memo: string;
         timestamp: number;
