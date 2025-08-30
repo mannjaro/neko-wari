@@ -28,7 +28,8 @@ export function useUpdateCost() {
           queryKey: ["monthly", "cost"],
         });
       }
+      return result;
     },
-    [router, queryClient, updateCost],
+    [router, queryClient, updateCost]
   );
 }

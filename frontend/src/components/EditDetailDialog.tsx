@@ -28,10 +28,9 @@ import { Input } from "@/components/ui/input";
 import { YenInput } from "./YenInput";
 import { PenLine } from "lucide-react";
 
-import {
-  ExtendedUpdateCostDataSchema,
-  updateCostDetail,
-} from "@/server/updateDetail";
+import { ExtendedUpdateCostDataSchema } from "@/server/updateDetail";
+
+import { useUpdateCost } from "@/hooks/useUpdateCost";
 
 import type { PaymentCategory } from "@/types/shared";
 
@@ -54,9 +53,11 @@ function SubmitForm({
     },
   });
 
+  const updateCostDetail = useUpdateCost();
+
   async function onSubmit(data: z.infer<typeof ExtendedUpdateCostDataSchema>) {
     try {
-      const result = await updateCostDetail({ data });
+      const result = await updateCostDetail(data);
       console.log("Update successful:", result);
       // TODO: Show success message and close dialog
     } catch (error) {
