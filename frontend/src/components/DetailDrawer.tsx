@@ -22,6 +22,7 @@ import { Price } from "./Price";
 import { NotebookPen, DollarSign, PiggyBank } from "lucide-react";
 
 import type { DetailDrawerProps } from "@/types";
+import type { PaymentCategory } from "@/types/shared";
 
 export function DetailDrawer({
   isOpen,
@@ -67,7 +68,7 @@ export function DetailDrawer({
                       amount={item.amount}
                       timestamp={item.timestamp}
                       memo={item.memo}
-                      category={category}
+                      category={category as PaymentCategory}
                     />
                   </TableCell>
                 </TableRow>

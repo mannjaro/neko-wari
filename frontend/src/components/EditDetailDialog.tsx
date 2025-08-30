@@ -26,10 +26,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { YenInput } from "./YenInput";
-
 import { PenLine } from "lucide-react";
 
-import { ExtendedUpdateCostDataSchema } from "@/server/updateDetail";
+import {
+  ExtendedUpdateCostDataSchema,
+  updateCostDetail,
+} from "@/server/updateDetail";
+
+import type { PaymentCategory } from "@/types/shared";
 
 function SubmitForm({
   amount,
@@ -37,13 +41,27 @@ function SubmitForm({
   memo,
   timestamp,
 }: EditDetailDialogCloseButtonProps) {
-  // TODO: Implement form submission logic
   const form = useForm<z.infer<typeof ExtendedUpdateCostDataSchema>>({
     resolver: zodResolver(ExtendedUpdateCostDataSchema),
+    defaultValues: {
+      category,
+      memo,
+      price: amount,
+      uid: "user", // TODO: Get actual user ID
+      updatedAt: new Date().toISOString(),
+      timestamp: String(timestamp),
+    },
   });
 
-  function onSubmit(data: z.infer<typeof ExtendedUpdateCostDataSchema>) {
-    console.log(data);
+  async function onSubmit(data: z.infer<typeof ExtendedUpdateCostDataSchema>) {
+    try {
+      const result = await updateCostDetail({ data });
+      console.log("Update successful:", result);
+      // TODO: Show success message and close dialog
+    } catch (error) {
+      console.error("Update failed:", error);
+      // TODO: Show error message
+    }
   }
 
   return (
@@ -56,7 +74,7 @@ function SubmitForm({
             <FormItem>
               <FormLabel>カテゴリ</FormLabel>
               <FormControl>
-                <Input {...field} defaultValue={category} />
+                <Input {...field} />
               </FormControl>
               <FormDescription>カテゴリを入力してください</FormDescription>
               <FormMessage />
@@ -70,7 +88,7 @@ function SubmitForm({
             <FormItem>
               <FormLabel>メモ</FormLabel>
               <FormControl>
-                <Input {...field} defaultValue={memo} />
+                <Input {...field} />
               </FormControl>
               <FormDescription>メモを入力してください</FormDescription>
               <FormMessage />
@@ -84,13 +102,14 @@ function SubmitForm({
             <FormItem>
               <FormLabel>価格</FormLabel>
               <FormControl>
-                <YenInput step="1" {...field} defaultValue={amount} />
+                <YenInput step="1" {...field} />
               </FormControl>
               <FormDescription>価格を入力してください</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
+        <Button type="submit">Submit</Button>
       </form>
     </Form>
   );
@@ -98,7 +117,7 @@ function SubmitForm({
 
 interface EditDetailDialogCloseButtonProps {
   timestamp: number;
-  category: string;
+  category: PaymentCategory;
   memo: string;
   amount: number;
 }
