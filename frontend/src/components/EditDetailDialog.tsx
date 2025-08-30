@@ -25,12 +25,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { YenInput } from "./YenInput";
 
 import { PenLine } from "lucide-react";
 
 import { ExtendedUpdateCostDataSchema } from "@/server/updateDetail";
 
-function SubmitForm() {
+function SubmitForm({
+  amount,
+  category,
+  memo,
+  timestamp,
+}: EditDetailDialogCloseButtonProps) {
   // TODO: Implement form submission logic
   const form = useForm<z.infer<typeof ExtendedUpdateCostDataSchema>>({
     resolver: zodResolver(ExtendedUpdateCostDataSchema),
@@ -50,9 +56,37 @@ function SubmitForm() {
             <FormItem>
               <FormLabel>カテゴリ</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} defaultValue={category} />
               </FormControl>
               <FormDescription>カテゴリを入力してください</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="memo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>メモ</FormLabel>
+              <FormControl>
+                <Input {...field} defaultValue={memo} />
+              </FormControl>
+              <FormDescription>メモを入力してください</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>価格</FormLabel>
+              <FormControl>
+                <YenInput step="1" {...field} defaultValue={amount} />
+              </FormControl>
+              <FormDescription>価格を入力してください</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -63,10 +97,10 @@ function SubmitForm() {
 }
 
 interface EditDetailDialogCloseButtonProps {
-  timestamp?: number;
-  category?: string;
-  memo?: string;
-  amount?: number;
+  timestamp: number;
+  category: string;
+  memo: string;
+  amount: number;
 }
 
 export function EditDetailDialogCloseButton({
@@ -74,7 +108,7 @@ export function EditDetailDialogCloseButton({
   category,
   memo,
   amount,
-}: EditDetailDialogCloseButtonProps = {}) {
+}: EditDetailDialogCloseButtonProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -88,7 +122,12 @@ export function EditDetailDialogCloseButton({
           <DialogDescription>カテゴリ、金額、メモの修正</DialogDescription>
         </DialogHeader>
         <div>
-          <SubmitForm />
+          <SubmitForm
+            category={category}
+            amount={amount}
+            memo={memo}
+            timestamp={timestamp}
+          />
         </div>
         <DialogFooter className="sm:justify-start">
           <DialogClose asChild>
