@@ -12,5 +12,4 @@ export const monthlyQueryOptions = (year: number, month: number) =>
   queryOptions({
     queryKey: ["monthly", "cost", year, month],
     queryFn: () => getMonthlyCost({ data: { year, month } }),
-    staleTime: 10 * 60 * 1000,
   });

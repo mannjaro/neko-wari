@@ -17,8 +17,8 @@ export function MonthlyCostTable({
   data: Awaited<ReturnType<typeof getMonthlyCost>> | undefined;
   isActive?: boolean;
 }) {
-  const [selectedUser, setSelectedUser] = useState<UserSummary>();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>();
 
   if (!data || !data.userSummaries) {
     return (
@@ -33,10 +33,13 @@ export function MonthlyCostTable({
   );
   const diffResult = paymentsMap.size === 2 ? calcDiff(paymentsMap) : null;
 
-  const handleRowClick = (user: (typeof data.userSummaries)[0]) => {
-    setSelectedUser(user);
+  const handleRowClick = (user: UserSummary) => {
+    setSelectedUserId(user.userId);
     setIsDrawerOpen(true);
   };
+  const currentUser = data.userSummaries.find(
+    (u) => u.userId === selectedUserId,
+  );
 
   return (
     <div
@@ -54,7 +57,7 @@ export function MonthlyCostTable({
       <DetailDrawer
         isOpen={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}
-        user={selectedUser}
+        user={currentUser}
       />
     </div>
   );
