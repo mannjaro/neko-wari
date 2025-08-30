@@ -10,7 +10,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ["hono/client"],
+      external: ["hono/client", "zod"],
     },
   },
   plugins: [
