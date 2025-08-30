@@ -1,4 +1,3 @@
-import { Logger } from "@aws-lambda-powertools/logger";
 import type {
   PaymentCategory,
   UserSummary,
@@ -10,8 +9,6 @@ import type {
 import { DYNAMO_KEYS } from "../../shared/constants";
 import { costDataRepository } from "../repositories/costDataRepository";
 
-const logger = new Logger({ serviceName: "dashboardService" });
-
 /**
  * Service for dashboard-related business logic
  */
@@ -19,7 +16,9 @@ export class DashboardService {
   /**
    * Generate monthly summary from cost data
    */
-  async generateMonthlySummary(yearMonth: string): Promise<MonthlySummaryResponse> {
+  async generateMonthlySummary(
+    yearMonth: string
+  ): Promise<MonthlySummaryResponse> {
     const costData = await costDataRepository.getMonthlyCostData(yearMonth);
 
     const userSummaryMap = new Map<string, UserSummary>();
@@ -67,7 +66,7 @@ export class DashboardService {
 
         userSummaryMap.set(userId, {
           userId,
-          user: item.User,
+          userName: item.User,
           totalAmount: item.Price,
           transactionCount: 1,
           categoryBreakdown,
@@ -123,7 +122,7 @@ export class DashboardService {
 
     return {
       userId,
-      user: transactions[0].User,
+      userName: transactions[0].User,
       yearMonth,
       transactions: transactions.sort((a, b) => b.Timestamp - a.Timestamp),
       summary: {
@@ -137,7 +136,9 @@ export class DashboardService {
   /**
    * Generate category summary for dashboard
    */
-  async generateCategorySummary(yearMonth: string): Promise<CategorySummaryResponse> {
+  async generateCategorySummary(
+    yearMonth: string
+  ): Promise<CategorySummaryResponse> {
     const costData = await costDataRepository.getMonthlyCostData(yearMonth);
 
     const categoryMap = new Map<PaymentCategory, CategorySummaryItem>();

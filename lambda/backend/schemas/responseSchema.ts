@@ -1,6 +1,5 @@
 import { z } from "zod";
 import {
-  PaymentCategorySchema,
   MonthlySummaryResponseSchema,
   UserDetailResponseSchema,
   CategorySummaryResponseSchema,

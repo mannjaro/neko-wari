@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import type { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +36,7 @@ import {
 import type { PaymentCategory } from "@/types/shared";
 
 function SubmitForm({
+  userId,
   amount,
   category,
   memo,
@@ -47,7 +48,7 @@ function SubmitForm({
       category,
       memo,
       price: amount,
-      uid: "user", // TODO: Get actual user ID
+      uid: userId, // TODO: Get actual user ID
       updatedAt: new Date().toISOString(),
       timestamp: String(timestamp),
     },
@@ -116,6 +117,7 @@ function SubmitForm({
 }
 
 interface EditDetailDialogCloseButtonProps {
+  userId: string;
   timestamp: number;
   category: PaymentCategory;
   memo: string;
@@ -123,6 +125,7 @@ interface EditDetailDialogCloseButtonProps {
 }
 
 export function EditDetailDialogCloseButton({
+  userId,
   timestamp,
   category,
   memo,
@@ -142,6 +145,7 @@ export function EditDetailDialogCloseButton({
         </DialogHeader>
         <div>
           <SubmitForm
+            userId={userId}
             category={category}
             amount={amount}
             memo={memo}

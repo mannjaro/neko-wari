@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { costService } from "../services/costService";
-import { UpdateCostData } from "../../shared/types";
+import type { UpdateCostData } from "../../shared/types";
 export const updateCostHandler = async (
   c: Context,
   userId: string,
@@ -8,7 +8,11 @@ export const updateCostHandler = async (
   req: UpdateCostData
 ) => {
   try {
-    const result = await costService.updateCostDetail(userId, Number(timestamp), req);
+    const result = await costService.updateCostDetail(
+      userId,
+      Number(timestamp),
+      req
+    );
     return c.json(result);
   } catch (error) {
     throw error;
