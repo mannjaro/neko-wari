@@ -34,6 +34,8 @@ import {
 } from "@/components/ui/select";
 
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
 import { YenInput } from "./YenInput";
 import { PenLine } from "lucide-react";
 
@@ -69,6 +71,13 @@ function SubmitForm({
   const onSubmit = useCallback(
     async (data: z.infer<typeof ExtendedUpdateCostDataSchema>) => {
       const result = await updateCostDetail(data);
+      toast("変更が保存されました", {
+        description: (
+          <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
+            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+          </pre>
+        ),
+      });
       console.log(result);
       return result;
     },
