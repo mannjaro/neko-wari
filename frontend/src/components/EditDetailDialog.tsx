@@ -24,6 +24,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { Input } from "@/components/ui/input";
 import { YenInput } from "./YenInput";
 import { PenLine } from "lucide-react";
@@ -33,6 +42,8 @@ import { ExtendedUpdateCostDataSchema } from "@/server/updateDetail";
 import { useUpdateCost } from "@/hooks/useUpdateCost";
 
 import type { PaymentCategory } from "@/types/shared";
+import { PaymentCategorySchema } from "@/types/shared";
+import { useCallback } from "react";
 
 function SubmitForm({
   userId,
@@ -55,16 +66,14 @@ function SubmitForm({
 
   const updateCostDetail = useUpdateCost();
 
-  async function onSubmit(data: z.infer<typeof ExtendedUpdateCostDataSchema>) {
-    try {
+  const onSubmit = useCallback(
+    async (data: z.infer<typeof ExtendedUpdateCostDataSchema>) => {
       const result = await updateCostDetail(data);
-      console.log("Update successful:", result);
-      // TODO: Show success message and close dialog
-    } catch (error) {
-      console.error("Update failed:", error);
-      // TODO: Show error message
-    }
-  }
+      console.log(result);
+      return result;
+    },
+    [updateCostDetail],
+  );
 
   return (
     <Form {...form}>
@@ -75,11 +84,22 @@ function SubmitForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>カテゴリ</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormDescription>カテゴリを入力してください</FormDescription>
-              <FormMessage />
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a verified email to display" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {PaymentCategorySchema.options.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+                <FormDescription>カテゴリを入力してください</FormDescription>
+                <FormMessage />
+              </Select>
             </FormItem>
           )}
         />

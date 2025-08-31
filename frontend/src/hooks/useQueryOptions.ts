@@ -10,6 +10,6 @@ export const deferredQueryOptions = (year: number, month: number) =>
 
 export const monthlyQueryOptions = (year: number, month: number) =>
   queryOptions({
-    queryKey: ["monthly", "cost", year, month],
+    queryKey: ["monthly", "cost", String(year), String(month).padStart(2, "0")],
     queryFn: () => getMonthlyCost({ data: { year, month } }),
   });
