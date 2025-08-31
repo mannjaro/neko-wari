@@ -45,7 +45,7 @@ import { useUpdateCost } from "@/hooks/useUpdateCost";
 
 import type { PaymentCategory } from "@/types/shared";
 import { PaymentCategorySchema } from "@/types/shared";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 function SubmitForm({
   userId,
@@ -53,7 +53,8 @@ function SubmitForm({
   category,
   memo,
   timestamp,
-}: EditDetailDialogCloseButtonProps) {
+  onSuccess,
+}: EditDetailDialogCloseButtonProps & { onSuccess?: () => void }) {
   const form = useForm<z.infer<typeof ExtendedUpdateCostDataSchema>>({
     resolver: zodResolver(ExtendedUpdateCostDataSchema),
     defaultValues: {
@@ -73,9 +74,10 @@ function SubmitForm({
       const result = await updateCostDetail(data);
       toast("変更が保存されました", {});
       console.log(result);
+      onSuccess?.();
       return result;
     },
-    [updateCostDetail],
+    [updateCostDetail, onSuccess],
   );
 
   return (
@@ -155,8 +157,14 @@ export function EditDetailDialogCloseButton({
   memo,
   amount,
 }: EditDetailDialogCloseButtonProps) {
+  const [open, setOpen] = useState(false);
+
+  const handleSuccess = useCallback(() => {
+    setOpen(false);
+  }, []);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <PenLine />
@@ -174,6 +182,7 @@ export function EditDetailDialogCloseButton({
             amount={amount}
             memo={memo}
             timestamp={timestamp}
+            onSuccess={handleSuccess}
           />
         </div>
         <DialogFooter className="sm:justify-start">
