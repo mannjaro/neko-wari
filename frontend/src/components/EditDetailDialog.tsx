@@ -71,13 +71,7 @@ function SubmitForm({
   const onSubmit = useCallback(
     async (data: z.infer<typeof ExtendedUpdateCostDataSchema>) => {
       const result = await updateCostDetail(data);
-      toast("変更が保存されました", {
-        description: (
-          <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-          </pre>
-        ),
-      });
+      toast("変更が保存されました", {});
       console.log(result);
       return result;
     },

@@ -1,6 +1,7 @@
 // src/routes/__root.tsx
 /// <reference types="vite/client" />
 import type { ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner";
 import {
   Outlet,
   createRootRouteWithContext,
@@ -56,6 +57,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
       <body>
         {children}
         <Scripts />
+        <Toaster />
       </body>
     </html>
   );
