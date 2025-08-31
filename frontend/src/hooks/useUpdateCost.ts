@@ -18,16 +18,15 @@ export function useUpdateCost() {
       const result = await updateCost({ data });
       const { YearMonth } = result;
       const [year, month] = YearMonth.split("-");
-      router.invalidate({ sync: true });
       if (year && month) {
+        console.log(year, month);
         queryClient.invalidateQueries({
           queryKey: ["monthly", "cost", year, month],
-          exact: false,
         });
       } else {
+        router.invalidate();
         queryClient.invalidateQueries({
           queryKey: ["monthly", "cost"],
-          exact: false,
         });
       }
       return result;
