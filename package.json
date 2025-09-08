@@ -34,6 +34,7 @@
     "@tanstack/react-router": "^1.131.28",
     "@tanstack/react-start": "^1.131.28",
     "@types/aws-lambda": "^8.10.152",
+    "amazon-cognito-identity-js": "^6.3.15",
     "aws-cdk-lib": "2.213.0",
     "change-case": "^5.4.4",
     "constructs": "^10.4.2",

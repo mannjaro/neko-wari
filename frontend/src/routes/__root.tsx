@@ -10,11 +10,13 @@ import {
 } from "@tanstack/react-router";
 import { NotFound } from "@/components/NotFound";
 import type { QueryClient } from "@tanstack/react-query";
+import type { AuthState } from "@/hooks/useAuth";
 
 import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
+  auth: AuthState;
 }>()({
   head: () => ({
     meta: [
