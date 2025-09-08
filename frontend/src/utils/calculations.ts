@@ -1,30 +1,30 @@
 import type { DiffAmount } from "@/types";
 
-export function calcDiff(payments: Map<string, number>): DiffAmount {
-  // 二人の立替額から，より多く支払った人に対して他方の人が払うべき金額を計算し，支払う方向を決める
-  // paymentsは必ず2人分のデータしか存在しない
-  // 金額の計算ロジックは，（多く支払った金額 - 他方の金額）/ 2
+export function calcDiff(payments: Map<string, number>): DiffAmount | null {
+  // 立替額から支払い情報を計算する
+  // 1人の場合: その人の半額を相手が支払うべき
+  // 2人の場合: より多く支払った人に対して他方の人が払うべき金額を計算
   const entries = Array.from(payments.entries());
-
-  if (entries.length !== 2) {
-    throw new Error("payments map must contain exactly 2 entries");
+  
+  if (entries.length === 0 || entries.length > 2) {
+    return null;
   }
-
-  const entry1 = entries[0];
-  const entry2 = entries[1];
-
-  if (!entry1 || !entry2) {
-    throw new Error("Invalid entries in payments map");
+  
+  // 1人または2人の場合の共通処理
+  const amounts = entries.map(([, amount]) => amount);
+  const users = entries.map(([user]) => user);
+  
+  const maxAmount = Math.max(...amounts);
+  const minAmount = amounts.length === 1 ? 0 : Math.min(...amounts);
+  const diff = (maxAmount - minAmount) / 2;
+  
+  const payerIndex = amounts.indexOf(maxAmount);
+  const payer = users[payerIndex];
+  const receiver = amounts.length === 1 ? "相手" : users[1 - payerIndex];
+  
+  if (!payer || (!receiver && amounts.length > 1)) {
+    return null;
   }
-
-  const [user1, amount1] = entry1;
-  const [user2, amount2] = entry2;
-
-  const diff = Math.abs(amount1 - amount2) / 2;
-
-  if (amount1 > amount2) {
-    return { amount: diff, from: user2, to: user1 };
-  } else {
-    return { amount: diff, from: user1, to: user2 };
-  }
+  
+  return { amount: diff, from: receiver || "相手", to: payer };
 }
