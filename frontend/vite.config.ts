@@ -13,10 +13,13 @@ export default defineConfig({
       external: ["hono/client"],
     },
   },
+  define: {
+    global: "window",
+  },
   resolve: {
     alias: {
       // Ensure zod resolves to the frontend node_modules
-      "zod": new URL("./node_modules/zod", import.meta.url).pathname,
+      zod: new URL("./node_modules/zod", import.meta.url).pathname,
     },
   },
   plugins: [

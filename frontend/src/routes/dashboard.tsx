@@ -1,6 +1,6 @@
 // src/routes/index.tsx
 import { Skeleton } from "@/components/ui/skeleton";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Suspense, useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import type { CarouselApi } from "@/components/ui/carousel";
@@ -15,20 +15,32 @@ const searchSchema = z.object({
   month: z.number().min(1).max(12).optional(),
 });
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/dashboard")({
   validateSearch: searchSchema,
   component: Home,
+  beforeLoad: ({ context, location }) => {
+    if (!context.auth || !context.auth.isAuthenticated) {
+      throw redirect({
+        to: "/login",
+        search: {
+          redirect: location.href,
+        },
+      });
+    }
+  },
   loaderDeps: ({ search: { year, month } }) => ({ year, month }),
   loader: ({ context, deps: { year, month } }) => {
     const now = new Date();
     const currentYear = year ?? now.getFullYear();
     const currentMonth = month ?? now.getMonth() + 1;
-    
+
     // Prefetch all 12 months for the current year
     for (let monthIndex = 1; monthIndex <= 12; monthIndex++) {
-      context.queryClient.prefetchQuery(monthlyQueryOptions(currentYear, monthIndex));
+      context.queryClient.prefetchQuery(
+        monthlyQueryOptions(currentYear, monthIndex),
+      );
     }
-    
+
     context.queryClient.prefetchQuery(
       deferredQueryOptions(currentYear, currentMonth),
     );
@@ -76,7 +88,7 @@ function Home() {
 
       if (newMonth !== currentMonth) {
         navigate({
-          to: "/",
+          to: "/dashboard",
           search: { year: currentYear, month: newMonth },
           replace: true,
         });
