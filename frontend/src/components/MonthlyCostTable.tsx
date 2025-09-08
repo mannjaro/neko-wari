@@ -45,9 +45,7 @@ export function MonthlyCostTable({
     <div
       className={`transition-opacity ${isActive ? "opacity-100" : "opacity-70"}`}
     >
-      {diffResult && (
-        <PaymentSummaryCard month={month} diffResult={diffResult} />
-      )}
+      <PaymentSummaryCard month={month} diffResult={diffResult} />
       <UserSummaryTable
         year={year}
         month={month}

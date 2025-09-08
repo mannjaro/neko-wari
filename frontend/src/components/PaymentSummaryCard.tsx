@@ -11,13 +11,37 @@ import { Price } from "./Price";
 
 interface PaymentSummaryCardProps {
   month: number;
-  diffResult: DiffAmount;
+  diffResult: DiffAmount | null;
 }
 
 export function PaymentSummaryCard({
   month,
   diffResult,
 }: PaymentSummaryCardProps) {
+  if (!diffResult) {
+    return (
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>{month}月 支払い金額</CardTitle>
+          <CardDescription>データがありません</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-gray-500">
+            <Price amount={0} />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <div>
+            <p className="text-sm text-gray-600 mb-1">差額</p>
+            <span className="font-medium text-gray-500">
+              なし
+            </span>
+          </div>
+        </CardFooter>
+      </Card>
+    );
+  }
+
   return (
     <Card className="mb-6">
       <CardHeader>
