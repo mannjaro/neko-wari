@@ -31,7 +31,7 @@ export function MonthlyCostTable({
   const paymentsMap = new Map(
     data.userSummaries.map((user) => [user.userName, user.totalAmount]),
   );
-  const diffResult = paymentsMap.size === 2 ? calcDiff(paymentsMap) : null;
+  const diffResult = calcDiff(paymentsMap);
 
   const handleRowClick = (user: UserSummary) => {
     setSelectedUserId(user.userId);
@@ -45,9 +45,7 @@ export function MonthlyCostTable({
     <div
       className={`transition-opacity ${isActive ? "opacity-100" : "opacity-70"}`}
     >
-      {diffResult && (
-        <PaymentSummaryCard month={month} diffResult={diffResult} />
-      )}
+      <PaymentSummaryCard month={month} diffResult={diffResult} />
       <UserSummaryTable
         year={year}
         month={month}
