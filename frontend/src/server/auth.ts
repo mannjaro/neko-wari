@@ -13,7 +13,6 @@ import {
   InitiateAuthCommand,
   ChangePasswordCommand,
   RespondToAuthChallengeCommand,
-  ChallengeName,
   ChallengeNameType,
 } from "@aws-sdk/client-cognito-identity-provider";
 
@@ -127,13 +126,10 @@ export const startAuth = createServerFn().handler(async () => {
   console.log(response);
 });
 
-function passwordChange(propsed: string) {}
-
 export const signIn = async (
   username: string,
   password: string
 ): Promise<any> => {
-  // Wait for 1 second
   const { SRP_A, authenticationHelper } = await calculateSRP_A(
     "ap-northeast-1_k3Oz2eZ3E"
   );
