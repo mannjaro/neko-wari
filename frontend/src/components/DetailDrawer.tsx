@@ -1,3 +1,4 @@
+import { DollarSign, NotebookPen, PiggyBank } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -17,12 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EditDetailDialogCloseButton } from "./EditDetailDialog";
-import { Price } from "./Price";
-import { NotebookPen, DollarSign, PiggyBank } from "lucide-react";
-
 import type { DetailDrawerProps } from "@/types";
 import type { PaymentCategory } from "@/types/shared";
+import { EditDetailDialogCloseButton } from "./EditDetailDialog";
+import { Price } from "./Price";
 
 export function DetailDrawer({
   isOpen,

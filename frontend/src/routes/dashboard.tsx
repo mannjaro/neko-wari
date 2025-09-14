@@ -1,9 +1,10 @@
 // src/routes/index.tsx
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Suspense, useState, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import type { CarouselApi } from "@/components/ui/carousel";
+import { Skeleton } from "@/components/ui/skeleton";
 import { YearlyCarousel } from "@/components/YearlyCarousel";
 import {
   deferredQueryOptions,
