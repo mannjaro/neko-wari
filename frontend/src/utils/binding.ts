@@ -19,7 +19,7 @@ export function getBindings(): Env {
   if (import.meta.env.DEV) {
     if (!cachedEnv) {
       throw new Error(
-        "Dev bindings not initialized yet. Call initDevEnv() first."
+        "Dev bindings not initialized yet. Call initDevEnv() first.",
       );
     }
     return cachedEnv;

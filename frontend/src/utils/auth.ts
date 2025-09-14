@@ -1,34 +1,37 @@
-// @ts-ignore
+// @ts-expect-error
 import { default as AuthenticationHelperWrapper } from "amazon-cognito-identity-js/lib/AuthenticationHelper.js";
-// @ts-ignore
+// @ts-expect-error
 import { default as BigIntegerWrapper } from "amazon-cognito-identity-js/lib/BigInteger.js";
-// @ts-ignore
+// @ts-expect-error
 import { default as DateHelperWrapper } from "amazon-cognito-identity-js/lib/DateHelper.js";
 
-import type { 
-  SRPSetupResult, 
-  SRPCalculationParams, 
-  SRPCalculationResult,
+import type {
+  AuthenticationHelperType,
   InputType,
-  AuthenticationHelperType
-} from '@/types/auth';
-import { AuthError } from '@/types/auth';
+  SRPCalculationParams,
+  SRPCalculationResult,
+  SRPSetupResult,
+} from "@/types/auth";
+import { AuthError } from "@/types/auth";
 
 const AuthenticationHelper = AuthenticationHelperWrapper.default;
 const BigInteger = BigIntegerWrapper.default;
 const DateHelper = DateHelperWrapper.default;
 
-export async function calculateSRP_A(userPoolName: string): Promise<SRPSetupResult> {
+export async function calculateSRP_A(
+  userPoolName: string,
+): Promise<SRPSetupResult> {
   try {
-    const authenticationHelper: AuthenticationHelperType = new AuthenticationHelper(userPoolName);
+    const authenticationHelper: AuthenticationHelperType =
+      new AuthenticationHelper(userPoolName);
     const SRP_A = authenticationHelper.largeAValue.toString(16);
 
     return { SRP_A, authenticationHelper };
   } catch (error) {
     throw new AuthError(
-      'Failed to calculate SRP_A',
-      'SRP_CALCULATION_ERROR',
-      error
+      "Failed to calculate SRP_A",
+      "SRP_CALCULATION_ERROR",
+      error,
     );
   }
 }
@@ -41,7 +44,7 @@ function hexToUint8Array(hex: string): Uint8Array {
 export async function hmacSHA256(
   message: string,
   key: string,
-  inputType: InputType = "text"
+  inputType: InputType = "text",
 ): Promise<string> {
   try {
     const encoder = new TextEncoder();
@@ -57,38 +60,32 @@ export async function hmacSHA256(
       keyData,
       { name: "HMAC", hash: "SHA-256" },
       false,
-      ["sign"]
+      ["sign"],
     );
 
     const signature = await crypto.subtle.sign("HMAC", cryptoKey, messageData);
-    
+
     return btoa(String.fromCharCode(...new Uint8Array(signature)));
   } catch (error) {
     throw new AuthError(
-      'Failed to calculate HMAC-SHA256',
-      'HMAC_CALCULATION_ERROR',
-      error
+      "Failed to calculate HMAC-SHA256",
+      "HMAC_CALCULATION_ERROR",
+      error,
     );
   }
 }
 
 export async function calculatePasswordVerifier(
   params: SRPCalculationParams,
-  userPoolName: string
+  userPoolName: string,
 ): Promise<SRPCalculationResult> {
-  const {
-    SRP_B,
-    SALT,
-    username,
-    password,
-    secretBlock,
-    authenticationHelper
-  } = params;
+  const { SRP_B, SALT, username, password, secretBlock, authenticationHelper } =
+    params;
 
   try {
     // AuthenticationHelper を使ってパスワード認証キー (HKDF) を計算
     const hkdfResult = { hkdf: undefined as undefined | string };
-    
+
     authenticationHelper.getPasswordAuthenticationKey(
       username,
       password,
@@ -96,13 +93,13 @@ export async function calculatePasswordVerifier(
       new BigInteger(SALT, 16),
       (_err: unknown, result?: string) => {
         hkdfResult.hkdf = result;
-      }
+      },
     );
 
     if (!hkdfResult.hkdf) {
       throw new AuthError(
-        'Failed to get password authentication key',
-        'HKDF_CALCULATION_ERROR'
+        "Failed to get password authentication key",
+        "HKDF_CALCULATION_ERROR",
       );
     }
 
@@ -129,9 +126,9 @@ export async function calculatePasswordVerifier(
       throw error;
     }
     throw new AuthError(
-      'Failed to calculate password verifier',
-      'PASSWORD_VERIFIER_ERROR',
-      error
+      "Failed to calculate password verifier",
+      "PASSWORD_VERIFIER_ERROR",
+      error,
     );
   }
 }

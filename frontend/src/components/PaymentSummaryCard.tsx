@@ -33,9 +33,7 @@ export function PaymentSummaryCard({
         <CardFooter>
           <div>
             <p className="text-sm text-gray-600 mb-1">差額</p>
-            <span className="font-medium text-gray-500">
-              なし
-            </span>
+            <span className="font-medium text-gray-500">なし</span>
           </div>
         </CardFooter>
       </Card>

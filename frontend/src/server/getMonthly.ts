@@ -1,10 +1,9 @@
 // getServerTime.ts
 import { createServerFn } from "@tanstack/react-start";
 import { hc } from "hono/client";
-import type { MonthlyGetType } from "../../../lambda/backend/app";
-import { getBindings } from "@/utils/binding";
-
 import { z } from "zod";
+import { getBindings } from "@/utils/binding";
+import type { MonthlyGetType } from "../../../lambda/backend/app";
 
 const Partition = z.object({
   year: z.number().min(2025),

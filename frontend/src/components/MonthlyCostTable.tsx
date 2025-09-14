@@ -1,10 +1,10 @@
 import { useState } from "react";
+import type { getMonthlyCost } from "@/server/getMonthly";
+import type { UserSummary } from "@/types";
 import { calcDiff } from "@/utils/calculations";
 import { DetailDrawer } from "./DetailDrawer";
 import { PaymentSummaryCard } from "./PaymentSummaryCard";
 import { UserSummaryTable } from "./UserSummaryTable";
-import type { getMonthlyCost } from "@/server/getMonthly";
-import type { UserSummary } from "@/types";
 
 export function MonthlyCostTable({
   year,

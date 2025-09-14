@@ -46,7 +46,7 @@ export interface AuthenticationHelperType {
     password: string,
     srpB: any,
     salt: any,
-    callback: (err: unknown, result?: string) => void
+    callback: (err: unknown, result?: string) => void,
   ): void;
 }
 
@@ -56,9 +56,9 @@ export class AuthError extends Error {
   constructor(
     message: string,
     public code?: string,
-    public details?: any
+    public details?: any,
   ) {
     super(message);
-    this.name = 'AuthError';
+    this.name = "AuthError";
   }
 }
