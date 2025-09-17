@@ -2,15 +2,15 @@ import { z } from "zod";
 
 // ログインフォームのスキーマ
 export const LoginFormSchema = z.object({
-  email: z.email({
+  email: z.string({
     message: "Username must be at least 2 characters.",
   }),
   password: z
     .string()
     .min(8, "パスワードは8文字以上で入力してください")
     .regex(
-      /^(?=.*?[a-z])(?=.*?\d)[a-z\d]{8,100}$/i,
-      "パスワードは半角英数字混合で入力してください",
+      /^(?=.*?[a-z])(?=.*?\d).{8,100}$/i,
+      "パスワードは半角英数字を含む8文字以上で入力してください"
     ),
 });
 
@@ -26,8 +26,8 @@ export const SignUpFormSchema = z
       .string()
       .min(8, "パスワードは8文字以上で入力してください")
       .regex(
-        /^(?=.*?[a-z])(?=.*?\d)[a-z\d]{8,100}$/i,
-        "パスワードは半角英数字混合で入力してください",
+        /^(?=.*?[a-z])(?=.*?\d).{8,100}$/i,
+        "パスワードは半角英数字を含む8文字以上で入力してください"
       ),
     confirmPassword: z.string(),
   })
