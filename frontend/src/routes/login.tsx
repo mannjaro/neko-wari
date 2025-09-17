@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +18,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { startAuth } from "@/server/auth";
 import { type LoginFormData, LoginFormSchema } from "@/types/forms";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/login")({
   component: RouteComponent,
@@ -31,10 +30,7 @@ export function LoginForm() {
     resolver: zodResolver(LoginFormSchema),
   });
 
-  const onSubmit = useCallback(async (_data: LoginFormData) => {
-    const result = await startAuth();
-    return result;
-  }, []);
+  const onSubmit = useAuth();
 
   return (
     <Form {...form}>
