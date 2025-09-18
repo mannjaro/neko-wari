@@ -23,6 +23,8 @@ export class CostService {
     // For example: validate price ranges, category constraints, etc.
 
     try {
+      this.validateCostData(updateData);
+
       const updatedItem = await costDataRepository.updateCostData(
         userId,
         timestamp,
