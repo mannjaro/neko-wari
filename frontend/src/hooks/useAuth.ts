@@ -2,6 +2,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startAuth } from "@/server/auth";
 import type { LoginFormData } from "@/types/forms";
+
+export const authQueryKey = ["auth"] as const;
 export interface AuthState {
   username: string;
   email: string;
@@ -22,7 +24,7 @@ export function useAuth() {
       });
     },
     onSuccess: (tokens) => {
-      queryClient.setQueryData(["auth"], tokens);
+      queryClient.setQueryData(authQueryKey, tokens);
     },
   });
   return {

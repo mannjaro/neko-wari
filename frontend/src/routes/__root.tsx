@@ -11,13 +11,11 @@ import {
 import type { ReactNode } from "react";
 import { NotFound } from "@/components/NotFound";
 import { Toaster } from "@/components/ui/sonner";
-import type { AuthState } from "@/hooks/useAuth";
 
 import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
-  auth: AuthState;
 }>()({
   head: () => ({
     meta: [

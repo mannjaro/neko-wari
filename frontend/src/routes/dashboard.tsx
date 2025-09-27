@@ -6,6 +6,8 @@ import { z } from "zod";
 import type { CarouselApi } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { YearlyCarousel } from "@/components/YearlyCarousel";
+import { authQueryKey } from "@/hooks/useAuth";
+import type { AuthTokens } from "@/types/auth";
 import {
   deferredQueryOptions,
   monthlyQueryOptions,
@@ -18,17 +20,13 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: searchSchema,
-  component: Home,
-  beforeLoad: ({ context, location }) => {
-    if (!context.auth || !context.auth.isAuthenticated) {
-      throw redirect({
-        to: "/login",
-        search: {
-          redirect: location.href,
-        },
-      });
+  beforeLoad: ({ context }) => {
+    const auth = context.queryClient.getQueryData<AuthTokens>(authQueryKey);
+    if (!auth?.accessToken) {
+      throw redirect({ to: "/login" });
     }
   },
+  component: Home,
   loaderDeps: ({ search: { year, month } }) => ({ year, month }),
   loader: ({ context, deps: { year, month } }) => {
     const now = new Date();

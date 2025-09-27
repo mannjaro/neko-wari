@@ -11,7 +11,6 @@ export function createRouter() {
     routeTree,
     context: {
       queryClient,
-      auth: undefined!,
     },
     scrollRestoration: true,
   });
