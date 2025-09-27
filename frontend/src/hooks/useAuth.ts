@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startAuth } from "@/server/auth";
@@ -14,7 +13,7 @@ export function useAuth() {
   const queryClient = useQueryClient();
 
   const { mutate, data, isSuccess, isPending } = useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) => {
+    mutationFn: ({ email, password }: LoginFormData) => {
       return loginFn({
         data: {
           email: email,
