@@ -30,11 +30,15 @@ export function LoginForm() {
     resolver: zodResolver(LoginFormSchema),
   });
 
-  const onSubmit = useAuth();
+  const { mutate, isSuccess, isPending } = useAuth();
+
+  const handleSubmit = form.handleSubmit((values) => {
+    mutate(values);
+  });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
             <CardTitle>Account</CardTitle>
@@ -47,7 +51,12 @@ export function LoginForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Email" required {...field} />
+                    <Input
+                      placeholder="Email"
+                      required
+                      disabled={isPending}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -60,16 +69,28 @@ export function LoginForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="Password" required {...field} />
+                    <Input
+                      placeholder="Password"
+                      required
+                      type="password"
+                      disabled={isPending}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            {isPending ? (
+              <p className="text-sm text-muted-foreground">Logging you in…</p>
+            ) : null}
+            {isSuccess ? (
+              <p className="text-sm text-emerald-600">Login successful.</p>
+            ) : null}
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full">
-              Login
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? "Signing in…" : "Login"}
             </Button>
           </CardFooter>
         </Card>
