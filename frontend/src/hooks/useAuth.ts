@@ -13,7 +13,7 @@ export function useAuth() {
   const loginFn = useServerFn(startAuth);
   const queryClient = useQueryClient();
 
-  const mutation = useMutation({
+  const { mutate, data, isSuccess, isPending } = useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) => {
       return loginFn({
         data: {
@@ -22,18 +22,14 @@ export function useAuth() {
         },
       });
     },
-  });
-  queryClient.fetchQuery;
-  return useCallback(
-    async (_data: LoginFormData) => {
-      const result = await loginFn({
-        data: {
-          email: _data.email,
-          password: _data.password,
-        },
-      });
-      return result;
+    onSuccess: (tokens) => {
+      queryClient.setQueryData(["auth"], tokens);
     },
-    [loginFn]
-  );
+  });
+  return {
+    mutate,
+    data,
+    isSuccess,
+    isPending,
+  };
 }

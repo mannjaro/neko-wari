@@ -1,4 +1,7 @@
 {
   "editor.defaultFormatter": "biomejs.biome",
-  "chatgpt.openOnStartup": false
+  "chatgpt.openOnStartup": false,
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  }
 }
