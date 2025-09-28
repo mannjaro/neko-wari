@@ -22,6 +22,7 @@ export const Route = createFileRoute("/dashboard")({
   validateSearch: searchSchema,
   beforeLoad: ({ context }) => {
     const auth = context.queryClient.getQueryData<AuthTokens>(authQueryKey);
+    console.log(auth);
     if (!auth?.accessToken) {
       throw redirect({ to: "/login" });
     }

@@ -1,7 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startAuth } from "@/server/auth";
-import type { LoginFormData } from "@/types/forms";
+import type { AuthRequest, AuthResult } from "@/types/auth";
 
 export const authQueryKey = ["auth"] as const;
 export interface AuthState {
@@ -14,23 +14,29 @@ export function useAuth() {
   const loginFn = useServerFn(startAuth);
   const queryClient = useQueryClient();
 
-  const { mutate, data, isSuccess, isPending } = useMutation({
-    mutationFn: ({ email, password }: LoginFormData) => {
-      return loginFn({
-        data: {
-          email: email,
-          password: password,
-        },
-      });
+  const { mutate, data, error, isSuccess, isPending, reset } = useMutation<
+    AuthResult,
+    Error,
+    AuthRequest
+  >({
+    mutationFn: (payload) => {
+      return loginFn({ data: payload });
     },
-    onSuccess: (tokens) => {
-      queryClient.setQueryData(authQueryKey, tokens);
+    onSuccess: (result) => {
+      if (result.status === "SUCCESS") {
+        console.log(result.tokens);
+        queryClient.setQueryData(authQueryKey, result.tokens);
+      } else {
+        queryClient.removeQueries({ queryKey: authQueryKey });
+      }
     },
   });
   return {
     mutate,
     data,
-    isSuccess,
+    error,
+    isSuccess: data?.status === "SUCCESS" && isSuccess,
     isPending,
+    reset,
   };
 }

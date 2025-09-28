@@ -10,7 +10,12 @@ import {
   RespondToAuthChallengeCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 
-import type { AuthConfig, AuthTokens, ChallengeParameters } from "@/types/auth";
+import type {
+  AuthConfig,
+  AuthResult,
+  AuthTokens,
+  ChallengeParameters,
+} from "@/types/auth";
 import { AuthError } from "@/types/auth";
 import { calculatePasswordVerifier, calculateSRP_A } from "@/utils/auth";
 
@@ -25,7 +30,7 @@ export class CognitoAuthService {
     });
   }
 
-  async signIn(username: string, password: string): Promise<AuthTokens> {
+  async startAuth(username: string, password: string): Promise<AuthResult> {
     try {
       // Step 1: SRP_A を計算
       const { SRP_A, authenticationHelper } = await calculateSRP_A(
@@ -52,8 +57,9 @@ export class CognitoAuthService {
       );
 
       // Step 5: チャレンジに応答
-      let challengeResponse = await this.respondToAuthChallenge(
-        initiateResponse.ChallengeName!,
+      const challengeResponse = await this.respondToAuthChallenge(
+        (initiateResponse.ChallengeName as ChallengeNameType) ||
+          ChallengeNameType.PASSWORD_VERIFIER,
         {
           PASSWORD_CLAIM_SIGNATURE: signature,
           PASSWORD_CLAIM_SECRET_BLOCK: challengeParams.SECRET_BLOCK,
@@ -63,25 +69,45 @@ export class CognitoAuthService {
         initiateResponse.Session,
       );
 
-      // Step 6: 新しいパスワードが必要な場合の処理
-      if (
-        challengeResponse.ChallengeName ===
-        ChallengeNameType.NEW_PASSWORD_REQUIRED
-      ) {
-        challengeResponse = await this.handleNewPasswordRequired(
-          challengeResponse,
-          challengeParams.USER_ID_FOR_SRP,
-          password, // 現在のパスワードを新しいパスワードとして設定
-        );
-      }
-
-      // Step 7: 認証結果を返す
-      return this.extractTokens(challengeResponse);
+      // Step 6: 認証結果を返す
+      return this.toAuthResult(challengeResponse);
     } catch (error) {
       if (error instanceof AuthError) {
         throw error;
       }
       throw new AuthError("Authentication failed", "SIGN_IN_ERROR", error);
+    }
+  }
+
+  async respondToChallenge(args: {
+    username: string;
+    session: string;
+    challengeName: ChallengeNameType;
+    answers: Record<string, string>;
+  }): Promise<AuthResult> {
+    try {
+      const challengeResponses = this.buildChallengeResponses(
+        args.challengeName,
+        args.answers,
+        args.username,
+      );
+
+      const response = await this.respondToAuthChallenge(
+        args.challengeName,
+        challengeResponses,
+        args.session,
+      );
+
+      return this.toAuthResult(response, args.session);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        throw error;
+      }
+      throw new AuthError(
+        "Failed to respond to authentication challenge",
+        "RESPOND_CHALLENGE_ERROR",
+        error,
+      );
     }
   }
 
@@ -142,13 +168,13 @@ export class CognitoAuthService {
   }
 
   private async respondToAuthChallenge(
-    challengeName: string,
+    challengeName: ChallengeNameType,
     challengeResponses: Record<string, string>,
     session?: string,
   ): Promise<RespondToAuthChallengeCommandOutput> {
     const command = new RespondToAuthChallengeCommand({
       ClientId: this.config.clientId,
-      ChallengeName: challengeName as ChallengeNameType,
+      ChallengeName: challengeName,
       ChallengeResponses: challengeResponses,
       Session: session,
     });
@@ -164,30 +190,45 @@ export class CognitoAuthService {
     }
   }
 
-  private async handleNewPasswordRequired(
+  private toAuthResult(
     response: RespondToAuthChallengeCommandOutput,
-    username: string,
-    newPassword: string,
-  ): Promise<RespondToAuthChallengeCommandOutput> {
-    const command = new RespondToAuthChallengeCommand({
-      Session: response.Session,
-      ClientId: this.config.clientId,
-      ChallengeName: response.ChallengeName!,
-      ChallengeResponses: {
-        NEW_PASSWORD: newPassword,
-        USERNAME: username,
-      },
-    });
-
-    try {
-      return await this.client.send(command);
-    } catch (error) {
-      throw new AuthError(
-        "Failed to set new password",
-        "NEW_PASSWORD_ERROR",
-        error,
-      );
+    fallbackSession?: string,
+  ): AuthResult {
+    if (response.AuthenticationResult) {
+      return {
+        status: "SUCCESS",
+        tokens: this.extractTokens(response),
+      };
     }
+
+    const challengeName = response.ChallengeName as
+      | ChallengeNameType
+      | undefined;
+
+    if (challengeName) {
+      const session = response.Session ?? fallbackSession;
+
+      if (!session) {
+        throw new AuthError(
+          "Challenge response is missing session token",
+          "MISSING_CHALLENGE_SESSION",
+          response,
+        );
+      }
+
+      return {
+        status: "CHALLENGE",
+        challengeName,
+        session,
+        parameters: response.ChallengeParameters ?? {},
+      };
+    }
+
+    throw new AuthError(
+      "Cognito response did not include tokens or challenge",
+      "INVALID_AUTH_RESPONSE",
+      response,
+    );
   }
 
   private extractTokens(
@@ -199,6 +240,7 @@ export class CognitoAuthService {
       throw new AuthError(
         "Authentication result is missing from response",
         "MISSING_AUTH_RESULT",
+        response,
       );
     }
 
@@ -207,5 +249,34 @@ export class CognitoAuthService {
       idToken: authResult.IdToken || "",
       refreshToken: authResult.RefreshToken || "",
     };
+  }
+
+  private buildChallengeResponses(
+    challengeName: ChallengeNameType,
+    answers: Record<string, string>,
+    username: string,
+  ): Record<string, string> {
+    const responses: Record<string, string> = {
+      ...answers,
+    };
+
+    if (challengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED) {
+      const newPassword =
+        responses.NEW_PASSWORD ?? (responses.newPassword as string | undefined);
+
+      if (!newPassword) {
+        throw new AuthError(
+          "New password is required for NEW_PASSWORD_REQUIRED challenge",
+          "MISSING_NEW_PASSWORD",
+        );
+      }
+
+      responses.NEW_PASSWORD = newPassword;
+      delete responses.newPassword;
+    }
+
+    responses.USERNAME = responses.USERNAME ?? username;
+
+    return responses;
   }
 }

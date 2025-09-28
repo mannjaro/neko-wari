@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { ChallengeNameType } from "@aws-sdk/client-cognito-identity-provider";
 
 import { getAuthConfig } from "@/lib/auth-config";
-import type { AuthTokens } from "@/types/auth";
 import { AuthError } from "@/types/auth";
 import { LoginFormSchema } from "@/types";
 import { CognitoAuthService } from "./cognito-auth";
@@ -12,17 +13,41 @@ function createAuthService(): CognitoAuthService {
   return new CognitoAuthService(config);
 }
 
+const StartAuthSchema = LoginFormSchema.extend({
+  mode: z.literal("START"),
+});
+
+const RespondAuthSchema = z.object({
+  mode: z.literal("RESPOND"),
+  username: z.string().min(1),
+  session: z.string().min(1),
+  challengeName: z.nativeEnum(ChallengeNameType),
+  answers: z.record(z.string(), z.string().min(1)),
+});
+
+const AuthRequestSchema = z.discriminatedUnion("mode", [
+  StartAuthSchema,
+  RespondAuthSchema,
+]);
+
 export const startAuth = createServerFn({
   method: "POST",
 })
-  .validator(LoginFormSchema)
+  .validator(AuthRequestSchema)
   .handler(async ({ data }) => {
-    const username = data.email;
-    const password = data.password;
+    const authService = createAuthService();
 
     try {
-      const response = await signIn(username, password);
-      return response;
+      if (data.mode === "START") {
+        return await authService.startAuth(data.email, data.password);
+      }
+
+      return await authService.respondToChallenge({
+        username: data.username,
+        session: data.session,
+        challengeName: data.challengeName,
+        answers: data.answers,
+      });
     } catch (error) {
       if (error instanceof AuthError) {
         throw new Error(`Authentication failed: ${error.message}`);
@@ -30,11 +55,3 @@ export const startAuth = createServerFn({
       throw error;
     }
   });
-
-export const signIn = async (
-  username: string,
-  password: string
-): Promise<AuthTokens> => {
-  const authService = createAuthService();
-  return await authService.signIn(username, password);
-};
