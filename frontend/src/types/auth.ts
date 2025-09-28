@@ -1,3 +1,5 @@
+import type { ChallengeNameType } from "@aws-sdk/client-cognito-identity-provider";
+
 export interface AuthTokens {
   accessToken: string;
   idToken: string;
@@ -62,3 +64,29 @@ export class AuthError extends Error {
     this.name = "AuthError";
   }
 }
+
+export type AuthRequest =
+  | {
+      mode: "START";
+      email: string;
+      password: string;
+    }
+  | {
+      mode: "RESPOND";
+      username: string;
+      session: string;
+      challengeName: ChallengeNameType;
+      answers: Record<string, string>;
+    };
+
+export type AuthResult =
+  | {
+      status: "SUCCESS";
+      tokens: AuthTokens;
+    }
+  | {
+      status: "CHALLENGE";
+      challengeName: ChallengeNameType;
+      session: string;
+      parameters: Record<string, string | undefined>;
+    };
