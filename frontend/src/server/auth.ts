@@ -21,7 +21,7 @@ const RespondAuthSchema = z.object({
   mode: z.literal("RESPOND"),
   username: z.string().min(1),
   session: z.string().min(1),
-  challengeName: z.nativeEnum(ChallengeNameType),
+  challengeName: z.enum(ChallengeNameType),
   answers: z.record(z.string(), z.string().min(1)),
 });
 
