@@ -8,7 +8,7 @@ import { LoginFormSchema } from "@/types";
 import { CognitoAuthService } from "./cognito-auth";
 
 // 認証サービスのインスタンスを作成する関数
-function createAuthService(): CognitoAuthService {
+export function createAuthService(): CognitoAuthService {
   const config = getAuthConfig();
   return new CognitoAuthService(config);
 }
