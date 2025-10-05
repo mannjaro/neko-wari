@@ -125,6 +125,14 @@ export class CognitoAuthService {
       });
 
       const response = await this.client.send(command);
+      if (!response.CredentialCreationOptions) {
+        throw new AuthError(
+          "Credential creation options were not returned",
+          "MISSING_PASSKEY_OPTIONS",
+          response,
+        );
+      }
+
       return response;
     } catch (error) {
       if (error instanceof AuthError) {
@@ -134,6 +142,32 @@ export class CognitoAuthService {
       throw new AuthError(
         "Failed to start passkey registration",
         "START_PASSKEY_REGISTRATION_ERROR",
+        error,
+      );
+    }
+  }
+
+  async completePasskeyRegistration(params: {
+    accessToken: string;
+    credential: any;
+  }): Promise<void> {
+    const { accessToken, credential } = params;
+
+    try {
+      const command = new CompleteWebAuthnRegistrationCommand({
+        AccessToken: accessToken,
+        Credential: credential,
+      });
+
+      await this.client.send(command);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        throw error;
+      }
+
+      throw new AuthError(
+        "Failed to complete passkey registration",
+        "COMPLETE_PASSKEY_REGISTRATION_ERROR",
         error,
       );
     }
@@ -188,10 +222,10 @@ export class CognitoAuthService {
     }
 
     return {
-      USER_ID_FOR_SRP: challengeParams.USER_ID_FOR_SRP!,
-      SRP_B: challengeParams.SRP_B!,
-      SALT: challengeParams.SALT!,
-      SECRET_BLOCK: challengeParams.SECRET_BLOCK!,
+      USER_ID_FOR_SRP: challengeParams.USER_ID_FOR_SRP || "",
+      SRP_B: challengeParams.SRP_B || "",
+      SALT: challengeParams.SALT || "",
+      SECRET_BLOCK: challengeParams.SECRET_BLOCK || "",
     };
   }
 

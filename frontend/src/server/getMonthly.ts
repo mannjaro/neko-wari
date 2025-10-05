@@ -13,7 +13,7 @@ const Partition = z.object({
 export const getMonthlyCost = createServerFn({
   method: "GET",
 })
-  .validator((partition: unknown) => {
+  .inputValidator((partition: unknown) => {
     const data = Partition.parse(partition);
     return {
       year: data.year.toString(),

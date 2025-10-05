@@ -33,7 +33,7 @@ const AuthRequestSchema = z.discriminatedUnion("mode", [
 export const startAuth = createServerFn({
   method: "POST",
 })
-  .validator(AuthRequestSchema)
+  .inputValidator(AuthRequestSchema)
   .handler(async ({ data }) => {
     const authService = createAuthService();
 
