@@ -1,7 +1,6 @@
 import type {
   InitiateAuthCommandOutput,
   RespondToAuthChallengeCommandOutput,
-  StartWebAuthnRegistrationCommandOutput,
 } from "@aws-sdk/client-cognito-identity-provider";
 import {
   AuthFlowType,
@@ -20,6 +19,12 @@ import type {
   ChallengeParameters,
 } from "@/types/auth";
 import { AuthError } from "@/types/auth";
+import type {
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialDescriptorJSON,
+  RegistrationResponseJSON,
+} from "@simplewebauthn/types";
+import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import { calculatePasswordVerifier, calculateSRP_A } from "@/utils/auth";
 
 export class CognitoAuthService {
@@ -116,7 +121,7 @@ export class CognitoAuthService {
 
   async startPasskeyRegistration(params: {
     accessToken: string;
-  }): Promise<StartWebAuthnRegistrationCommandOutput> {
+  }): Promise<PublicKeyCredentialCreationOptionsJSON> {
     const { accessToken } = params;
 
     try {
@@ -133,7 +138,9 @@ export class CognitoAuthService {
         );
       }
 
-      return response;
+      return this.normalizeCredentialCreationOptions(
+        response.CredentialCreationOptions,
+      );
     } catch (error) {
       if (error instanceof AuthError) {
         throw error;
@@ -340,5 +347,130 @@ export class CognitoAuthService {
     responses.USERNAME = responses.USERNAME ?? username;
 
     return responses;
+  }
+
+  private normalizeCredentialCreationOptions(
+    options: unknown,
+  ): PublicKeyCredentialCreationOptionsJSON {
+    const parsedOptions = this.parseCredentialCreationOptions(options);
+    const publicKeyOptions =
+      (parsedOptions as { publicKey?: PublicKeyCredentialCreationOptionsJSON })
+        .publicKey ?? (parsedOptions as PublicKeyCredentialCreationOptionsJSON);
+
+    if (!publicKeyOptions?.challenge) {
+      throw new AuthError(
+        "Passkey credential options are missing challenge",
+        "INVALID_PASSKEY_OPTIONS",
+        options,
+      );
+    }
+
+    const normalizedUser = {
+      ...publicKeyOptions.user,
+      id: this.ensureBase64URL(publicKeyOptions.user.id),
+    };
+
+    const normalizedExcludeCredentials =
+      publicKeyOptions.excludeCredentials?.map((credential) => ({
+        ...credential,
+        id: this.ensureBase64URL(credential.id),
+      })) as PublicKeyCredentialDescriptorJSON[] | undefined;
+
+    return {
+      ...publicKeyOptions,
+      challenge: this.ensureBase64URL(publicKeyOptions.challenge),
+      excludeCredentials: normalizedExcludeCredentials,
+      user: normalizedUser,
+    };
+  }
+
+  private parseCredentialCreationOptions(options: unknown): unknown {
+    if (options == null) {
+      throw new AuthError(
+        "Passkey credential options were empty",
+        "INVALID_PASSKEY_OPTIONS",
+        options,
+      );
+    }
+
+    if (typeof options === "string") {
+      return this.tryParseDocumentString(options);
+    }
+
+    if (ArrayBuffer.isView(options)) {
+      const view = options as ArrayBufferView;
+      const array = new Uint8Array(
+        view.buffer,
+        view.byteOffset,
+        view.byteLength,
+      );
+      const text = new TextDecoder().decode(array);
+      return this.tryParseDocumentString(text);
+    }
+
+    if (options instanceof ArrayBuffer) {
+      const text = new TextDecoder().decode(new Uint8Array(options));
+      return this.tryParseDocumentString(text);
+    }
+
+    return options;
+  }
+
+  private tryParseDocumentString(value: string): unknown {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      throw new AuthError(
+        "Passkey credential document string is empty",
+        "INVALID_PASSKEY_OPTIONS",
+        value,
+      );
+    }
+
+    try {
+      return JSON.parse(trimmed);
+    } catch (jsonError) {
+      try {
+        const base64 = this.convertToBase64(trimmed);
+        const decoded = isoBase64URL.toBuffer(base64, "base64");
+        const text = new TextDecoder().decode(decoded);
+        return JSON.parse(text);
+      } catch (parseError) {
+        throw new AuthError(
+          "Failed to parse passkey credential options",
+          "INVALID_PASSKEY_OPTIONS",
+          { value, jsonError, parseError },
+        );
+      }
+    }
+  }
+
+  private ensureBase64URL(value: string): string {
+    if (isoBase64URL.isBase64URL(value)) {
+      return isoBase64URL.trimPadding(value);
+    }
+
+    if (isoBase64URL.isBase64(value)) {
+      const buffer = isoBase64URL.toBuffer(value, "base64");
+      return isoBase64URL.fromBuffer(buffer);
+    }
+
+    return value;
+  }
+
+  private convertToBase64(value: string): string {
+    if (isoBase64URL.isBase64(value)) {
+      return value;
+    }
+
+    if (isoBase64URL.isBase64URL(value)) {
+      return isoBase64URL.toBase64(value);
+    }
+
+    throw new AuthError(
+      "Provided value is not base64/base64url encoded",
+      "INVALID_PASSKEY_OPTIONS",
+      value,
+    );
   }
 }

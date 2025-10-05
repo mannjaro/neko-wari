@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useForm } from "react-hook-form";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,9 +15,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { type LoginFormData, LoginFormSchema } from "@/types/forms";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, authQueryKey } from "@/hooks/useAuth";
+import type { AuthTokens } from "@/types/auth";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChallengeNameType } from "@aws-sdk/client-cognito-identity-provider";
+import {
+  startPasskeyRegistration,
+  completePasskeyRegistration,
+} from "@/server/passkey";
 import { startRegistration } from "@simplewebauthn/browser";
+import type { PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/browser";
 
 interface ChallengeFormValues {
   newPassword: string;
@@ -29,6 +37,9 @@ export const Route = createFileRoute("/login")({
 });
 
 export function LoginForm() {
+  const startRegistPasskey = useServerFn(startPasskeyRegistration);
+  const completeRegisterPasskey = useServerFn(completePasskeyRegistration);
+  const queryClient = useQueryClient();
   const form = useForm<LoginFormData>({
     resolver: zodResolver(LoginFormSchema),
     defaultValues: {
@@ -46,6 +57,9 @@ export function LoginForm() {
 
   const { mutate, data, error, isSuccess, isPending, reset } = useAuth();
   const [username, setUsername] = useState("");
+  const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
+  const [passkeySuccess, setPasskeySuccess] = useState(false);
 
   const challenge = useMemo(() => {
     return data?.status === "CHALLENGE" ? data : null;
@@ -200,6 +214,64 @@ export function LoginForm() {
     setUsername("");
   };
 
+  const accessToken = useMemo(() => {
+    if (data?.status === "SUCCESS") {
+      return data.tokens.accessToken;
+    }
+
+    const cached = queryClient.getQueryData<AuthTokens | undefined>(
+      authQueryKey,
+    );
+
+    return cached?.accessToken ?? "";
+  }, [data, queryClient]);
+
+  const handlePasskeyRegistration = async () => {
+    setPasskeyError(null);
+    setPasskeySuccess(false);
+
+    if (!accessToken) {
+      setPasskeyError("ログイン後に再度お試しください。");
+      return;
+    }
+
+    try {
+      setIsRegisteringPasskey(true);
+      const options = await startRegistPasskey({
+        data: { accessToken },
+      });
+
+      if (options === undefined) {
+        throw new Error("Options is undefined");
+      }
+
+      // Parse options.CredentialCreationOptions to PublicKeyCredentialCreationOptionsJSON
+
+      const registration = await startRegistration({
+        optionsJSON: options,
+      });
+
+      await completeRegisterPasskey({
+        data: {
+          accessToken,
+          credential: registration,
+        },
+      });
+
+      setPasskeySuccess(true);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "NotAllowedError") {
+        setPasskeyError("Passkey登録がユーザー操作でキャンセルされました。");
+      } else if (err instanceof Error) {
+        setPasskeyError(err.message || "Passkey登録に失敗しました。");
+      } else {
+        setPasskeyError("Passkey登録に失敗しました。");
+      }
+    } finally {
+      setIsRegisteringPasskey(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -254,6 +326,32 @@ export function LoginForm() {
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? "Signing in…" : "Login"}
             </Button>
+            {accessToken ? (
+              <div className="space-y-2 rounded-md border p-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Passkey登録</p>
+                  <p className="text-xs text-muted-foreground">
+                    Passkeyを登録すると、次回以降ワンタップでサインインできます。
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handlePasskeyRegistration}
+                  disabled={isRegisteringPasskey}
+                >
+                  {isRegisteringPasskey ? "登録中…" : "Passkeyを登録"}
+                </Button>
+                {passkeySuccess ? (
+                  <p className="text-xs text-emerald-600">
+                    Passkeyの登録が完了しました。
+                  </p>
+                ) : null}
+                {passkeyError ? (
+                  <p className="text-xs text-destructive">{passkeyError}</p>
+                ) : null}
+              </div>
+            ) : null}
             <Button variant="outline" className="w-full" asChild>
               <Link to="/dashboard">ダッシュボードへ移動</Link>
             </Button>
