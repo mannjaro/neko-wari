@@ -23,8 +23,10 @@ import {
   startPasskeyRegistration,
   completePasskeyRegistration,
 } from "@/server/passkey";
-import { startRegistration } from "@simplewebauthn/browser";
-import type { PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/browser";
+import {
+  startRegistration,
+  startAuthentication,
+} from "@simplewebauthn/browser";
 
 interface ChallengeFormValues {
   newPassword: string;
