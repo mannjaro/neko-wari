@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { type LoginFormData, LoginFormSchema } from "@/types/forms";
 import { useAuth } from "@/hooks/useAuth";
 import { ChallengeNameType } from "@aws-sdk/client-cognito-identity-provider";
+import { startRegistration } from "@simplewebauthn/browser";
 
 interface ChallengeFormValues {
   newPassword: string;
@@ -67,129 +68,127 @@ export function LoginForm() {
     });
   });
 
-  const handleChallengeSubmit = challengeForm.handleSubmit(
-    (values) => {
-      if (!challenge) {
-        return;
-      }
+  const handleChallengeSubmit = challengeForm.handleSubmit((values) => {
+    if (!challenge) {
+      return;
+    }
 
-      if (!resolvedUsername) {
-        const field =
-          challenge.challengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED
-            ? "newPassword"
-            : "code";
-        challengeForm.setError(field as keyof ChallengeFormValues, {
-          type: "validate",
-          message: "ユーザー名が特定できません。最初からやり直してください。",
-        });
-        return;
-      }
-
-      const answers: Record<string, string> = {};
-
-      switch (challenge.challengeName) {
-        case ChallengeNameType.NEW_PASSWORD_REQUIRED: {
-          if (values.newPassword !== values.confirmPassword) {
-            challengeForm.setError("confirmPassword", {
-              type: "validate",
-              message: "新しいパスワードが一致しません",
-            });
-            return;
-          }
-          if (!values.newPassword) {
-            challengeForm.setError("newPassword", {
-              type: "validate",
-              message: "新しいパスワードを入力してください",
-            });
-            return;
-          }
-          answers.NEW_PASSWORD = values.newPassword;
-          break;
-        }
-        case ChallengeNameType.SMS_MFA: {
-          if (!values.code) {
-            challengeForm.setError("code", {
-              type: "validate",
-              message: "コードを入力してください",
-            });
-            return;
-          }
-          answers.SMS_MFA_CODE = values.code;
-          break;
-        }
-        case ChallengeNameType.SOFTWARE_TOKEN_MFA: {
-          if (!values.code) {
-            challengeForm.setError("code", {
-              type: "validate",
-              message: "コードを入力してください",
-            });
-            return;
-          }
-          answers.SOFTWARE_TOKEN_MFA_CODE = values.code;
-          break;
-        }
-        case ChallengeNameType.EMAIL_OTP: {
-          if (!values.code) {
-            challengeForm.setError("code", {
-              type: "validate",
-              message: "コードを入力してください",
-            });
-            return;
-          }
-          answers.EMAIL_OTP_CODE = values.code;
-          break;
-        }
-        case ChallengeNameType.SMS_OTP: {
-          if (!values.code) {
-            challengeForm.setError("code", {
-              type: "validate",
-              message: "コードを入力してください",
-            });
-            return;
-          }
-          answers.OTP = values.code;
-          break;
-        }
-        case ChallengeNameType.WEB_AUTHN: {
-          // WebAuthn はブラウザ API 連携が必要。ここではプレースホルダー。
-          if (!values.code) {
-            challengeForm.setError("code", {
-              type: "validate",
-              message: "WebAuthn結果を入力してください",
-            });
-            return;
-          }
-          answers.WEB_AUTHN_ASSERTION = values.code;
-          break;
-        }
-        default: {
-          if (values.code) {
-            answers.ANSWER = values.code;
-          } else {
-            challengeForm.setError("code", {
-              type: "validate",
-              message: "コードを入力してください",
-            });
-            return;
-          }
-          break;
-        }
-      }
-
-      mutate({
-        mode: "RESPOND",
-        username: resolvedUsername,
-        session: challenge.session,
-        challengeName: challenge.challengeName,
-        answers,
+    if (!resolvedUsername) {
+      const field =
+        challenge.challengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED
+          ? "newPassword"
+          : "code";
+      challengeForm.setError(field as keyof ChallengeFormValues, {
+        type: "validate",
+        message: "ユーザー名が特定できません。最初からやり直してください。",
       });
-      challengeForm.reset({
-        newPassword: "",
-        confirmPassword: "",
-        code: "",
-      });
-    },
-  );
+      return;
+    }
+
+    const answers: Record<string, string> = {};
+
+    switch (challenge.challengeName) {
+      case ChallengeNameType.NEW_PASSWORD_REQUIRED: {
+        if (values.newPassword !== values.confirmPassword) {
+          challengeForm.setError("confirmPassword", {
+            type: "validate",
+            message: "新しいパスワードが一致しません",
+          });
+          return;
+        }
+        if (!values.newPassword) {
+          challengeForm.setError("newPassword", {
+            type: "validate",
+            message: "新しいパスワードを入力してください",
+          });
+          return;
+        }
+        answers.NEW_PASSWORD = values.newPassword;
+        break;
+      }
+      case ChallengeNameType.SMS_MFA: {
+        if (!values.code) {
+          challengeForm.setError("code", {
+            type: "validate",
+            message: "コードを入力してください",
+          });
+          return;
+        }
+        answers.SMS_MFA_CODE = values.code;
+        break;
+      }
+      case ChallengeNameType.SOFTWARE_TOKEN_MFA: {
+        if (!values.code) {
+          challengeForm.setError("code", {
+            type: "validate",
+            message: "コードを入力してください",
+          });
+          return;
+        }
+        answers.SOFTWARE_TOKEN_MFA_CODE = values.code;
+        break;
+      }
+      case ChallengeNameType.EMAIL_OTP: {
+        if (!values.code) {
+          challengeForm.setError("code", {
+            type: "validate",
+            message: "コードを入力してください",
+          });
+          return;
+        }
+        answers.EMAIL_OTP_CODE = values.code;
+        break;
+      }
+      case ChallengeNameType.SMS_OTP: {
+        if (!values.code) {
+          challengeForm.setError("code", {
+            type: "validate",
+            message: "コードを入力してください",
+          });
+          return;
+        }
+        answers.OTP = values.code;
+        break;
+      }
+      case ChallengeNameType.WEB_AUTHN: {
+        // WebAuthn はブラウザ API 連携が必要。ここではプレースホルダー。
+        if (!values.code) {
+          challengeForm.setError("code", {
+            type: "validate",
+            message: "WebAuthn結果を入力してください",
+          });
+          return;
+        }
+        answers.WEB_AUTHN_ASSERTION = values.code;
+        break;
+      }
+      default: {
+        if (values.code) {
+          answers.ANSWER = values.code;
+        } else {
+          challengeForm.setError("code", {
+            type: "validate",
+            message: "コードを入力してください",
+          });
+          return;
+        }
+        break;
+      }
+    }
+
+    mutate({
+      mode: "RESPOND",
+      username: resolvedUsername,
+      session: challenge.session,
+      challengeName: challenge.challengeName,
+      answers,
+    });
+    challengeForm.reset({
+      newPassword: "",
+      confirmPassword: "",
+      code: "",
+    });
+  });
 
   const resetChallengeState = () => {
     challengeForm.reset({

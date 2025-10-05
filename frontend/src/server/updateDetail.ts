@@ -17,7 +17,7 @@ export type ExtendedUpdateCostData = z.infer<
 export const updateCostDetail = createServerFn({
   method: "POST",
 })
-  .validator(ExtendedUpdateCostDataSchema)
+  .inputValidator(ExtendedUpdateCostDataSchema)
   .handler(async ({ data }) => {
     const env = getBindings();
     const client = hc<DetailUpdateType>(env.BACKEND_API);
