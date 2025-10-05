@@ -1,13 +1,16 @@
 import type {
   InitiateAuthCommandOutput,
   RespondToAuthChallengeCommandOutput,
+  StartWebAuthnRegistrationCommandOutput,
 } from "@aws-sdk/client-cognito-identity-provider";
 import {
   AuthFlowType,
   ChallengeNameType,
   CognitoIdentityProviderClient,
+  CompleteWebAuthnRegistrationCommand,
   InitiateAuthCommand,
   RespondToAuthChallengeCommand,
+  StartWebAuthnRegistrationCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 
 import type {
@@ -106,6 +109,31 @@ export class CognitoAuthService {
       throw new AuthError(
         "Failed to respond to authentication challenge",
         "RESPOND_CHALLENGE_ERROR",
+        error,
+      );
+    }
+  }
+
+  async startPasskeyRegistration(params: {
+    accessToken: string;
+  }): Promise<StartWebAuthnRegistrationCommandOutput> {
+    const { accessToken } = params;
+
+    try {
+      const command = new StartWebAuthnRegistrationCommand({
+        AccessToken: accessToken,
+      });
+
+      const response = await this.client.send(command);
+      return response;
+    } catch (error) {
+      if (error instanceof AuthError) {
+        throw error;
+      }
+
+      throw new AuthError(
+        "Failed to start passkey registration",
+        "START_PASSKEY_REGISTRATION_ERROR",
         error,
       );
     }
