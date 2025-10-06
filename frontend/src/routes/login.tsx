@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { type LoginFormData, LoginFormSchema } from "@/types/forms";
 import { useAuth, authQueryKey } from "@/hooks/useAuth";
+import { useAuthChallenge } from "@/hooks/useAuthChallenge";
 import type { AuthTokens } from "@/types/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChallengeNameType } from "@aws-sdk/client-cognito-identity-provider";
@@ -23,16 +24,7 @@ import {
   startPasskeyRegistration,
   completePasskeyRegistration,
 } from "@/server/passkey";
-import {
-  startRegistration,
-  startAuthentication,
-} from "@simplewebauthn/browser";
-
-interface ChallengeFormValues {
-  newPassword: string;
-  confirmPassword: string;
-  code: string;
-}
+import { startRegistration } from "@simplewebauthn/browser";
 
 export const Route = createFileRoute("/login")({
   component: RouteComponent,
@@ -49,171 +41,42 @@ export function LoginForm() {
       password: "",
     },
   });
-  const challengeForm = useForm<ChallengeFormValues>({
-    defaultValues: {
-      newPassword: "",
-      confirmPassword: "",
-      code: "",
-    },
-  });
-
-  const { mutate, data, error, isSuccess, isPending, reset } = useAuth();
-  const [username, setUsername] = useState("");
+  const {
+    authenticateWithPassword,
+    authenticateWithPasskey,
+    respondToChallenge,
+    respondToChallengeAsync,
+    data,
+    challenge,
+    error,
+    isSuccess,
+    isPending,
+    method,
+    reset,
+  } = useAuth();
   const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
   const [passkeySuccess, setPasskeySuccess] = useState(false);
 
-  const challenge = useMemo(() => {
-    return data?.status === "CHALLENGE" ? data : null;
-  }, [data]);
+  const challengeHandlers = useAuthChallenge({
+    challenge,
+    submitChallenge: respondToChallenge,
+    submitChallengeAsync: respondToChallengeAsync,
+    isPending,
+  });
 
-  const resolvedUsername = useMemo(() => {
-    if (!challenge) {
-      return username;
-    }
-
-    return username || challenge.parameters.USER_ID_FOR_SRP || "";
-  }, [challenge, username]);
+  const emailValue = form.watch("email");
 
   const handleSubmit = form.handleSubmit((values) => {
-    setUsername(values.email);
-    mutate({
-      mode: "START",
+    authenticateWithPassword({
       email: values.email,
       password: values.password,
     });
   });
 
-  const handleChallengeSubmit = challengeForm.handleSubmit((values) => {
-    if (!challenge) {
-      return;
-    }
-
-    if (!resolvedUsername) {
-      const field =
-        challenge.challengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED
-          ? "newPassword"
-          : "code";
-      challengeForm.setError(field as keyof ChallengeFormValues, {
-        type: "validate",
-        message: "ユーザー名が特定できません。最初からやり直してください。",
-      });
-      return;
-    }
-
-    const answers: Record<string, string> = {};
-
-    switch (challenge.challengeName) {
-      case ChallengeNameType.NEW_PASSWORD_REQUIRED: {
-        if (values.newPassword !== values.confirmPassword) {
-          challengeForm.setError("confirmPassword", {
-            type: "validate",
-            message: "新しいパスワードが一致しません",
-          });
-          return;
-        }
-        if (!values.newPassword) {
-          challengeForm.setError("newPassword", {
-            type: "validate",
-            message: "新しいパスワードを入力してください",
-          });
-          return;
-        }
-        answers.NEW_PASSWORD = values.newPassword;
-        break;
-      }
-      case ChallengeNameType.SMS_MFA: {
-        if (!values.code) {
-          challengeForm.setError("code", {
-            type: "validate",
-            message: "コードを入力してください",
-          });
-          return;
-        }
-        answers.SMS_MFA_CODE = values.code;
-        break;
-      }
-      case ChallengeNameType.SOFTWARE_TOKEN_MFA: {
-        if (!values.code) {
-          challengeForm.setError("code", {
-            type: "validate",
-            message: "コードを入力してください",
-          });
-          return;
-        }
-        answers.SOFTWARE_TOKEN_MFA_CODE = values.code;
-        break;
-      }
-      case ChallengeNameType.EMAIL_OTP: {
-        if (!values.code) {
-          challengeForm.setError("code", {
-            type: "validate",
-            message: "コードを入力してください",
-          });
-          return;
-        }
-        answers.EMAIL_OTP_CODE = values.code;
-        break;
-      }
-      case ChallengeNameType.SMS_OTP: {
-        if (!values.code) {
-          challengeForm.setError("code", {
-            type: "validate",
-            message: "コードを入力してください",
-          });
-          return;
-        }
-        answers.OTP = values.code;
-        break;
-      }
-      case ChallengeNameType.WEB_AUTHN: {
-        // WebAuthn はブラウザ API 連携が必要。ここではプレースホルダー。
-        if (!values.code) {
-          challengeForm.setError("code", {
-            type: "validate",
-            message: "WebAuthn結果を入力してください",
-          });
-          return;
-        }
-        answers.WEB_AUTHN_ASSERTION = values.code;
-        break;
-      }
-      default: {
-        if (values.code) {
-          answers.ANSWER = values.code;
-        } else {
-          challengeForm.setError("code", {
-            type: "validate",
-            message: "コードを入力してください",
-          });
-          return;
-        }
-        break;
-      }
-    }
-
-    mutate({
-      mode: "RESPOND",
-      username: resolvedUsername,
-      session: challenge.session,
-      challengeName: challenge.challengeName,
-      answers,
-    });
-    challengeForm.reset({
-      newPassword: "",
-      confirmPassword: "",
-      code: "",
-    });
-  });
-
   const resetChallengeState = () => {
-    challengeForm.reset({
-      newPassword: "",
-      confirmPassword: "",
-      code: "",
-    });
+    challengeHandlers.resetForm();
     reset();
-    setUsername("");
   };
 
   const accessToken = useMemo(() => {
@@ -326,7 +189,22 @@ export function LoginForm() {
               <p className="text-sm text-emerald-600">Login successful.</p>
             ) : null}
             <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Signing in…" : "Login"}
+              {isPending && method === "PASSWORD" ? "Signing in…" : "Login"}
+            </Button>
+            <Button
+              type="button"
+              className="w-full"
+              variant="secondary"
+              disabled={isPending || !emailValue}
+              onClick={() => {
+                if (emailValue) {
+                  authenticateWithPasskey({ username: emailValue });
+                }
+              }}
+            >
+              {isPending && method === "PASSKEY"
+                ? "Passkeyでサインイン中…"
+                : "Passkeyでログイン"}
             </Button>
             {accessToken ? (
               <div className="space-y-2 rounded-md border p-3">
@@ -360,25 +238,69 @@ export function LoginForm() {
           </form>
         </Form>
 
-        {challenge ? (
+        {challengeHandlers.challenge ? (
           <div className="space-y-2">
             <h3 className="text-sm font-medium">
-              追加認証が必要です: {challenge.challengeName}
+              追加認証が必要です: {
+                challengeHandlers.challenge.challengeName
+              }
             </h3>
-            <Form {...challengeForm}>
-              <form onSubmit={handleChallengeSubmit} className="space-y-4">
-                {challenge.challengeName ===
-                ChallengeNameType.NEW_PASSWORD_REQUIRED ? (
-                  <>
+            {challengeHandlers.shouldRenderForm ? (
+              <Form {...challengeHandlers.form}>
+                <form
+                  onSubmit={challengeHandlers.handleSubmit}
+                  className="space-y-4"
+                >
+                  {challengeHandlers.challenge?.challengeName ===
+                  ChallengeNameType.NEW_PASSWORD_REQUIRED ? (
+                    <>
+                      <FormField
+                        control={challengeHandlers.form.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>新しいパスワード</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="password"
+                                required
+                                disabled={isPending}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={challengeHandlers.form.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>新しいパスワード（確認）</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="password"
+                                required
+                                disabled={isPending}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  ) : (
                     <FormField
-                      control={challengeForm.control}
-                      name="newPassword"
+                      control={challengeHandlers.form.control}
+                      name="code"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>新しいパスワード</FormLabel>
+                          <FormLabel>確認コード</FormLabel>
                           <FormControl>
                             <Input
-                              type="password"
+                              placeholder="コードを入力"
                               required
                               disabled={isPending}
                               {...field}
@@ -388,60 +310,59 @@ export function LoginForm() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={challengeForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>新しいパスワード（確認）</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              required
-                              disabled={isPending}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                ) : (
-                  <FormField
-                    control={challengeForm.control}
-                    name="code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>確認コード</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="コードを入力"
-                            required
-                            disabled={isPending}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-                <div className="flex items-center gap-2">
-                  <Button type="submit" disabled={isPending}>
-                    送信
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Button type="submit" disabled={isPending}>
+                      送信
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={isPending}
+                      onClick={resetChallengeState}
+                    >
+                      キャンセル
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            ) : null}
+            {challengeHandlers.passkey ? (
+              <div className="space-y-2 rounded-md border p-3 text-sm">
+                <p>Passkeyでの認証を進めています。</p>
+                {challengeHandlers.passkey.error ? (
+                  <p className="text-xs text-destructive">
+                    {challengeHandlers.passkey.error}
+                  </p>
+                ) : null}
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={
+                      isPending ||
+                      challengeHandlers.passkey.isProcessing ||
+                      !challengeHandlers.passkey.hasOptions
+                    }
+                    onClick={() => challengeHandlers.passkey?.retry()}
+                  >
+                    {challengeHandlers.passkey.isProcessing
+                      ? "認証処理中…"
+                      : "再試行"}
                   </Button>
                   <Button
                     type="button"
-                    variant="secondary"
+                    size="sm"
+                    variant="ghost"
                     disabled={isPending}
                     onClick={resetChallengeState}
                   >
                     キャンセル
                   </Button>
                 </div>
-              </form>
-            </Form>
+              </div>
+            ) : null}
           </div>
         ) : null}
 

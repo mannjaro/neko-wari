@@ -22,9 +22,39 @@ import { AuthError } from "@/types/auth";
 import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialDescriptorJSON,
-  RegistrationResponseJSON,
-} from "@simplewebauthn/types";
-import { isoBase64URL } from "@simplewebauthn/server/helpers";
+  async authenticateWithPassword(
+    username: string,
+    password: string,
+  ): Promise<AuthResult> {
+      const initiateResponse = await this.initiateAuth(
+        AuthFlowType.USER_SRP_AUTH,
+        {
+          USERNAME: username,
+          SRP_A,
+        },
+      );
+      const challengeParams =
+        this.extractSrpChallengeParameters(initiateResponse);
+  async startUserAuth(username: string): Promise<AuthResult> {
+    try {
+      const response = await this.initiateAuth(AuthFlowType.USER_AUTH, {
+        USERNAME: username,
+      });
+
+      return this.toAuthResult(response);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        throw error;
+      }
+
+      throw new AuthError(
+        "Failed to start user authentication",
+        "START_USER_AUTH_ERROR",
+        error,
+      );
+    }
+  }
+
 import { calculatePasswordVerifier, calculateSRP_A } from "@/utils/auth";
 
 export class CognitoAuthService {
@@ -155,14 +185,11 @@ export class CognitoAuthService {
   }
 
   async completePasskeyRegistration(params: {
-    accessToken: string;
-    credential: any;
-  }): Promise<void> {
-    const { accessToken, credential } = params;
-
-    try {
-      const command = new CompleteWebAuthnRegistrationCommand({
-        AccessToken: accessToken,
+    authFlow: AuthFlowType,
+    authParameters: Record<string, string>,
+      AuthFlow: authFlow,
+      AuthParameters: authParameters,
+  private extractSrpChallengeParameters(
         Credential: credential,
       });
 
@@ -236,8 +263,12 @@ export class CognitoAuthService {
     };
   }
 
-  private async respondToAuthChallenge(
-    challengeName: ChallengeNameType,
+    response:
+      | InitiateAuthCommandOutput
+      | RespondToAuthChallengeCommandOutput,
+    response:
+      | InitiateAuthCommandOutput
+      | RespondToAuthChallengeCommandOutput,
     challengeResponses: Record<string, string>,
     session?: string,
   ): Promise<RespondToAuthChallengeCommandOutput> {
