@@ -1,10 +1,13 @@
 // src/routes/index.tsx
-import { Skeleton } from "@/components/ui/skeleton";
-import { createFileRoute } from "@tanstack/react-router";
-import { Suspense, useState, useEffect, useRef } from "react";
+
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import type { CarouselApi } from "@/components/ui/carousel";
+import { Skeleton } from "@/components/ui/skeleton";
 import { YearlyCarousel } from "@/components/YearlyCarousel";
+import { authQueryKey } from "@/hooks/useAuth";
+import type { AuthTokens } from "@/types/auth";
 import {
   deferredQueryOptions,
   monthlyQueryOptions,
@@ -15,20 +18,29 @@ const searchSchema = z.object({
   month: z.number().min(1).max(12).optional(),
 });
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/dashboard")({
   validateSearch: searchSchema,
+  beforeLoad: ({ context }) => {
+    const auth = context.queryClient.getQueryData<AuthTokens>(authQueryKey);
+    console.log(auth);
+    if (!auth?.accessToken) {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: Home,
   loaderDeps: ({ search: { year, month } }) => ({ year, month }),
   loader: ({ context, deps: { year, month } }) => {
     const now = new Date();
     const currentYear = year ?? now.getFullYear();
     const currentMonth = month ?? now.getMonth() + 1;
-    
+
     // Prefetch all 12 months for the current year
     for (let monthIndex = 1; monthIndex <= 12; monthIndex++) {
-      context.queryClient.prefetchQuery(monthlyQueryOptions(currentYear, monthIndex));
+      context.queryClient.prefetchQuery(
+        monthlyQueryOptions(currentYear, monthIndex),
+      );
     }
-    
+
     context.queryClient.prefetchQuery(
       deferredQueryOptions(currentYear, currentMonth),
     );
@@ -76,7 +88,7 @@ function Home() {
 
       if (newMonth !== currentMonth) {
         navigate({
-          to: "/",
+          to: "/dashboard",
           search: { year: currentYear, month: newMonth },
           replace: true,
         });

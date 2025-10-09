@@ -1,11 +1,11 @@
-import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useCallback } from "react";
 
 import {
-  updateCostDetail,
   type ExtendedUpdateCostData,
+  updateCostDetail,
 } from "@/server/updateDetail";
 
 export function useUpdateCost() {
@@ -31,6 +31,6 @@ export function useUpdateCost() {
       }
       return result;
     },
-    [router, queryClient, updateCost]
+    [router, queryClient, updateCost],
   );
 }

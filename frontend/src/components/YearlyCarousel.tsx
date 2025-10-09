@@ -1,11 +1,11 @@
 import { useSuspenseQueries } from "@tanstack/react-query";
 import {
   Carousel,
+  type CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-  type CarouselApi,
 } from "@/components/ui/carousel";
 import { monthlyQueryOptions } from "@/hooks/useQueryOptions";
 import { MonthlyCostTable } from "./MonthlyCostTable";
