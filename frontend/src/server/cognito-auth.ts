@@ -11,6 +11,12 @@ import {
   RespondToAuthChallengeCommand,
   StartWebAuthnRegistrationCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
+import { isoBase64URL } from "@simplewebauthn/server/helpers";
+import type {
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialDescriptorJSON,
+  RegistrationResponseJSON,
+} from "@simplewebauthn/types";
 
 import type {
   AuthConfig,
@@ -19,13 +25,32 @@ import type {
   ChallengeParameters,
 } from "@/types/auth";
 import { AuthError } from "@/types/auth";
-import type {
-  PublicKeyCredentialCreationOptionsJSON,
-  PublicKeyCredentialDescriptorJSON,
+import { calculatePasswordVerifier, calculateSRP_A } from "@/utils/auth";
+
+type CognitoAuthResponse =
+  | InitiateAuthCommandOutput
+  | RespondToAuthChallengeCommandOutput;
+
+export class CognitoAuthService {
+  private readonly client: CognitoIdentityProviderClient;
+  private readonly config: AuthConfig;
+
+  constructor(config: AuthConfig) {
+    this.config = config;
+    this.client = new CognitoIdentityProviderClient({
+      region: config.region,
+    });
+  }
+
   async authenticateWithPassword(
     username: string,
     password: string,
   ): Promise<AuthResult> {
+    try {
+      const { SRP_A, authenticationHelper } = await calculateSRP_A(
+        this.config.userPoolName,
+      );
+
       const initiateResponse = await this.initiateAuth(
         AuthFlowType.USER_SRP_AUTH,
         {
@@ -33,8 +58,48 @@ import type {
           SRP_A,
         },
       );
+
       const challengeParams =
         this.extractSrpChallengeParameters(initiateResponse);
+
+      const { signature, dateNow } = await calculatePasswordVerifier(
+        {
+          SRP_B: challengeParams.SRP_B,
+          SALT: challengeParams.SALT,
+          username: challengeParams.USER_ID_FOR_SRP,
+          password,
+          secretBlock: challengeParams.SECRET_BLOCK,
+          authenticationHelper,
+        },
+        this.config.userPoolName,
+      );
+
+      const challengeResponse = await this.respondToAuthChallenge(
+        (initiateResponse.ChallengeName as ChallengeNameType) ||
+          ChallengeNameType.PASSWORD_VERIFIER,
+        {
+          PASSWORD_CLAIM_SIGNATURE: signature,
+          PASSWORD_CLAIM_SECRET_BLOCK: challengeParams.SECRET_BLOCK,
+          TIMESTAMP: dateNow,
+          USERNAME: challengeParams.USER_ID_FOR_SRP,
+        },
+        initiateResponse.Session,
+      );
+
+      return this.toAuthResult(challengeResponse);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        throw error;
+      }
+
+      throw new AuthError(
+        "Failed to authenticate with password",
+        "SIGN_IN_ERROR",
+        error,
+      );
+    }
+  }
+
   async startUserAuth(username: string): Promise<AuthResult> {
     try {
       const response = await this.initiateAuth(AuthFlowType.USER_AUTH, {
@@ -52,68 +117,6 @@ import type {
         "START_USER_AUTH_ERROR",
         error,
       );
-    }
-  }
-
-import { calculatePasswordVerifier, calculateSRP_A } from "@/utils/auth";
-
-export class CognitoAuthService {
-  private client: CognitoIdentityProviderClient;
-  private config: AuthConfig;
-
-  constructor(config: AuthConfig) {
-    this.config = config;
-    this.client = new CognitoIdentityProviderClient({
-      region: config.region,
-    });
-  }
-
-  async startAuth(username: string, password: string): Promise<AuthResult> {
-    try {
-      // Step 1: SRP_A を計算
-      const { SRP_A, authenticationHelper } = await calculateSRP_A(
-        this.config.userPoolName,
-      );
-
-      // Step 2: InitiateAuth を呼び出し
-      const initiateResponse = await this.initiateAuth(username, SRP_A);
-
-      // Step 3: チャレンジパラメータを取得
-      const challengeParams = this.extractChallengeParameters(initiateResponse);
-
-      // Step 4: パスワード検証を計算
-      const { signature, dateNow } = await calculatePasswordVerifier(
-        {
-          SRP_B: challengeParams.SRP_B,
-          SALT: challengeParams.SALT,
-          username: challengeParams.USER_ID_FOR_SRP,
-          password,
-          secretBlock: challengeParams.SECRET_BLOCK,
-          authenticationHelper,
-        },
-        this.config.userPoolName,
-      );
-
-      // Step 5: チャレンジに応答
-      const challengeResponse = await this.respondToAuthChallenge(
-        (initiateResponse.ChallengeName as ChallengeNameType) ||
-          ChallengeNameType.PASSWORD_VERIFIER,
-        {
-          PASSWORD_CLAIM_SIGNATURE: signature,
-          PASSWORD_CLAIM_SECRET_BLOCK: challengeParams.SECRET_BLOCK,
-          TIMESTAMP: dateNow,
-          USERNAME: challengeParams.USER_ID_FOR_SRP,
-        },
-        initiateResponse.Session,
-      );
-
-      // Step 6: 認証結果を返す
-      return this.toAuthResult(challengeResponse);
-    } catch (error) {
-      if (error instanceof AuthError) {
-        throw error;
-      }
-      throw new AuthError("Authentication failed", "SIGN_IN_ERROR", error);
     }
   }
 
@@ -141,6 +144,7 @@ export class CognitoAuthService {
       if (error instanceof AuthError) {
         throw error;
       }
+
       throw new AuthError(
         "Failed to respond to authentication challenge",
         "RESPOND_CHALLENGE_ERROR",
@@ -185,11 +189,14 @@ export class CognitoAuthService {
   }
 
   async completePasskeyRegistration(params: {
-    authFlow: AuthFlowType,
-    authParameters: Record<string, string>,
-      AuthFlow: authFlow,
-      AuthParameters: authParameters,
-  private extractSrpChallengeParameters(
+    accessToken: string;
+    credential: RegistrationResponseJSON;
+  }): Promise<void> {
+    const { accessToken, credential } = params;
+
+    try {
+      const command = new CompleteWebAuthnRegistrationCommand({
+        AccessToken: accessToken,
         Credential: credential,
       });
 
@@ -208,16 +215,13 @@ export class CognitoAuthService {
   }
 
   private async initiateAuth(
-    username: string,
-    srpA: string,
+    authFlow: AuthFlowType,
+    authParameters: Record<string, string>,
   ): Promise<InitiateAuthCommandOutput> {
     const command = new InitiateAuthCommand({
-      AuthFlow: AuthFlowType.USER_SRP_AUTH,
+      AuthFlow: authFlow,
       ClientId: this.config.clientId,
-      AuthParameters: {
-        USERNAME: username,
-        SRP_A: srpA,
-      },
+      AuthParameters: authParameters,
     });
 
     try {
@@ -231,44 +235,8 @@ export class CognitoAuthService {
     }
   }
 
-  private extractChallengeParameters(
-    response: InitiateAuthCommandOutput,
-  ): ChallengeParameters {
-    const challengeParams = response.ChallengeParameters;
-
-    if (!challengeParams) {
-      throw new AuthError(
-        "Challenge parameters are missing from response",
-        "MISSING_CHALLENGE_PARAMS",
-      );
-    }
-
-    const requiredParams = ["USER_ID_FOR_SRP", "SRP_B", "SALT", "SECRET_BLOCK"];
-    const missingParams = requiredParams.filter(
-      (param) => !challengeParams[param],
-    );
-
-    if (missingParams.length > 0) {
-      throw new AuthError(
-        `Missing required challenge parameters: ${missingParams.join(", ")}`,
-        "INVALID_CHALLENGE_PARAMS",
-      );
-    }
-
-    return {
-      USER_ID_FOR_SRP: challengeParams.USER_ID_FOR_SRP || "",
-      SRP_B: challengeParams.SRP_B || "",
-      SALT: challengeParams.SALT || "",
-      SECRET_BLOCK: challengeParams.SECRET_BLOCK || "",
-    };
-  }
-
-    response:
-      | InitiateAuthCommandOutput
-      | RespondToAuthChallengeCommandOutput,
-    response:
-      | InitiateAuthCommandOutput
-      | RespondToAuthChallengeCommandOutput,
+  private async respondToAuthChallenge(
+    challengeName: ChallengeNameType,
     challengeResponses: Record<string, string>,
     session?: string,
   ): Promise<RespondToAuthChallengeCommandOutput> {
@@ -291,7 +259,7 @@ export class CognitoAuthService {
   }
 
   private toAuthResult(
-    response: RespondToAuthChallengeCommandOutput,
+    response: CognitoAuthResponse,
     fallbackSession?: string,
   ): AuthResult {
     if (response.AuthenticationResult) {
@@ -331,9 +299,7 @@ export class CognitoAuthService {
     );
   }
 
-  private extractTokens(
-    response: RespondToAuthChallengeCommandOutput,
-  ): AuthTokens {
+  private extractTokens(response: CognitoAuthResponse): AuthTokens {
     const authResult = response.AuthenticationResult;
 
     if (!authResult) {
@@ -348,6 +314,38 @@ export class CognitoAuthService {
       accessToken: authResult.AccessToken || "",
       idToken: authResult.IdToken || "",
       refreshToken: authResult.RefreshToken || "",
+    };
+  }
+
+  private extractSrpChallengeParameters(
+    response: InitiateAuthCommandOutput,
+  ): ChallengeParameters {
+    const challengeParams = response.ChallengeParameters;
+
+    if (!challengeParams) {
+      throw new AuthError(
+        "Challenge parameters are missing from response",
+        "MISSING_CHALLENGE_PARAMS",
+      );
+    }
+
+    const requiredParams = ["USER_ID_FOR_SRP", "SRP_B", "SALT", "SECRET_BLOCK"];
+    const missingParams = requiredParams.filter(
+      (param) => !challengeParams[param],
+    );
+
+    if (missingParams.length > 0) {
+      throw new AuthError(
+        `Missing required challenge parameters: ${missingParams.join(", ")}`,
+        "INVALID_CHALLENGE_PARAMS",
+      );
+    }
+
+    return {
+      USER_ID_FOR_SRP: challengeParams.USER_ID_FOR_SRP || "",
+      SRP_B: challengeParams.SRP_B || "",
+      SALT: challengeParams.SALT || "",
+      SECRET_BLOCK: challengeParams.SECRET_BLOCK || "",
     };
   }
 
