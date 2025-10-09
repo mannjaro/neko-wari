@@ -65,19 +65,21 @@ export class AuthError extends Error {
   }
 }
 
-export type AuthRequest =
-  | {
-      mode: "START";
-      email: string;
-      password: string;
-    }
-  | {
-      mode: "RESPOND";
-      username: string;
-      session: string;
-      challengeName: ChallengeNameType;
-      answers: Record<string, string>;
-    };
+export interface PasswordAuthRequest {
+  email: string;
+  password: string;
+}
+
+export interface PasskeyAuthRequest {
+  username: string;
+}
+
+export interface ChallengeRequest {
+  username: string;
+  session: string;
+  challengeName: ChallengeNameType;
+  answers: Record<string, string>;
+}
 
 export type AuthResult =
   | {
