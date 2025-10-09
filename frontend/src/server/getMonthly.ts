@@ -1,10 +1,9 @@
 // getServerTime.ts
 import { createServerFn } from "@tanstack/react-start";
 import { hc } from "hono/client";
-import type { MonthlyGetType } from "../../../lambda/backend/app";
-import { getBindings } from "@/utils/binding";
-
 import { z } from "zod";
+import { getBindings } from "@/utils/binding";
+import type { MonthlyGetType } from "../../../lambda/backend/app";
 
 const Partition = z.object({
   year: z.number().min(2025),
@@ -14,7 +13,7 @@ const Partition = z.object({
 export const getMonthlyCost = createServerFn({
   method: "GET",
 })
-  .validator((partition: unknown) => {
+  .inputValidator((partition: unknown) => {
     const data = Partition.parse(partition);
     return {
       year: data.year.toString(),

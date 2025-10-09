@@ -172,8 +172,8 @@ export const UserSummarySchema = z.object({
         amount: z.number(),
         memo: z.string(),
         timestamp: z.number(),
-      })
-    )
+      }),
+    ),
   ),
 });
 export type UserSummary = z.infer<typeof UserSummarySchema>;
@@ -202,8 +202,8 @@ export const UserDetailResponseSchema = z.object({
         z.object({
           amount: z.number(),
           memo: z.string(),
-        })
-      )
+        }),
+      ),
     ),
   }),
 });
