@@ -233,7 +233,7 @@ export function LoginForm() {
               </div>
             ) : null}
             <Button variant="outline" className="w-full" asChild>
-              <Link to="/dashboard">ダッシュボードへ移動</Link>
+              <Link to="/">ダッシュボードへ移動</Link>
             </Button>
           </form>
         </Form>

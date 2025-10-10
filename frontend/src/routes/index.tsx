@@ -18,7 +18,7 @@ const searchSchema = z.object({
   month: z.number().min(1).max(12).optional(),
 });
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/")({
   validateSearch: searchSchema,
   beforeLoad: ({ context }) => {
     const auth = context.queryClient.getQueryData<AuthTokens>(authQueryKey);
@@ -88,7 +88,7 @@ function Home() {
 
       if (newMonth !== currentMonth) {
         navigate({
-          to: "/dashboard",
+          to: "/",
           search: { year: currentYear, month: newMonth },
           replace: true,
         });
