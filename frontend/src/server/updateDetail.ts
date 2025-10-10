@@ -19,7 +19,7 @@ export const updateCostDetail = createServerFn({
 })
   .inputValidator(ExtendedUpdateCostDataSchema)
   .handler(async ({ data }) => {
-    const env = getBindings();
+    const env = await getBindings();
     const client = hc<DetailUpdateType>(env.BACKEND_API);
     const response = await client.user[":uid"].detail[":timestamp"].$put({
       json: {

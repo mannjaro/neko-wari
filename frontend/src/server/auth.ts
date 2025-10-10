@@ -11,8 +11,8 @@ import type {
 import { CognitoAuthService } from "./cognito-auth";
 
 // 認証サービスのインスタンスを作成する関数
-export function createAuthService(): CognitoAuthService {
-  const config = getAuthConfig();
+export async function createAuthService(): Promise<CognitoAuthService> {
+  const config = await getAuthConfig();
   return new CognitoAuthService(config);
 }
 
@@ -115,7 +115,7 @@ function parseChallengePayload(data: unknown): ChallengeRequest {
 async function runWithAuthService<T>(
   handler: (service: CognitoAuthService) => Promise<T>,
 ): Promise<T> {
-  const authService = createAuthService();
+  const authService = await createAuthService();
 
   try {
     return await handler(authService);

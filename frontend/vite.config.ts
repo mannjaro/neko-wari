@@ -11,7 +11,15 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ["hono/client"],
+      external: (id) => {
+        // Externalize packages that should not be bundled for client builds
+        if (id === "hono/client") return true;
+        if (id === "youch" || id.startsWith("youch/")) return true;
+        if (id === "exsolve" || id.startsWith("exsolve/")) return true;
+        if (id === "unenv" || id.startsWith("unenv/")) return true;
+        if (id === "pathe" || id.startsWith("pathe/")) return true;
+        return false;
+      },
     },
   },
   define: {

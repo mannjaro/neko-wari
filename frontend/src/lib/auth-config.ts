@@ -1,8 +1,8 @@
 import type { AuthConfig } from "@/types/auth";
 import { getBindings } from "@/utils/binding";
 
-export const getAuthConfig = (): AuthConfig => {
-  const env = getBindings();
+export const getAuthConfig = async (): Promise<AuthConfig> => {
+  const env = await getBindings();
   const userPoolId = env.COGNITO_USER_POOL_ID;
   const clientId = env.COGNITO_CLIENT_ID;
 
