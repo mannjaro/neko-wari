@@ -49,8 +49,7 @@ function resolveChallengeState(
     return null;
   }
 
-  const resolvedUsername =
-    username || result.parameters.USER_ID_FOR_SRP || "";
+  const resolvedUsername = username || result.parameters.USER_ID_FOR_SRP || "";
 
   const base = {
     challengeName: result.challengeName,
