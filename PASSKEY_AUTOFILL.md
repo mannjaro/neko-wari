@@ -62,17 +62,64 @@ AWS Cognito's passkey authentication flow:
 ## Testing
 To test this change:
 
-1. Register a passkey for a user account
-2. Log out
-3. Click "Passkeyでログイン" button
-4. The browser should immediately show a passkey prompt with available credentials
-5. Select the passkey to authenticate
+1. Register a passkey for a user account:
+   - Log in with email/password
+   - Click "Passkeyを登録" button in the login success section
+   - Complete the passkey registration flow
+
+2. Log out from the application
+
+3. Return to login page and enter your email address
+
+4. Click "Passkeyでログイン" button
+
+5. The browser should immediately show a passkey prompt with available credentials
+
+6. Select the passkey to authenticate (Touch ID, Face ID, Windows Hello, etc.)
 
 ### Expected Behavior
-- **Before fix**: Browser shows generic "Use your passkey" dialog without suggestions
-- **After fix**: Browser shows specific passkeys registered for the user/device
+- **Before fix**: Browser shows generic "Use your passkey" dialog without specific credential suggestions, or authentication may fail if `allowCredentials: []` is interpreted as "no credentials allowed"
+- **After fix**: Browser automatically discovers and displays all passkeys registered for the domain, allowing the user to select their credential immediately
+
+### Platform-Specific Behavior
+- **macOS/iOS Safari**: Shows Touch ID/Face ID prompt with credential selection
+- **Chrome/Edge**: Shows passkey selection dialog with available credentials
+- **Android**: Shows biometric prompt with credential options
+- **Windows**: Shows Windows Hello prompt with available passkeys
+
+## Edge Cases and Considerations
+
+### Empty vs Undefined `allowCredentials`
+- `allowCredentials: undefined` → Browser discovers all available passkeys ✅
+- `allowCredentials: []` → Browser interprets as "no credentials allowed" ❌
+- `allowCredentials: [credential1, credential2]` → Browser shows only those specific credentials ✅
+
+### Backward Compatibility
+This change maintains backward compatibility:
+- If Cognito sends specific credential IDs, they are properly normalized and used
+- If Cognito sends empty array or omits the field, we convert to undefined for discovery
+- Existing passkey authentication flows continue to work unchanged
+
+### User Experience Impact
+- Users with registered passkeys will see immediate credential suggestions
+- New users without passkeys will see the standard registration flow
+- The change is transparent and doesn't require any user action
+
+## Future Enhancements
+Consider implementing conditional UI (autofill) for passkeys:
+```typescript
+// Add mediation: "conditional" for autofill behavior
+const assertion = await startAuthentication({
+  optionsJSON: webAuthnOptions,
+  useBrowserAutofill: true, // SimpleWebAuthn option for conditional UI
+});
+```
+
+This would enable passkey suggestions directly in the email input field, similar to password managers.
 
 ## References
 - [WebAuthn Specification - PublicKeyCredentialRequestOptions](https://www.w3.org/TR/webauthn-2/#dictdef-publickeycredentialrequestoptions)
+- [WebAuthn Discoverable Credentials](https://www.w3.org/TR/webauthn-2/#client-side-discoverable-credential)
 - [SimpleWebAuthn Documentation](https://simplewebauthn.dev/)
 - [AWS Cognito Passkey Documentation](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-passkeys.html)
+- [Passkey Best Practices](https://web.dev/passkey-form-autofill/)
