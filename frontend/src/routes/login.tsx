@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useForm } from "react-hook-form";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -57,6 +57,7 @@ export function LoginForm() {
   const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
   const [passkeySuccess, setPasskeySuccess] = useState(false);
+  const [hasAutoTriggered, setHasAutoTriggered] = useState(false);
 
   const challengeHandlers = useAuthChallenge({
     challenge,
@@ -66,6 +67,36 @@ export function LoginForm() {
   });
 
   const emailValue = form.watch("email");
+
+  // Auto-trigger passkey authentication when email is entered
+  useEffect(() => {
+    // Only auto-trigger once per session, when:
+    // - Email has been entered
+    // - Not already processing
+    // - Not already authenticated
+    // - Haven't auto-triggered before
+    if (
+      emailValue &&
+      !isPending &&
+      !isSuccess &&
+      !hasAutoTriggered &&
+      !challenge
+    ) {
+      setHasAutoTriggered(true);
+      // Small delay to ensure smooth UX
+      const timer = setTimeout(() => {
+        authenticateWithPasskey({ username: emailValue });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    emailValue,
+    isPending,
+    isSuccess,
+    hasAutoTriggered,
+    challenge,
+    authenticateWithPasskey,
+  ]);
 
   const handleSubmit = form.handleSubmit((values) => {
     authenticateWithPassword({
@@ -156,6 +187,7 @@ export function LoginForm() {
                       placeholder="Email"
                       required
                       disabled={isPending}
+                      autoComplete="username webauthn"
                       {...field}
                     />
                   </FormControl>
