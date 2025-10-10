@@ -241,9 +241,7 @@ export function LoginForm() {
         {challengeHandlers.challenge ? (
           <div className="space-y-2">
             <h3 className="text-sm font-medium">
-              追加認証が必要です: {
-                challengeHandlers.challenge.challengeName
-              }
+              追加認証が必要です: {challengeHandlers.challenge.challengeName}
             </h3>
             {challengeHandlers.shouldRenderForm ? (
               <Form {...challengeHandlers.form}>
@@ -330,11 +328,11 @@ export function LoginForm() {
             {challengeHandlers.passkey ? (
               <div className="space-y-2 rounded-md border p-3 text-sm">
                 <p>Passkeyでの認証を進めています。</p>
-                {challengeHandlers.passkey.error ? (
+                {/* {challengeHandlers.passkey.error ? (
                   <p className="text-xs text-destructive">
                     {challengeHandlers.passkey.error}
                   </p>
-                ) : null}
+                ) : null} */}
                 <div className="flex gap-2">
                   <Button
                     type="button"
