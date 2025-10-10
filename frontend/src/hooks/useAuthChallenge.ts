@@ -93,10 +93,14 @@ function normalizeRequestOptions(
     return null;
   }
 
-  const allowCredentials = publicKey.allowCredentials?.map((credential) => ({
-    ...credential,
-    id: ensureBase64URL(credential.id),
-  }));
+  // Normalize allowCredentials, but omit if empty to enable discoverable credentials
+  const allowCredentials =
+    publicKey.allowCredentials && publicKey.allowCredentials.length > 0
+      ? publicKey.allowCredentials.map((credential) => ({
+          ...credential,
+          id: ensureBase64URL(credential.id),
+        }))
+      : undefined;
 
   return {
     ...publicKey,
