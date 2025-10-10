@@ -24,10 +24,12 @@ User clicks "Passkeyでログイン"
     User sees: Generic dialog or authentication fails
 ```
 
-## After Fix
+## After Fix (with Auto-Trigger)
 
 ```
-User clicks "Passkeyでログイン"
+User enters email address
+              ↓
+    Auto-trigger activates (300ms delay)
               ↓
     authenticateWithPasskey()
               ↓
@@ -53,6 +55,8 @@ User clicks "Passkeyでログイン"
               ↓
     Authentication succeeds! 🎉
 ```
+
+**Note:** Users can still manually click "Passkeyでログイン" button if they skip the auto-trigger.
 
 ## Technical Flow Details
 

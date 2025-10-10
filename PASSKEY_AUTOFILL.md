@@ -105,8 +105,43 @@ This change maintains backward compatibility:
 - New users without passkeys will see the standard registration flow
 - The change is transparent and doesn't require any user action
 
+## Auto-Trigger Feature
+
+As of the latest update, passkey authentication is automatically triggered when a user enters their email address:
+
+### Implementation
+1. **Email Input Enhancement**: Added `autoComplete="username webauthn"` attribute to signal passkey support
+2. **Auto-Trigger Logic**: When email is entered, passkey authentication starts automatically after 300ms
+3. **One-Time Trigger**: Prevents multiple authentication attempts in a single session
+
+### Code Implementation
+```typescript
+// Auto-trigger passkey authentication when email is entered
+useEffect(() => {
+  if (
+    emailValue &&
+    !isPending &&
+    !isSuccess &&
+    !hasAutoTriggered &&
+    !challenge
+  ) {
+    setHasAutoTriggered(true);
+    const timer = setTimeout(() => {
+      authenticateWithPasskey({ username: emailValue });
+    }, 300);
+    return () => clearTimeout(timer);
+  }
+}, [emailValue, isPending, isSuccess, hasAutoTriggered, challenge, authenticateWithPasskey]);
+```
+
+### User Experience
+- User enters email → Passkey prompt appears automatically
+- No need to click "Passkeyでログイン" button
+- Seamless authentication flow
+- Falls back to manual button click if auto-trigger is skipped
+
 ## Future Enhancements
-Consider implementing conditional UI (autofill) for passkeys:
+Consider implementing full conditional UI (autofill) for passkeys with WebAuthn Level 3:
 ```typescript
 // Add mediation: "conditional" for autofill behavior
 const assertion = await startAuthentication({
@@ -115,7 +150,7 @@ const assertion = await startAuthentication({
 });
 ```
 
-This would enable passkey suggestions directly in the email input field, similar to password managers.
+This would enable passkey suggestions directly in the email input field's autofill dropdown, similar to password managers, without requiring any authentication flow initiation.
 
 ## References
 - [WebAuthn Specification - PublicKeyCredentialRequestOptions](https://www.w3.org/TR/webauthn-2/#dictdef-publickeycredentialrequestoptions)

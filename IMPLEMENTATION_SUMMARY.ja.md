@@ -6,9 +6,12 @@ passkeyログイン時に、既に対応するパスキーがデバイス（Keyc
 ## 実装内容
 
 ### 変更ファイル
-- `frontend/src/hooks/useAuthChallenge.ts`（8行追加、4行削除）
+1. `frontend/src/hooks/useAuthChallenge.ts`（8行追加、4行削除）
+2. `frontend/src/routes/login.tsx`（33行追加、1行削除）
 
 ### 変更の詳細
+
+#### 1. パスキー検出の有効化
 `normalizeRequestOptions` 関数内の `allowCredentials` の処理を以下のように変更しました：
 
 **変更前:**
@@ -45,14 +48,38 @@ AWS Cognitoが空の配列 `[]` を返す場合、ブラウザはパスキーを
 ### 解決方法
 空の `allowCredentials` 配列を `undefined` に変換することで、ブラウザの「発見可能な認証情報モード」を有効化しました。これにより、ブラウザはドメインに登録されている全てのパスキーを自動的に検索し、ユーザーに提案します。
 
+#### 2. 自動パスキー認証トリガー
+ログインページに以下の機能を追加しました：
+
+**変更内容:**
+```typescript
+// メールアドレス入力時に自動的にパスキー認証を開始
+useEffect(() => {
+  if (emailValue && !isPending && !isSuccess && !hasAutoTriggered && !challenge) {
+    setHasAutoTriggered(true);
+    const timer = setTimeout(() => {
+      authenticateWithPasskey({ username: emailValue });
+    }, 300);
+    return () => clearTimeout(timer);
+  }
+}, [emailValue, isPending, isSuccess, hasAutoTriggered, challenge, authenticateWithPasskey]);
+```
+
+**追加機能:**
+- メールアドレス入力欄に `autoComplete="username webauthn"` 属性を追加
+- メールアドレス入力後、300ms後に自動的にパスキー認証を開始
+- セッションごとに1回のみ自動トリガー（重複防止）
+
 ## 動作フロー
 
-### ユーザー操作
+### ユーザー操作（新機能対応版）
 1. ログインページでメールアドレスを入力
-2. 「Passkeyでログイン」ボタンをクリック
+2. **自動的にパスキー認証が開始される**（ボタンクリック不要）
 3. ブラウザが自動的に利用可能なパスキーを表示
 4. Touch ID / Face ID / Windows Hello などで認証
 5. ログイン完了 🎉
+
+**注意:** 自動トリガーをスキップした場合でも、従来通り「Passkeyでログイン」ボタンから手動で認証できます。
 
 ### 内部処理
 1. `authenticateWithPasskey()` が呼ばれる
