@@ -100,10 +100,16 @@ export class CognitoAuthService {
     }
   }
 
-  async startUserAuth(username: string): Promise<AuthResult> {
+  async startUserAuth(
+    username: string,
+    challenge?: ChallengeNameType,
+    secretHash?: string,
+  ): Promise<AuthResult> {
     try {
       const response = await this.initiateAuth(AuthFlowType.USER_AUTH, {
         USERNAME: username,
+        ...(challenge && { PREFERRED_CHALLENGE: challenge }),
+        ...(secretHash && { SECRET_HASH: secretHash }),
       });
 
       return this.toAuthResult(response);

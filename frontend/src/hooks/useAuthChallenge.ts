@@ -83,8 +83,11 @@ function normalizeRequestOptions(
     return null;
   }
 
-  const container = options as { publicKey?: PublicKeyCredentialRequestOptionsJSON };
-  const publicKey = container.publicKey ?? (options as PublicKeyCredentialRequestOptionsJSON);
+  const container = options as {
+    publicKey?: PublicKeyCredentialRequestOptionsJSON;
+  };
+  const publicKey =
+    container.publicKey ?? (options as PublicKeyCredentialRequestOptionsJSON);
 
   if (!publicKey?.challenge) {
     return null;
@@ -116,6 +119,7 @@ function extractWebAuthnOptions(
     "publicKeyCredentialRequestOptions",
     "credentialOptions",
     "CREDENTIAL_OPTIONS",
+    "CREDENTIAL_REQUEST_OPTIONS",
   ];
 
   for (const key of candidates) {
@@ -285,14 +289,16 @@ export function useAuthChallenge({
         optionsJSON: webAuthnOptions,
       });
 
-      await submitChallengeAsync({
+      const payload = {
         username: resolvedUsername,
         session: challenge.session,
         challengeName: ChallengeNameType.WEB_AUTHN,
         answers: {
-          WEB_AUTHN_ASSERTION: JSON.stringify(assertion),
+          CREDENTIAL: JSON.stringify(assertion),
         },
-      });
+      };
+
+      await submitChallengeAsync(payload);
     } catch (error) {
       if (error instanceof DOMException && error.name === "NotAllowedError") {
         setPasskeyError("Passkey認証がユーザー操作でキャンセルされました。");
@@ -367,7 +373,13 @@ export function useAuthChallenge({
       hasOptions: Boolean(webAuthnOptions),
       retry: handlePasskey,
     };
-  }, [challenge, handlePasskey, isPasskeyProcessing, passkeyError, webAuthnOptions]);
+  }, [
+    challenge,
+    handlePasskey,
+    isPasskeyProcessing,
+    passkeyError,
+    webAuthnOptions,
+  ]);
 
   return {
     challenge,
