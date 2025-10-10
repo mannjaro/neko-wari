@@ -18,7 +18,7 @@ export const startPasskeyRegistration = createServerFn({
 })
   .inputValidator(StartRegistrationSchema)
   .handler(async ({ data }) => {
-    const authService = createAuthService();
+    const authService = await createAuthService();
 
     try {
       return await authService.startPasskeyRegistration({
@@ -38,7 +38,7 @@ export const completePasskeyRegistration = createServerFn({
 })
   .inputValidator(CompleteRegistrationSchema)
   .handler(async ({ data }) => {
-    const authService = createAuthService();
+    const authService = await createAuthService();
 
     try {
       await authService.completePasskeyRegistration({
