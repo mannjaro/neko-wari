@@ -143,7 +143,7 @@ export const startPasskeyAuth = createServerFn({
   .inputValidator(parsePasskeyPayload)
   .handler(async ({ data }) => {
     return runWithAuthService((service) =>
-      service.startUserAuth(data.username, "WEB_AUTHN"),
+      service.startUserAuth(data.username, ChallengeNameType.WEB_AUTHN),
     );
   });
 
