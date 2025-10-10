@@ -1,8 +1,10 @@
 import type { AuthConfig } from "@/types/auth";
+import { getBindings } from "@/utils/binding";
 
 export const getAuthConfig = (): AuthConfig => {
-  const userPoolId = process.env.COGNITO_USER_POOL_ID;
-  const clientId = process.env.COGNITO_CLIENT_ID;
+  const env = getBindings();
+  const userPoolId = env.COGNITO_USER_POOL_ID;
+  const clientId = env.COGNITO_CLIENT_ID;
 
   if (!userPoolId) {
     throw new Error("COGNITO_USER_POOL_ID is not set");
@@ -18,7 +20,7 @@ export const getAuthConfig = (): AuthConfig => {
     throw new Error("Invalid User Pool ID format");
   }
 
-  const region = process.env.AWS_REGION || userPoolRegion;
+  const region = userPoolRegion;
 
   return {
     userPoolId,
