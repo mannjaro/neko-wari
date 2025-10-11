@@ -17,4 +17,15 @@ export default defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  resolve: {
+    alias: {
+      "@shared": path.resolve(__dirname, "../lambda/shared"),
+    },
+  },
+  optimizeDeps: {
+    include: ["zod"],
+  },
+  ssr: {
+    noExternal: ["zod"],
+  },
 });
