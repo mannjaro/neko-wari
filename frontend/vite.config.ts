@@ -11,20 +11,6 @@ export default defineConfig({
   server: {
     port: 3000,
   },
-  build: {
-    rollupOptions: {
-      external: ["hono/client"],
-    },
-  },
-  define: {
-    global: "window",
-  },
-  resolve: {
-    alias: {
-      // Ensure zod resolves to the frontend node_modules
-      zod: new URL("./node_modules/zod", import.meta.url).pathname,
-    },
-  },
   plugins: [
     tsConfigPaths(),
     cloudflare({ viteEnvironment: { name: "ssr" } }),
