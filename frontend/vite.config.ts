@@ -4,7 +4,6 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
-
 import tsConfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
@@ -19,13 +18,8 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@shared": path.resolve(__dirname, "../lambda/shared"),
+      // Ensure zod resolves to the frontend node_modules
+      zod: new URL("./node_modules/zod", import.meta.url).pathname,
     },
-  },
-  optimizeDeps: {
-    include: ["zod"],
-  },
-  ssr: {
-    noExternal: ["zod"],
   },
 });
