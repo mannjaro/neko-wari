@@ -38,6 +38,7 @@
     "aws-cdk-lib": "2.219.0",
     "change-case": "^5.4.4",
     "constructs": "^10.4.2",
+    "deploy-time-build": "^0.3.50",
     "esbuild": "^0.25.10",
     "hono": "^4.9.10",
     "lucide": "^0.545.0",
