@@ -2,6 +2,8 @@
 
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 import { defineConfig } from "vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 
@@ -11,15 +13,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: (id) => {
-        // Externalize packages that should not be bundled for client builds
-        if (id === "hono/client") return true;
-        if (id === "youch" || id.startsWith("youch/")) return true;
-        if (id === "exsolve" || id.startsWith("exsolve/")) return true;
-        if (id === "unenv" || id.startsWith("unenv/")) return true;
-        if (id === "pathe" || id.startsWith("pathe/")) return true;
-        return false;
-      },
+      external: ["wrangler"],
     },
   },
   define: {
@@ -33,7 +27,8 @@ export default defineConfig({
   },
   plugins: [
     tsConfigPaths(),
-    tanstackStart({ customViteReactPlugin: true, target: "cloudflare-module" }),
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    tanstackStart(),
     viteReact(),
   ],
 });
