@@ -2,8 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { hc } from "hono/client";
 import { z } from "zod";
 import { UpdateCostDataSchema } from "@/types/shared";
-import { getBindings } from "@/utils/binding";
 import type { DetailUpdateType } from "../../../lambda/backend/app";
+import { env } from "cloudflare:workers";
 
 export const ExtendedUpdateCostDataSchema = UpdateCostDataSchema.extend({
   uid: z.string(),
@@ -19,7 +19,6 @@ export const updateCostDetail = createServerFn({
 })
   .inputValidator(ExtendedUpdateCostDataSchema)
   .handler(async ({ data }) => {
-    const env = getBindings();
     const client = hc<DetailUpdateType>(env.BACKEND_API);
     const response = await client.user[":uid"].detail[":timestamp"].$put({
       json: {
