@@ -1,9 +1,5 @@
 import type { PaymentCategory } from "@shared/types";
 
-// Re-export form types for convenience
-export type { LoginFormData, SignUpFormData } from "./forms";
-export { LoginFormSchema, SignUpFormSchema } from "./forms";
-
 export type DiffAmount = {
   amount: number;
   from: string;

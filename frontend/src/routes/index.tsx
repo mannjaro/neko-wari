@@ -1,13 +1,11 @@
 // src/routes/index.tsx
 
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import type { CarouselApi } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { YearlyCarousel } from "@/components/YearlyCarousel";
-import { authQueryKey } from "@/hooks/useAuth";
-import type { AuthTokens } from "@/types/auth";
 import {
   deferredQueryOptions,
   monthlyQueryOptions,
@@ -18,15 +16,8 @@ const searchSchema = z.object({
   month: z.number().min(1).max(12).optional(),
 });
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/")({
   validateSearch: searchSchema,
-  beforeLoad: ({ context }) => {
-    const auth = context.queryClient.getQueryData<AuthTokens>(authQueryKey);
-    console.log(auth);
-    if (!auth?.accessToken) {
-      throw redirect({ to: "/login" });
-    }
-  },
   component: Home,
   loaderDeps: ({ search: { year, month } }) => ({ year, month }),
   loader: ({ context, deps: { year, month } }) => {
@@ -88,7 +79,7 @@ function Home() {
 
       if (newMonth !== currentMonth) {
         navigate({
-          to: "/dashboard",
+          to: "/",
           search: { year: currentYear, month: newMonth },
           replace: true,
         });
