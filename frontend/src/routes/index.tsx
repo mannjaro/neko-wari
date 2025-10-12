@@ -5,6 +5,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import type { CarouselApi } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { YearlyCarousel } from "@/components/YearlyCarousel";
 import {
   deferredQueryOptions,
@@ -135,13 +136,46 @@ function Home() {
   }
 
   return (
-    <div>
-      <button type="button" onClick={() => auth.signinRedirect()}>
-        Sign in
-      </button>
-      <button type="button" onClick={() => signOutRedirect()}>
-        Sign out
-      </button>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-2xl">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">
+            支払い管理ダッシュボード
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            サインインして支払い情報を管理
+          </p>
+        </div>
+
+        <div className="mt-8 space-y-4">
+          <Button
+            type="button"
+            onClick={() => auth.signinRedirect()}
+            className="w-full h-12 text-base font-semibold transition-all duration-200 hover:scale-105"
+            size="lg"
+          >
+            <svg
+              className="mr-2 h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+              />
+            </svg>
+            サインイン
+          </Button>
+
+          <div className="text-center text-xs text-gray-500">
+            安全な認証でログインします
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
