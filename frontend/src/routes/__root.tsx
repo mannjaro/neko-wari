@@ -11,8 +11,18 @@ import {
 import type { ReactNode } from "react";
 import { NotFound } from "@/components/NotFound";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "react-oidc-context";
 
 import appCss from "@/styles/app.css?url";
+
+const cognitoAuthConfig = {
+  authority:
+    "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_ntfS5MRXx",
+  client_id: "52egt02nn47oubgatq6vadtgs4",
+  redirect_uri: "http://localhost:3000",
+  response_type: "code",
+  scope: "aws.cognito.signin.user.admin email openid phone profile",
+};
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -56,7 +66,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <AuthProvider {...cognitoAuthConfig}>{children}</AuthProvider>
         <Scripts />
         <Toaster />
       </body>

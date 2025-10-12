@@ -10,11 +10,20 @@ import {
   deferredQueryOptions,
   monthlyQueryOptions,
 } from "@/hooks/useQueryOptions";
+import { useAuth } from "react-oidc-context";
 
 const searchSchema = z.object({
   year: z.number().optional(),
   month: z.number().min(1).max(12).optional(),
 });
+
+// 環境に応じた設定
+const CLIENT_ID = "52egt02nn47oubgatq6vadtgs4";
+const COGNITO_DOMAIN =
+  "https://payment-dashboard.auth.ap-northeast-1.amazoncognito.com";
+const REDIRECT_URI = import.meta.env.DEV
+  ? "http://localhost:3000"
+  : "https://advanced-payment-dashboard.zk-takayuki.workers.dev";
 
 export const Route = createFileRoute("/")({
   validateSearch: searchSchema,
@@ -60,10 +69,19 @@ function Home() {
   const navigate = Route.useNavigate();
   const [api, setApi] = useState<CarouselApi>();
   const initialSetRef = useRef(false);
+  const auth = useAuth();
 
   const now = new Date();
   const currentYear = year ?? now.getFullYear();
   const currentMonth = month ?? now.getMonth() + 1;
+
+  const signOutRedirect = () => {
+    window.location.href = `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(REDIRECT_URI)}`;
+  };
+
+  const setUpPasskey = () => {
+    window.location.href = `${COGNITO_DOMAIN}/passkeys/add?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+  };
 
   // Carousel APIの設定
   useEffect(() => {
@@ -97,13 +115,33 @@ function Home() {
     }
   }, [currentMonth, api]);
 
+  if (auth.isAuthenticated) {
+    return (
+      <Suspense fallback={<SkeletonDemo />}>
+        <YearlyCarousel
+          year={currentYear}
+          currentMonth={currentMonth}
+          setApi={setApi}
+        />
+        <button type="button" onClick={() => setUpPasskey()}>
+          Set up Passkey
+        </button>
+
+        <button type="button" onClick={() => auth.removeUser()}>
+          Sign out
+        </button>
+      </Suspense>
+    );
+  }
+
   return (
-    <Suspense fallback={<SkeletonDemo />}>
-      <YearlyCarousel
-        year={currentYear}
-        currentMonth={currentMonth}
-        setApi={setApi}
-      />
-    </Suspense>
+    <div>
+      <button type="button" onClick={() => auth.signinRedirect()}>
+        Sign in
+      </button>
+      <button type="button" onClick={() => signOutRedirect()}>
+        Sign out
+      </button>
+    </div>
   );
 }
