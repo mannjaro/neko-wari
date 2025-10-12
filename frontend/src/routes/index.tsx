@@ -116,6 +116,39 @@ function Home() {
     }
   }, [currentMonth, api]);
 
+  // 認証エラーのハンドリング
+  useEffect(() => {
+    if (auth.error) {
+      console.error("Authentication error:", auth.error);
+    }
+  }, [auth.error]);
+
+  // 認証状態のローディング中はスケルトンを表示
+  if (auth.isLoading) {
+    return <SkeletonDemo />;
+  }
+
+  // エラー表示
+  if (auth.error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
+        <div className="w-full max-w-md space-y-4 rounded-2xl bg-white p-8 shadow-2xl">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600">認証エラー</h1>
+            <p className="mt-2 text-sm text-gray-600">{auth.error.message}</p>
+          </div>
+          <Button
+            type="button"
+            onClick={() => auth.signinRedirect()}
+            className="w-full"
+          >
+            再度サインイン
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (auth.isAuthenticated) {
     return (
       <Suspense fallback={<SkeletonDemo />}>
