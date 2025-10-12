@@ -193,20 +193,102 @@ function Home() {
 
   if (auth.isAuthenticated) {
     return (
-      <Suspense fallback={<SkeletonDemo />}>
-        <YearlyCarousel
-          year={currentYear}
-          currentMonth={currentMonth}
-          setApi={setApi}
-        />
-        <button type="button" onClick={() => setUpPasskey()}>
-          Set up Passkey
-        </button>
+      <div className="min-h-screen bg-gray-50">
+        {/* ユーザー情報ヘッダ */}
+        <header className="bg-white shadow-sm">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <h1 className="text-xl font-semibold text-gray-900">
+                  支払い管理ダッシュボード
+                </h1>
+              </div>
 
-        <button type="button" onClick={() => auth.removeUser()}>
-          Sign out
-        </button>
-      </Suspense>
+              <div className="flex items-center space-x-4">
+                {/* ユーザー情報 */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-semibold">
+                    {auth.user?.profile?.email?.[0]?.toUpperCase() ||
+                      auth.user?.profile?.name?.[0]?.toUpperCase() ||
+                      "U"}
+                  </div>
+                  <div className="hidden sm:block text-sm">
+                    <p className="font-medium text-gray-900">
+                      {auth.user?.profile?.name ||
+                        auth.user?.profile?.email ||
+                        "ユーザー"}
+                    </p>
+                    {auth.user?.profile?.email && auth.user?.profile?.name && (
+                      <p className="text-gray-500">{auth.user.profile.email}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* アクションボタン */}
+                <div className="flex items-center space-x-2">
+                  <Button
+                    type="button"
+                    onClick={() => setUpPasskey()}
+                    variant="outline"
+                    size="sm"
+                    className="hidden sm:inline-flex"
+                  >
+                    <svg
+                      className="mr-2 h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                      />
+                    </svg>
+                    Passkey設定
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={() => auth.removeUser()}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <svg
+                      className="mr-2 h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    ログアウト
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* メインコンテンツ */}
+        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <Suspense fallback={<SkeletonDemo />}>
+            <YearlyCarousel
+              year={currentYear}
+              currentMonth={currentMonth}
+              setApi={setApi}
+            />
+          </Suspense>
+        </main>
+      </div>
     );
   }
 
