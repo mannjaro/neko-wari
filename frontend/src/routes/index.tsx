@@ -10,6 +10,7 @@ import {
   deferredQueryOptions,
   monthlyQueryOptions,
 } from "@/hooks/useQueryOptions";
+import { useAuth } from "react-oidc-context";
 
 const searchSchema = z.object({
   year: z.number().optional(),
@@ -60,10 +61,27 @@ function Home() {
   const navigate = Route.useNavigate();
   const [api, setApi] = useState<CarouselApi>();
   const initialSetRef = useRef(false);
+  const auth = useAuth();
 
   const now = new Date();
   const currentYear = year ?? now.getFullYear();
   const currentMonth = month ?? now.getMonth() + 1;
+
+  const signOutRedirect = () => {
+    const clientId = "52egt02nn47oubgatq6vadtgs4";
+    const logoutUri = "http://localhost:3000";
+    const cognitoDomain =
+      "https://payment-dashboard.auth.ap-northeast-1.amazoncognito.com";
+    window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
+  };
+
+  const setUpPasskey = () => {
+    const clientId = "52egt02nn47oubgatq6vadtgs4";
+    const redirectUri = "http://localhost:3000";
+    const cognitoDomain =
+      "https://payment-dashboard.auth.ap-northeast-1.amazoncognito.com";
+    window.location.href = `${cognitoDomain}/passkeys/add?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+  };
 
   // Carousel APIの設定
   useEffect(() => {
@@ -97,13 +115,33 @@ function Home() {
     }
   }, [currentMonth, api]);
 
+  if (auth.isAuthenticated) {
+    return (
+      <Suspense fallback={<SkeletonDemo />}>
+        <YearlyCarousel
+          year={currentYear}
+          currentMonth={currentMonth}
+          setApi={setApi}
+        />
+        <button type="button" onClick={() => setUpPasskey()}>
+          Set up Passkey
+        </button>
+
+        <button type="button" onClick={() => auth.removeUser()}>
+          Sign out
+        </button>
+      </Suspense>
+    );
+  }
+
   return (
-    <Suspense fallback={<SkeletonDemo />}>
-      <YearlyCarousel
-        year={currentYear}
-        currentMonth={currentMonth}
-        setApi={setApi}
-      />
-    </Suspense>
+    <div>
+      <button type="button" onClick={() => auth.signinRedirect()}>
+        Sign in
+      </button>
+      <button type="button" onClick={() => signOutRedirect()}>
+        Sign out
+      </button>
+    </div>
   );
 }

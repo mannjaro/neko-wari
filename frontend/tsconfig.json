@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext",
+      "es5",
+      "es6",
+      "dom"
+    ],
     "target": "es2022",
     "module": "esnext",
     "moduleDetection": "force",
@@ -25,8 +30,12 @@
     "noPropertyAccessFromIndexSignature": false,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@shared/*": ["../lambda/shared/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@shared/*": [
+        "../lambda/shared/*"
+      ]
     }
   }
 }
