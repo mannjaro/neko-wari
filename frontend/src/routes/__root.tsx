@@ -34,13 +34,8 @@ const cognitoAuthConfig = {
       ? new WebStorageStateStore({ store: window.localStorage })
       : undefined,
   onSigninCallback: (_user: unknown): void => {
-    // 認証後にクエリパラメータをクリア（初回ログイン時も正しく動作）
-    const url = new URL(window.location.href);
-    // codeとstateパラメータを削除
-    url.searchParams.delete("code");
-    url.searchParams.delete("state");
-    url.searchParams.delete("session_state");
-    window.history.replaceState({}, document.title, url.pathname + url.search);
+    // 認証後にダッシュボードへリダイレクト
+    window.location.href = "/dashboard";
   },
 };
 
@@ -57,7 +52,7 @@ export const Route = createRootRouteWithContext<{
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "TanStack Start Starter",
+        title: "立替にゃんこ",
       },
     ],
     links: [
@@ -65,6 +60,21 @@ export const Route = createRootRouteWithContext<{
         rel: "stylesheet",
         href: appCss,
       },
+      {
+        rel: "icon",
+        href: "/favicon.ico",
+      },
+      {
+        rel: "icon",
+        type: "image/svg+xml",
+        href: "/favicon.svg",
+      },
+      {
+        rel: "apple-touch-icon",
+        sizes: "180x180",
+        href: "/apple-touch-icon.png",
+      },
+      { rel: "manifest", href: "/site.webmanifest", color: "#fffff" },
     ],
   }),
   component: RootComponent,
