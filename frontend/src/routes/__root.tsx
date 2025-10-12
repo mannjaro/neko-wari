@@ -15,11 +15,15 @@ import { AuthProvider } from "react-oidc-context";
 
 import appCss from "@/styles/app.css?url";
 
+const REDIRECT_URI = import.meta.env.DEV
+  ? "http://localhost:3000"
+  : "https://advanced-payment-dashboard.zk-****.workers.dev";
+
 const cognitoAuthConfig = {
   authority:
     "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_ntfS5MRXx",
   client_id: "52egt02nn47oubgatq6vadtgs4",
-  redirect_uri: "http://localhost:3000",
+  redirect_uri: REDIRECT_URI,
   response_type: "code",
   scope: "aws.cognito.signin.user.admin email openid phone profile",
 };
