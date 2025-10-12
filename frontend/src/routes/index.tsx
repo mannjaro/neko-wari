@@ -116,15 +116,34 @@ function Home() {
     }
   }, [currentMonth, api]);
 
+  // 認証コールバックの自動処理（初回ログイン時）
+  useEffect(() => {
+    // URLにcodeパラメータがある場合、認証コールバック処理中
+    const hasAuthParams = new URLSearchParams(window.location.search).has(
+      "code",
+    );
+    if (hasAuthParams && !auth.isLoading && !auth.isAuthenticated) {
+      console.log("Processing authentication callback...");
+    }
+  }, [auth.isLoading, auth.isAuthenticated]);
+
   // 認証エラーのハンドリング
   useEffect(() => {
     if (auth.error) {
       console.error("Authentication error:", auth.error);
+      // エラーの詳細をログ出力
+      console.error("Error details:", {
+        message: auth.error.message,
+        name: auth.error.name,
+      });
     }
   }, [auth.error]);
 
-  // 認証状態のローディング中はスケルトンを表示
-  if (auth.isLoading) {
+  // 認証状態のローディング中、またはコールバック処理中はスケルトンを表示
+  const hasAuthParams =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).has("code");
+  if (auth.isLoading || hasAuthParams) {
     return <SkeletonDemo />;
   }
 
@@ -136,14 +155,37 @@ function Home() {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600">認証エラー</h1>
             <p className="mt-2 text-sm text-gray-600">{auth.error.message}</p>
+            {auth.error.name && (
+              <p className="mt-1 text-xs text-gray-500">
+                エラータイプ: {auth.error.name}
+              </p>
+            )}
           </div>
-          <Button
-            type="button"
-            onClick={() => auth.signinRedirect()}
-            className="w-full"
-          >
-            再度サインイン
-          </Button>
+          <div className="space-y-2">
+            <Button
+              type="button"
+              onClick={() => {
+                // エラー状態をクリアしてから再度サインイン
+                auth.clearStaleState();
+                auth.signinRedirect();
+              }}
+              className="w-full"
+            >
+              再度サインイン
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                // localStorageをクリアして最初からやり直し
+                localStorage.clear();
+                window.location.reload();
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              ストレージをクリアして再読み込み
+            </Button>
+          </div>
         </div>
       </div>
     );

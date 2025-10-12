@@ -33,9 +33,14 @@ const cognitoAuthConfig = {
     typeof window !== "undefined"
       ? new WebStorageStateStore({ store: window.localStorage })
       : undefined,
-  onSigninCallback: () => {
-    // 認証後にクエリパラメータをクリア
-    window.history.replaceState({}, document.title, window.location.pathname);
+  onSigninCallback: (_user: unknown): void => {
+    // 認証後にクエリパラメータをクリア（初回ログイン時も正しく動作）
+    const url = new URL(window.location.href);
+    // codeとstateパラメータを削除
+    url.searchParams.delete("code");
+    url.searchParams.delete("state");
+    url.searchParams.delete("session_state");
+    window.history.replaceState({}, document.title, url.pathname + url.search);
   },
 };
 
