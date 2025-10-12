@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 import { NotFound } from "@/components/NotFound";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "react-oidc-context";
+import { WebStorageStateStore } from "oidc-client-ts";
 
 import appCss from "@/styles/app.css?url";
 
@@ -26,6 +27,16 @@ const cognitoAuthConfig = {
   redirect_uri: REDIRECT_URI,
   response_type: "code",
   scope: "aws.cognito.signin.user.admin email openid phone profile",
+  automaticSilentRenew: true,
+  loadUserInfo: true,
+  userStore:
+    typeof window !== "undefined"
+      ? new WebStorageStateStore({ store: window.localStorage })
+      : undefined,
+  onSigninCallback: () => {
+    // 認証後にクエリパラメータをクリア
+    window.history.replaceState({}, document.title, window.location.pathname);
+  },
 };
 
 export const Route = createRootRouteWithContext<{
