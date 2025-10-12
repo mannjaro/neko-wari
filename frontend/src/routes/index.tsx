@@ -17,6 +17,14 @@ const searchSchema = z.object({
   month: z.number().min(1).max(12).optional(),
 });
 
+// 環境に応じた設定
+const CLIENT_ID = "52egt02nn47oubgatq6vadtgs4";
+const COGNITO_DOMAIN =
+  "https://payment-dashboard.auth.ap-northeast-1.amazoncognito.com";
+const REDIRECT_URI = import.meta.env.DEV
+  ? "http://localhost:3000"
+  : "https://advanced-payment-dashboard.zk-****.workers.dev";
+
 export const Route = createFileRoute("/")({
   validateSearch: searchSchema,
   component: Home,
@@ -68,19 +76,11 @@ function Home() {
   const currentMonth = month ?? now.getMonth() + 1;
 
   const signOutRedirect = () => {
-    const clientId = "52egt02nn47oubgatq6vadtgs4";
-    const logoutUri = "http://localhost:3000";
-    const cognitoDomain =
-      "https://payment-dashboard.auth.ap-northeast-1.amazoncognito.com";
-    window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
+    window.location.href = `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(REDIRECT_URI)}`;
   };
 
   const setUpPasskey = () => {
-    const clientId = "52egt02nn47oubgatq6vadtgs4";
-    const redirectUri = "http://localhost:3000";
-    const cognitoDomain =
-      "https://payment-dashboard.auth.ap-northeast-1.amazoncognito.com";
-    window.location.href = `${cognitoDomain}/passkeys/add?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    window.location.href = `${COGNITO_DOMAIN}/passkeys/add?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
   };
 
   // Carousel APIの設定
