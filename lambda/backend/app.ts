@@ -12,7 +12,7 @@ import {
 
 import { UpdateCostDetailSchema } from "./schemas/requestSchema";
 
-import { updateCostHandler } from "./handlers/updateHandlers";
+import { updateCostHandler, deleteCostHandler } from "./handlers/updateHandlers";
 
 type Bindings = {
   event: LambdaEvent;
@@ -53,6 +53,14 @@ export const detailUpdate = app.put(
   }
 );
 
+export const detailDelete = app.delete(
+  "/user/:uid/detail/:timestamp",
+  async (c) => {
+    const { uid, timestamp } = c.req.param();
+    return deleteCostHandler(c, uid, timestamp);
+  }
+);
+
 app.get(
   "/dashboard/user/details",
   zValidator(
@@ -85,5 +93,6 @@ app.get(
 
 export type MonthlyGetType = typeof monthlyGet;
 export type DetailUpdateType = typeof detailUpdate;
+export type DetailDeleteType = typeof detailDelete;
 
 export default app;
