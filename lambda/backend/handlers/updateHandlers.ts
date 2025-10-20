@@ -18,3 +18,16 @@ export const updateCostHandler = async (
     throw error;
   }
 };
+
+export const deleteCostHandler = async (
+  c: Context,
+  userId: string,
+  timestamp: string
+) => {
+  try {
+    await costService.deleteCostDetail(userId, Number(timestamp));
+    return c.json({ success: true });
+  } catch (error) {
+    throw error;
+  }
+};
