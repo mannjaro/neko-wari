@@ -190,6 +190,23 @@ export class CostDataRepository {
   }
 
   /**
+   * Delete cost data
+   */
+  async deleteCostData(userId: string, timestamp: number): Promise<void> {
+    try {
+      const pk = `${DYNAMO_KEYS.USER_PREFIX}${userId}`;
+      const sk = `${DYNAMO_KEYS.COST_PREFIX}${timestamp}`;
+
+      await dynamoRepository.delete(pk, sk);
+
+      logger.info("Cost data deleted successfully", { userId, timestamp });
+    } catch (error) {
+      logger.error("Error deleting cost data", { error, userId, timestamp });
+      throw error;
+    }
+  }
+
+  /**
    * Build update expression for DynamoDB UpdateCommand
    */
   private buildUpdateExpression(

@@ -21,7 +21,7 @@ describe("Get monthly data", () => {
   });
 });
 
-describe("Search Endpoint", () => {
+describe("Update Endpoint", () => {
   // Create the test client from the app instance
   const client = testClient(detailUpdate);
 
