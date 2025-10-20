@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { hc } from "hono/client";
 import { z } from "zod";
-import type { MonthlyGetType } from "../../../lambda/backend/app";
+import type app from "../../../lambda/backend/app";
 import { env } from "cloudflare:workers";
 
 const Partition = z.object({
@@ -21,7 +21,7 @@ export const getMonthlyCost = createServerFn({
     };
   })
   .handler(async ({ data: { year, month } }) => {
-    const client = hc<MonthlyGetType>(env.BACKEND_API);
+    const client = hc<typeof app>(env.BACKEND_API);
     const response = await client.dashboard.monthly.$get({
       query: {
         month,
