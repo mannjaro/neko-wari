@@ -1,4 +1,4 @@
-import { DollarSign, NotebookPen, PiggyBank } from "lucide-react";
+import { DollarSign, NotebookPen, PiggyBank, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -21,6 +21,7 @@ import {
 import type { DetailDrawerProps } from "@/types";
 import type { PaymentCategory } from "@/types/shared";
 import { EditDetailDialogCloseButton } from "./EditDetailDialog";
+import { DeleteDetailButton } from "./DeleteDetailButton";
 import { Price } from "./Price";
 
 export function DetailDrawer({
@@ -63,13 +64,20 @@ export function DetailDrawer({
                     <Price amount={item.amount} />
                   </TableCell>
                   <TableCell>
-                    <EditDetailDialogCloseButton
-                      userId={user.userId}
-                      amount={item.amount}
-                      timestamp={item.timestamp}
-                      memo={item.memo}
-                      category={category as PaymentCategory}
-                    />
+                    <div className="flex gap-2">
+                      <EditDetailDialogCloseButton
+                        userId={user.userId}
+                        amount={item.amount}
+                        timestamp={item.timestamp}
+                        memo={item.memo}
+                        category={category as PaymentCategory}
+                      />
+                      <DeleteDetailButton
+                        userId={user.userId}
+                        timestamp={item.timestamp}
+                        memo={item.memo}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               )),

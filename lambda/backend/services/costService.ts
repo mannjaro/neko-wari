@@ -45,6 +45,22 @@ export class CostService {
   }
 
   /**
+   * Delete cost data
+   */
+  async deleteCostDetail(userId: string, timestamp: number): Promise<void> {
+    logger.debug("Deleting cost detail", { userId, timestamp });
+
+    try {
+      await costDataRepository.deleteCostData(userId, timestamp);
+
+      logger.info("Cost detail deleted successfully", { userId, timestamp });
+    } catch (error) {
+      logger.error("Error deleting cost detail", { error, userId, timestamp });
+      throw error;
+    }
+  }
+
+  /**
    * Validate cost data before saving
    */
   validateCostData(updateData: UpdateCostData): void {
