@@ -4,6 +4,12 @@ This is a blank project for CDK development with TypeScript.
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
+## Documentation
+
+* [Authentication and Token Management](docs/AUTHENTICATION.md) - Automatic access token refresh with AWS Cognito
+* [Implementation History](IMPLEMENTATION_HISTORY.md) - Detailed implementation history of the LINE Bot
+* [Claude Instructions](CLAUDE.md) - Project overview and architecture guide
+
 ## Useful commands
 
 * `npm run build`   compile typescript to js
