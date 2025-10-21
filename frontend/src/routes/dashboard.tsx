@@ -12,6 +12,7 @@ import {
   monthlyQueryOptions,
 } from "@/hooks/useQueryOptions";
 import { useAuth } from "react-oidc-context";
+import { AuthGuard } from "@/components/AuthGuard";
 
 const searchSchema = z.object({
   year: z.number().optional(),
@@ -134,9 +135,10 @@ function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* ユーザー情報ヘッダ */}
-      <header className="bg-white shadow-sm">
+    <AuthGuard>
+      <div className="min-h-screen bg-gray-50">
+        {/* ユーザー情報ヘッダ */}
+        <header className="bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -229,5 +231,6 @@ function Dashboard() {
         </Suspense>
       </main>
     </div>
+    </AuthGuard>
   );
 }
