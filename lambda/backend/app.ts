@@ -95,4 +95,7 @@ export type MonthlyGetType = typeof monthlyGet;
 export type DetailUpdateType = typeof detailUpdate;
 export type DetailDeleteType = typeof detailDelete;
 
+// Export app type for RPC client
+export type AppType = typeof app;
+
 export default app;

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { hc } from "hono/client";
 import { z } from "zod";
 import { UpdateCostDataSchema } from "@/types/shared";
-import type app from "../../../lambda/backend/app";
+import type { AppType } from "../../../lambda/backend/app";
 import { env } from "cloudflare:workers";
 
 export const ExtendedUpdateCostDataSchema = UpdateCostDataSchema.extend({
@@ -19,7 +19,7 @@ export const updateCostDetail = createServerFn({
 })
   .inputValidator(ExtendedUpdateCostDataSchema)
   .handler(async ({ data }) => {
-    const client = hc<typeof app>(env.BACKEND_API);
+    const client = hc<AppType>(env.BACKEND_API);
     const response = await client.user[":uid"].detail[":timestamp"].$put({
       json: {
         ...data,
