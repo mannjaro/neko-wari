@@ -1,5 +1,23 @@
 # Authentication and Token Management
 
+## Quick Reference
+
+**Problem Solved**: アクセストークンの有効期限が切れた場合に、リフレッシュトークンが期限内であれば自動的にアクセストークンをリフレッシュする
+
+**Solution Components**:
+- ✅ `AuthGuard` component - Automatic token validation and refresh
+- ✅ `isTokenExpired()` - Token expiration checking with 60-second buffer
+- ✅ `hasRefreshToken()` - Refresh token validation
+- ✅ Enhanced OIDC config - Silent renew with proper timeouts
+- ✅ Periodic checks - Every 5 minutes
+- ✅ Error handling - User-friendly messages and automatic logout on failure
+
+**Key Files**:
+- `frontend/src/components/AuthGuard.tsx` - Main token refresh logic
+- `frontend/src/utils/authUtils.ts` - Token utility functions
+- `frontend/src/routes/__root.tsx` - OIDC configuration
+- `frontend/src/routes/dashboard.tsx` - Protected route with AuthGuard
+
 ## Overview
 
 This application uses AWS Cognito for authentication with automatic access token refresh functionality. The frontend is built with React and uses `react-oidc-context` library for OIDC authentication flow.
@@ -132,22 +150,66 @@ function MyComponent() {
 ### Successful Refresh Flow
 ```
 1. AuthGuard detects token expiration (< 60 seconds remaining)
+   └─> isTokenExpired(user, 60) returns true
 2. Checks if refresh token is available
+   └─> hasRefreshToken(user) returns true
 3. Calls auth.signinSilent() to refresh
+   └─> Opens hidden iframe with prompt=none
 4. OIDC client sends refresh token to Cognito
-5. Cognito returns new access token
+   └─> POST to /oauth2/token with refresh_token grant
+5. Cognito validates and returns new access token
+   └─> New token has fresh expiration time
 6. Tokens updated in LocalStorage
+   └─> User object updated with new tokens
 7. Application continues normally
+   └─> No interruption to user experience
 ```
 
 ### Failed Refresh Flow
 ```
 1. AuthGuard detects token expiration
+   └─> isTokenExpired(user, 60) returns true
 2. Attempts to refresh with auth.signinSilent()
+   └─> Sends refresh token to Cognito
 3. Refresh fails (e.g., refresh token expired)
+   └─> Cognito returns error response
 4. Error message displayed to user
+   └─> "トークンの更新に失敗しました。再度ログインしてください。"
 5. After 2 seconds, user is logged out
+   └─> auth.removeUser() clears tokens
 6. Redirected to login page
+   └─> useEffect in Dashboard triggers navigation
+```
+
+### Visual Flow Diagram
+```
+User Activity
+     │
+     ├─> Page Load / User Returns
+     │       │
+     │       ├─> AuthGuard mounted
+     │       │       │
+     │       │       ├─> Check: isTokenExpired(user, 60)?
+     │       │       │       │
+     │       │       │       ├─[No]──> Continue normally
+     │       │       │       │
+     │       │       │       └─[Yes]─> Check: hasRefreshToken(user)?
+     │       │       │                       │
+     │       │       │                       ├─[No]──> Show error → Logout
+     │       │       │                       │
+     │       │       │                       └─[Yes]─> auth.signinSilent()
+     │       │       │                                       │
+     │       │       │                                       ├─[Success]─> Update tokens
+     │       │       │                                       │                  │
+     │       │       │                                       │                  └─> Continue
+     │       │       │                                       │
+     │       │       │                                       └─[Fail]────> Show error → Logout
+     │       │       │
+     │       │       └─> Set interval (5 min) for periodic checks
+     │       │
+     │       └─> Render protected content
+     │
+     └─> Every 5 minutes: Repeat token check
 ```
 
 ## Error Handling
