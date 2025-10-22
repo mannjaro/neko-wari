@@ -29,6 +29,10 @@ const cognitoAuthConfig = {
   scope: "aws.cognito.signin.user.admin email openid phone profile",
   automaticSilentRenew: true,
   loadUserInfo: true,
+  // Increase the silent renew timeout to handle longer refresh operations
+  silentRequestTimeoutInSeconds: 30,
+  // Configure token refresh to happen before expiration (60 seconds before)
+  accessTokenExpiringNotificationTimeInSeconds: 60,
   userStore:
     typeof window !== "undefined"
       ? new WebStorageStateStore({ store: window.localStorage })
