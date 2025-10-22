@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/table";
 import type { DetailDrawerProps } from "@/types";
 import type { PaymentCategory } from "@/types/shared";
-import { EditDetailDialogCloseButton } from "./EditDetailDialog";
 import { DeleteDetailButton } from "./DeleteDetailButton";
+import { EditDetailDialogCloseButton } from "./EditDetailDialog";
 import { Price } from "./Price";
 
 export function DetailDrawer({
@@ -51,7 +51,7 @@ export function DetailDrawer({
               <TableHead>
                 <PiggyBank />
               </TableHead>
-              <TableHead />
+              <TableHead className="text-right" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -63,8 +63,8 @@ export function DetailDrawer({
                   <TableCell>
                     <Price amount={item.amount} />
                   </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
+                  <TableCell className="text-right">
+                    <div className="flex gap-2 justify-end">
                       <EditDetailDialogCloseButton
                         userId={user.userId}
                         amount={item.amount}
