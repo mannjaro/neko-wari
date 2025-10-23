@@ -37,8 +37,8 @@ import { ExtendedUpdateCostDataSchema } from "@/server/updateDetail";
 
 import type { PaymentCategory } from "@/types/shared";
 import { PaymentCategorySchema } from "@/types/shared";
-import { YenInput } from "./YenInput";
 import { getCategoryName } from "@/utils/categoryNames";
+import { YenInput } from "./YenInput";
 
 function SubmitForm({
   userId,

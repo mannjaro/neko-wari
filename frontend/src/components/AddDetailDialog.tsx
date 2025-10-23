@@ -33,10 +33,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateCost } from "@/hooks/useCreateCost";
-import { CreateCostDataSchema } from "@/types/shared";
-import { PaymentCategorySchema } from "@/types/shared";
-import { YenInput } from "./YenInput";
+import { CreateCostDataSchema, PaymentCategorySchema } from "@/types/shared";
 import { getCategoryName } from "@/utils/categoryNames";
+import { YenInput } from "./YenInput";
 
 function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   const form = useForm<z.infer<typeof CreateCostDataSchema>>({
@@ -80,7 +79,9 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
               <FormControl>
                 <Input placeholder="ユーザー名を入力" {...field} />
               </FormControl>
-              <FormDescription>支払いをしたユーザーを入力してください</FormDescription>
+              <FormDescription>
+                支払いをしたユーザーを入力してください
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -164,7 +165,9 @@ export function AddDetailDialog() {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>新しい項目を追加</DialogTitle>
-          <DialogDescription>カテゴリ、備考、金額、ユーザーを入力してください</DialogDescription>
+          <DialogDescription>
+            カテゴリ、備考、金額、ユーザーを入力してください
+          </DialogDescription>
         </DialogHeader>
         <div>
           <SubmitForm onSuccess={handleSuccess} />
