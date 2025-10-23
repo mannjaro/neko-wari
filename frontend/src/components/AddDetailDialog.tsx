@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PenLine } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -32,50 +32,60 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useUpdateCost } from "@/hooks/useUpdateCost";
-import { ExtendedUpdateCostDataSchema } from "@/server/updateDetail";
-
-import type { PaymentCategory } from "@/types/shared";
-import { PaymentCategorySchema } from "@/types/shared";
+import { useCreateCost } from "@/hooks/useCreateCost";
+import { CreateCostDataSchema, PaymentCategorySchema } from "@/types/shared";
 import { getCategoryName } from "@/utils/categoryNames";
 import { YenInput } from "./YenInput";
 
-function SubmitForm({
-  userId,
-  amount,
-  category,
-  memo,
-  timestamp,
-  onSuccess,
-}: EditDetailDialogCloseButtonProps & { onSuccess?: () => void }) {
-  const form = useForm<z.infer<typeof ExtendedUpdateCostDataSchema>>({
-    resolver: zodResolver(ExtendedUpdateCostDataSchema),
+function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
+  const form = useForm<z.infer<typeof CreateCostDataSchema>>({
+    resolver: zodResolver(CreateCostDataSchema),
     defaultValues: {
-      category,
-      memo,
-      price: amount,
-      uid: userId, // TODO: Get actual user ID
-      updatedAt: new Date().toISOString(),
-      timestamp: String(timestamp),
+      userId: "",
+      category: "other",
+      memo: "",
+      price: 0,
     },
   });
 
-  const updateCostDetail = useUpdateCost();
+  const createCostDetail = useCreateCost();
 
   const onSubmit = useCallback(
-    async (data: z.infer<typeof ExtendedUpdateCostDataSchema>) => {
-      const result = await updateCostDetail(data);
-      toast("変更が保存されました", {});
-      console.log(result);
-      onSuccess?.();
-      return result;
+    async (data: z.infer<typeof CreateCostDataSchema>) => {
+      try {
+        const result = await createCostDetail(data);
+        toast("新しい項目が追加されました", {});
+        console.log(result);
+        form.reset();
+        onSuccess?.();
+        return result;
+      } catch (error) {
+        toast.error("エラーが発生しました");
+        console.error(error);
+      }
     },
-    [updateCostDetail, onSuccess],
+    [createCostDetail, onSuccess, form],
   );
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+        <FormField
+          control={form.control}
+          name="userId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>ユーザー</FormLabel>
+              <FormControl>
+                <Input placeholder="ユーザー名を入力" {...field} />
+              </FormControl>
+              <FormDescription>
+                支払いをしたユーザーを入力してください
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="category"
@@ -85,7 +95,7 @@ function SubmitForm({
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a verified email to display" />
+                    <SelectValue placeholder="カテゴリを選択" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -95,7 +105,7 @@ function SubmitForm({
                     </SelectItem>
                   ))}
                 </SelectContent>
-                <FormDescription>カテゴリを入力してください</FormDescription>
+                <FormDescription>カテゴリを選択してください</FormDescription>
                 <FormMessage />
               </Select>
             </FormItem>
@@ -108,9 +118,9 @@ function SubmitForm({
             <FormItem>
               <FormLabel>メモ</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input placeholder="備考を入力" {...field} />
               </FormControl>
-              <FormDescription>メモを入力してください</FormDescription>
+              <FormDescription>備考を入力してください</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -124,32 +134,20 @@ function SubmitForm({
               <FormControl>
                 <YenInput step="1" {...field} />
               </FormControl>
-              <FormDescription>価格を入力してください</FormDescription>
+              <FormDescription>金額を入力してください</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit" className="w-full">
+          追加する
+        </Button>
       </form>
     </Form>
   );
 }
 
-interface EditDetailDialogCloseButtonProps {
-  userId: string;
-  timestamp: number;
-  category: PaymentCategory;
-  memo: string;
-  amount: number;
-}
-
-export function EditDetailDialogCloseButton({
-  userId,
-  timestamp,
-  category,
-  memo,
-  amount,
-}: EditDetailDialogCloseButtonProps) {
+export function AddDetailDialog() {
   const [open, setOpen] = useState(false);
 
   const handleSuccess = useCallback(() => {
@@ -159,29 +157,25 @@ export function EditDetailDialogCloseButton({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <PenLine />
+        <Button variant="default">
+          <Plus className="h-4 w-4 mr-2" />
+          新規追加
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>編集</DialogTitle>
-          <DialogDescription>カテゴリ、金額、メモの修正</DialogDescription>
+          <DialogTitle>新しい項目を追加</DialogTitle>
+          <DialogDescription>
+            カテゴリ、備考、金額、ユーザーを入力してください
+          </DialogDescription>
         </DialogHeader>
         <div>
-          <SubmitForm
-            userId={userId}
-            category={category}
-            amount={amount}
-            memo={memo}
-            timestamp={timestamp}
-            onSuccess={handleSuccess}
-          />
+          <SubmitForm onSuccess={handleSuccess} />
         </div>
         <DialogFooter className="sm:justify-start">
           <DialogClose asChild>
             <Button type="button" variant="secondary">
-              閉じる
+              キャンセル
             </Button>
           </DialogClose>
         </DialogFooter>
