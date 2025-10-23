@@ -1,10 +1,11 @@
 import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { hc } from "hono/client";
+import type { z } from "zod";
 import { CreateCostDataSchema } from "@/types/shared";
 import type { CostCreateType } from "../../../lambda/backend/app";
 
-export type CreateCostData = typeof CreateCostDataSchema._type;
+export type CreateCostData = z.infer<typeof CreateCostDataSchema>;
 
 export const createCostDetail = createServerFn({
   method: "POST",
