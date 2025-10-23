@@ -86,6 +86,15 @@ export const CostDataItemSchema = BaseDynamoItemSchema.extend({
 });
 export type CostDataItem = z.infer<typeof CostDataItemSchema>;
 
+// Create Cost transaction data schema
+export const CreateCostDataSchema = z.object({
+  userId: z.string(),
+  category: PaymentCategorySchema,
+  memo: z.string(),
+  price: z.number(),
+});
+export type CreateCostData = z.infer<typeof CreateCostDataSchema>;
+
 // Update Cost transaction data schema
 export const UpdateCostDataSchema = z.object({
   userId: z.string().optional(),
