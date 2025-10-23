@@ -13,6 +13,7 @@ import {
 } from "@/hooks/useQueryOptions";
 import { useAuth } from "react-oidc-context";
 import { AuthGuard } from "@/components/AuthGuard";
+import { AddDetailDialog } from "@/components/AddDetailDialog";
 
 const searchSchema = z.object({
   year: z.number().optional(),
@@ -169,6 +170,7 @@ function Dashboard() {
 
               {/* アクションボタン */}
               <div className="flex items-center space-x-2">
+                <AddDetailDialog />
                 <Button
                   type="button"
                   onClick={() => setUpPasskey()}

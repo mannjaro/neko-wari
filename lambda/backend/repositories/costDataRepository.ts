@@ -3,6 +3,7 @@ import * as changeCase from "change-case";
 import type {
   UserState,
   CostDataItem,
+  CreateCostData,
   UpdateCostData,
   UpdateExpressionResult,
 } from "../../shared/types";
@@ -19,6 +20,51 @@ const logger = new Logger({ serviceName: "costDataRepository" });
  * Repository for cost data operations
  */
 export class CostDataRepository {
+  /**
+   * Creates new cost data from API
+   */
+  async createCostData(data: CreateCostData): Promise<CostDataItem> {
+    try {
+      const timestamp = Date.now();
+      const now = new Date().toISOString();
+      const date = new Date(timestamp);
+      const yearMonth = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`;
+
+      const costItem: CostDataItem = {
+        PK: `${DYNAMO_KEYS.USER_PREFIX}${data.userId}`,
+        SK: `${DYNAMO_KEYS.COST_PREFIX}${timestamp}`,
+        GSI1PK: `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
+        GSI1SK: `${DYNAMO_KEYS.USER_PREFIX}${data.userId}#${timestamp}`,
+        EntityType: DYNAMO_KEYS.ENTITY_COST_DATA as "COST_DATA",
+        CreatedAt: now,
+        UpdatedAt: now,
+        User: data.userId,
+        Category: data.category,
+        Memo: data.memo,
+        Price: data.price,
+        Timestamp: timestamp,
+        YearMonth: yearMonth,
+      } as CostDataItem;
+
+      await dynamoRepository.put(costItem);
+
+      logger.info("Cost data created successfully", {
+        userId: data.userId,
+        timestamp,
+        yearMonth,
+        category: data.category,
+        price: data.price,
+      });
+
+      return costItem;
+    } catch (error) {
+      logger.error("Error creating cost data", { error, data });
+      throw error;
+    }
+  }
+
   /**
    * Saves cost data permanently to DynamoDB
    */

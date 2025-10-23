@@ -1,5 +1,5 @@
 import { Logger } from "@aws-lambda-powertools/logger";
-import type { UpdateCostData } from "../../shared/types";
+import type { CreateCostData, UpdateCostData } from "../../shared/types";
 import type { CostDataItemResponse } from "../schemas/responseSchema";
 import { costDataRepository } from "../repositories/costDataRepository";
 
@@ -9,6 +9,32 @@ const logger = new Logger({ serviceName: "costService" });
  * Service for cost management business logic
  */
 export class CostService {
+  /**
+   * Create new cost data with business logic validation
+   */
+  async createCostDetail(
+    data: CreateCostData
+  ): Promise<CostDataItemResponse> {
+    logger.debug("Creating cost detail", { data });
+
+    try {
+      this.validateCreateCostData(data);
+
+      const createdItem = await costDataRepository.createCostData(data);
+
+      logger.info("Cost detail created successfully", {
+        userId: data.userId,
+        category: data.category,
+        price: data.price,
+      });
+
+      return createdItem;
+    } catch (error) {
+      logger.error("Error creating cost detail", { error, data });
+      throw error;
+    }
+  }
+
   /**
    * Update existing cost data with business logic validation
    */
@@ -58,6 +84,26 @@ export class CostService {
       logger.error("Error deleting cost detail", { error, userId, timestamp });
       throw error;
     }
+  }
+
+  /**
+   * Validate cost data before creating
+   */
+  validateCreateCostData(data: CreateCostData): void {
+    // Business validation rules
+    if (data.price < 0) {
+      throw new Error("Price cannot be negative");
+    }
+
+    if (data.memo.length > 500) {
+      throw new Error("Memo cannot exceed 500 characters");
+    }
+
+    if (!data.userId || data.userId.trim() === "") {
+      throw new Error("User ID is required");
+    }
+
+    // Add more validation rules as needed
   }
 
   /**
