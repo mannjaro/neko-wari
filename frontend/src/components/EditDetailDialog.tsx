@@ -38,6 +38,7 @@ import { ExtendedUpdateCostDataSchema } from "@/server/updateDetail";
 import type { PaymentCategory } from "@/types/shared";
 import { PaymentCategorySchema } from "@/types/shared";
 import { YenInput } from "./YenInput";
+import { getCategoryName } from "@/utils/categoryNames";
 
 function SubmitForm({
   userId,
@@ -90,7 +91,7 @@ function SubmitForm({
                 <SelectContent>
                   {PaymentCategorySchema.options.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category}
+                      {getCategoryName(category)}
                     </SelectItem>
                   ))}
                 </SelectContent>

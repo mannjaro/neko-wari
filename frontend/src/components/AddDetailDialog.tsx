@@ -36,6 +36,7 @@ import { useCreateCost } from "@/hooks/useCreateCost";
 import { CreateCostDataSchema } from "@/types/shared";
 import { PaymentCategorySchema } from "@/types/shared";
 import { YenInput } from "./YenInput";
+import { getCategoryName } from "@/utils/categoryNames";
 
 function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   const form = useForm<z.infer<typeof CreateCostDataSchema>>({
@@ -99,7 +100,7 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
                 <SelectContent>
                   {PaymentCategorySchema.options.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category}
+                      {getCategoryName(category)}
                     </SelectItem>
                   ))}
                 </SelectContent>
