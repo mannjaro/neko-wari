@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import type { DetailDrawerProps } from "@/types";
 import type { PaymentCategory } from "@/types/shared";
+import { getCategoryName } from "@/utils/categoryNames";
 import { DeleteDetailButton } from "./DeleteDetailButton";
 import { EditDetailDialogCloseButton } from "./EditDetailDialog";
 import { Price } from "./Price";
@@ -58,7 +59,9 @@ export function DetailDrawer({
             {Object.entries(user.categoryBreakdown).map(([category, items]) =>
               items.map((item, _) => (
                 <TableRow key={`${item.timestamp}-${item.memo}-`}>
-                  <TableCell>{category}</TableCell>
+                  <TableCell>
+                    {getCategoryName(category as PaymentCategory)}
+                  </TableCell>
                   <TableCell>{item.memo}</TableCell>
                   <TableCell>
                     <Price amount={item.amount} />

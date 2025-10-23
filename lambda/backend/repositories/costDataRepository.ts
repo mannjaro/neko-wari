@@ -1,17 +1,18 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import * as changeCase from "change-case";
+import { DYNAMO_KEYS } from "../../shared/constants";
 import type {
-  UserState,
   CostDataItem,
+  CreateCostData,
   UpdateCostData,
   UpdateExpressionResult,
+  UserState,
 } from "../../shared/types";
-import { DYNAMO_KEYS } from "../../shared/constants";
-import { dynamoRepository } from "./dynamoRepository";
 import {
-  CostDataItemResponse,
+  type CostDataItemResponse,
   costDataItemSchema,
 } from "../schemas/responseSchema";
+import { dynamoRepository } from "./dynamoRepository";
 
 const logger = new Logger({ serviceName: "costDataRepository" });
 
@@ -19,6 +20,51 @@ const logger = new Logger({ serviceName: "costDataRepository" });
  * Repository for cost data operations
  */
 export class CostDataRepository {
+  /**
+   * Creates new cost data from API
+   */
+  async createCostData(data: CreateCostData): Promise<CostDataItem> {
+    try {
+      const timestamp = Date.now();
+      const now = new Date().toISOString();
+      const date = new Date(timestamp);
+      const yearMonth = `${date.getFullYear()}-${String(
+        date.getMonth() + 1,
+      ).padStart(2, "0")}`;
+
+      const costItem: CostDataItem = {
+        PK: `${DYNAMO_KEYS.USER_PREFIX}${data.userId}`,
+        SK: `${DYNAMO_KEYS.COST_PREFIX}${timestamp}`,
+        GSI1PK: `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
+        GSI1SK: `${DYNAMO_KEYS.USER_PREFIX}${data.userId}#${timestamp}`,
+        EntityType: DYNAMO_KEYS.ENTITY_COST_DATA as "COST_DATA",
+        CreatedAt: now,
+        UpdatedAt: now,
+        User: data.userId,
+        Category: data.category,
+        Memo: data.memo,
+        Price: data.price,
+        Timestamp: timestamp,
+        YearMonth: yearMonth,
+      } as CostDataItem;
+
+      await dynamoRepository.put(costItem);
+
+      logger.info("Cost data created successfully", {
+        userId: data.userId,
+        timestamp,
+        yearMonth,
+        category: data.category,
+        price: data.price,
+      });
+
+      return costItem;
+    } catch (error) {
+      logger.error("Error creating cost data", { error, data });
+      throw error;
+    }
+  }
+
   /**
    * Saves cost data permanently to DynamoDB
    */
@@ -28,7 +74,7 @@ export class CostDataRepository {
       const now = new Date().toISOString();
       const date = new Date(timestamp);
       const yearMonth = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
+        date.getMonth() + 1,
       ).padStart(2, "0")}`;
 
       if (state.user === undefined) {
@@ -91,7 +137,7 @@ export class CostDataRepository {
    */
   async getUserMonthlyCostData(
     userId: string,
-    yearMonth: string
+    yearMonth: string,
   ): Promise<CostDataItem[]> {
     try {
       const items = await dynamoRepository.query(
@@ -100,7 +146,7 @@ export class CostDataRepository {
         {
           ":gsi1pk": `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
           ":gsi1sk": `${DYNAMO_KEYS.USER_PREFIX}${userId}#`,
-        }
+        },
       );
 
       return items as CostDataItem[];
@@ -119,7 +165,7 @@ export class CostDataRepository {
    */
   async getCostDataItem(
     userId: string,
-    timestamp: number
+    timestamp: number,
   ): Promise<CostDataItem> {
     try {
       const pk = `${DYNAMO_KEYS.USER_PREFIX}${userId}`;
@@ -164,7 +210,7 @@ export class CostDataRepository {
   async updateCostData(
     userId: string,
     timestamp: number,
-    updateData: UpdateCostData
+    updateData: UpdateCostData,
   ): Promise<CostDataItemResponse> {
     try {
       const prevCostItem = await this.getCostDataItem(userId, timestamp);
@@ -175,7 +221,7 @@ export class CostDataRepository {
         prevCostItem.SK,
         updateExpressions.UpdateExpression,
         updateExpressions.ExpressionAttributeNames,
-        updateExpressions.ExpressionAttributeValues
+        updateExpressions.ExpressionAttributeValues,
       );
 
       if (!result) {
@@ -210,7 +256,7 @@ export class CostDataRepository {
    * Build update expression for DynamoDB UpdateCommand
    */
   private buildUpdateExpression(
-    updateData: UpdateCostData
+    updateData: UpdateCostData,
   ): UpdateExpressionResult {
     const updateExpressions: string[] = [];
     const expressionAttributeNames: Record<string, string> = {};

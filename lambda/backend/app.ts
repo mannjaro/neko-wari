@@ -10,9 +10,9 @@ import {
   categorySummaryHandler,
 } from "./handlers/dashboardHandlers";
 
-import { UpdateCostDetailSchema } from "./schemas/requestSchema";
+import { CreateCostDetailSchema, UpdateCostDetailSchema } from "./schemas/requestSchema";
 
-import { updateCostHandler, deleteCostHandler } from "./handlers/updateHandlers";
+import { createCostHandler, updateCostHandler, deleteCostHandler } from "./handlers/updateHandlers";
 
 type Bindings = {
   event: LambdaEvent;
@@ -22,6 +22,16 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.get("/", (c) => c.text("Status: OK"));
+
+// Create new cost entry
+export const costCreate = app.post(
+  "/cost/create",
+  zValidator("json", CreateCostDetailSchema),
+  async (c) => {
+    const body = c.req.valid("json");
+    return createCostHandler(c, body as any);
+  }
+);
 
 // Dashboard API endpoints
 export const monthlyGet = app.get(
@@ -91,6 +101,7 @@ app.get(
   }
 );
 
+export type CostCreateType = typeof costCreate;
 export type MonthlyGetType = typeof monthlyGet;
 export type DetailUpdateType = typeof detailUpdate;
 export type DetailDeleteType = typeof detailDelete;
