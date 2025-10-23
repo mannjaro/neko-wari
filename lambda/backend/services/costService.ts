@@ -1,7 +1,7 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import type { CreateCostData, UpdateCostData } from "../../shared/types";
-import type { CostDataItemResponse } from "../schemas/responseSchema";
 import { costDataRepository } from "../repositories/costDataRepository";
+import type { CostDataItemResponse } from "../schemas/responseSchema";
 
 const logger = new Logger({ serviceName: "costService" });
 
@@ -12,9 +12,7 @@ export class CostService {
   /**
    * Create new cost data with business logic validation
    */
-  async createCostDetail(
-    data: CreateCostData
-  ): Promise<CostDataItemResponse> {
+  async createCostDetail(data: CreateCostData): Promise<CostDataItemResponse> {
     logger.debug("Creating cost detail", { data });
 
     try {
@@ -41,7 +39,7 @@ export class CostService {
   async updateCostDetail(
     userId: string,
     timestamp: number,
-    updateData: UpdateCostData
+    updateData: UpdateCostData,
   ): Promise<CostDataItemResponse> {
     logger.debug("Updating cost detail", { userId, timestamp, updateData });
 
@@ -54,7 +52,7 @@ export class CostService {
       const updatedItem = await costDataRepository.updateCostData(
         userId,
         timestamp,
-        updateData
+        updateData,
       );
 
       logger.info("Cost detail updated successfully", {

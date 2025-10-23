@@ -1,11 +1,8 @@
 import type { Context } from "hono";
-import { costService } from "../services/costService";
 import type { CreateCostData, UpdateCostData } from "../../shared/types";
+import { costService } from "../services/costService";
 
-export const createCostHandler = async (
-  c: Context,
-  req: CreateCostData
-) => {
+export const createCostHandler = async (c: Context, req: CreateCostData) => {
   try {
     const result = await costService.createCostDetail(req);
     return c.json(result);
@@ -18,13 +15,13 @@ export const updateCostHandler = async (
   c: Context,
   userId: string,
   timestamp: string,
-  req: UpdateCostData
+  req: UpdateCostData,
 ) => {
   try {
     const result = await costService.updateCostDetail(
       userId,
       Number(timestamp),
-      req
+      req,
     );
     return c.json(result);
   } catch (error) {
@@ -35,7 +32,7 @@ export const updateCostHandler = async (
 export const deleteCostHandler = async (
   c: Context,
   userId: string,
-  timestamp: string
+  timestamp: string,
 ) => {
   try {
     await costService.deleteCostDetail(userId, Number(timestamp));
