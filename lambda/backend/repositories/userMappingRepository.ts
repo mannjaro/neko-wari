@@ -150,6 +150,50 @@ class UserMappingRepository {
   }
 
   /**
+   * Find all LINE users with a specific display name (for linking purposes)
+   * Returns LINE users that haven't been linked to a Cognito account yet
+   */
+  async findUnlinkedLineUsersByDisplayName(
+    displayName: string
+  ): Promise<UserMapping[]> {
+    try {
+      // This requires a scan since we don't have a GSI on DisplayName
+      // In production, consider adding a GSI for display name lookups
+      const { ScanCommand } = await import("@aws-sdk/lib-dynamodb");
+      
+      const result = await docClient.send(
+        new ScanCommand({
+          TableName: TABLE_NAME,
+          FilterExpression: "EntityType = :entityType AND DisplayName = :displayName AND LineUserId = CognitoUserId",
+          ExpressionAttributeValues: {
+            ":entityType": "USER_MAPPING",
+            ":displayName": displayName,
+          },
+        })
+      );
+
+      if (!result.Items || result.Items.length === 0) {
+        return [];
+      }
+
+      return result.Items.map(item => ({
+        cognitoUserId: item.CognitoUserId,
+        lineUserId: item.LineUserId,
+        displayName: item.DisplayName,
+        email: item.Email,
+        createdAt: item.CreatedAt,
+        updatedAt: item.UpdatedAt,
+      }));
+    } catch (error) {
+      logger.error("Error finding unlinked LINE users by display name", {
+        displayName,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Link LINE user ID to existing Cognito user
    */
   async linkLineUser(
@@ -182,6 +226,55 @@ class UserMappingRepository {
       logger.error("Error linking LINE user", {
         cognitoUserId,
         lineUserId,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Merge LINE user data into Cognito user
+   * This migrates all cost data from LINE user ID to Cognito user ID
+   */
+  async mergeLINEUserIntoCognitoUser(
+    lineUserId: string,
+    cognitoUserId: string
+  ): Promise<void> {
+    try {
+      // Get LINE user mapping
+      const lineMapping = await this.getUserMappingByLineId(lineUserId);
+      if (!lineMapping) {
+        throw new Error(`LINE user mapping not found: ${lineUserId}`);
+      }
+
+      // Get Cognito user mapping
+      const cognitoMapping = await this.getUserMappingByCognitoId(cognitoUserId);
+      if (!cognitoMapping) {
+        throw new Error(`Cognito user mapping not found: ${cognitoUserId}`);
+      }
+
+      // If LINE user was using their LINE ID as canonical, we need to migrate data
+      if (lineMapping.cognitoUserId === lineUserId) {
+        // Update the LINE user mapping to point to Cognito ID
+        await this.saveUserMapping({
+          cognitoUserId: cognitoUserId,
+          lineUserId: lineUserId,
+          displayName: lineMapping.displayName,
+          email: cognitoMapping.email || lineMapping.email,
+          createdAt: lineMapping.createdAt,
+          updatedAt: new Date().toISOString(),
+        });
+
+        logger.info("Merged LINE user into Cognito user", {
+          lineUserId,
+          cognitoUserId,
+          previousCanonicalId: lineMapping.cognitoUserId,
+        });
+      }
+    } catch (error) {
+      logger.error("Error merging LINE user into Cognito user", {
+        lineUserId,
+        cognitoUserId,
         error,
       });
       throw error;

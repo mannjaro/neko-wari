@@ -173,7 +173,6 @@ export const postbackEventHandler = async (
       if (data === POSTBACK_DATA.CONFIRM_YES) {
         try {
           // Get or create user mapping for LINE user
-          let canonicalUserId = userId; // Default to LINE user ID if no mapping exists
           let userMapping = await userMappingRepository.getUserMappingByLineId(userId);
           
           if (!userMapping) {
@@ -193,7 +192,9 @@ export const postbackEventHandler = async (
             });
           }
           
-          canonicalUserId = userMapping.cognitoUserId;
+          // Use the canonical user ID from the mapping
+          // This will be Cognito ID if linked, or LINE ID if not yet linked
+          const canonicalUserId = userMapping.cognitoUserId;
 
           // Save cost data to DynamoDB using canonical user ID
           await costDataRepository.saveCostData(canonicalUserId, currentState);
