@@ -11,20 +11,29 @@ export const DeleteCostDataSchema = z.object({
 
 export type DeleteCostData = z.infer<typeof DeleteCostDataSchema>;
 
+const DeleteCostDetailInputSchema = z.object({
+  data: DeleteCostDataSchema,
+  accessToken: z.string(),
+});
+
 export const deleteCostDetail = createServerFn({
   method: "POST",
 })
-  .inputValidator(DeleteCostDataSchema)
-  .handler(async ({ data }) => {
+  .inputValidator(DeleteCostDetailInputSchema)
+  .handler(async ({ data: input }) => {
     const client = hc<DetailDeleteType>(env.BACKEND_API);
     const response = await client.user[":uid"].detail[":timestamp"].$delete({
       param: {
-        uid: data.uid,
-        timestamp: data.timestamp,
+        uid: input.data.uid,
+        timestamp: input.data.timestamp,
+      },
+      headers: {
+        Authorization: `Bearer ${input.accessToken}`,
       },
     });
     if (!response.ok) {
-      throw new Error("Delete failed");
+      const errorText = await response.text();
+      throw new Error(`Delete failed: ${response.status} - ${errorText}`);
     }
     return response.json();
   });
