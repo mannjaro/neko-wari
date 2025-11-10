@@ -24,10 +24,11 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 app.get("/", (c) => c.text("Status: OK"));
 
-// Apply authentication middleware to all routes except health check and webhook
+// Apply authentication middleware to all routes except health check
 app.use("*", async (c, next) => {
-  // Skip authentication for health check and webhook
-  if (c.req.path === "/" || c.req.path.startsWith("/webhook")) {
+  // Skip authentication for health check only
+  // Note: /webhook is handled by a separate Lambda function and doesn't reach this handler
+  if (c.req.path === "/") {
     return next();
   }
   return authMiddleware(c, next);
