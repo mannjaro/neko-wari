@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 export const CreateCostDetailSchema = z.object({
-  userId: z.string(),
+  userId: z.string().optional(), // Now optional - will be extracted from JWT token
+  displayName: z.string().optional(), // Optional display name override
   category: z.union([
     z.literal("rent"),
     z.literal("utilities"),
