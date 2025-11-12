@@ -164,7 +164,7 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   );
 }
 
-export function AddDetailDialog() {
+export function AddDetailDialog({ isMobile = false }: { isMobile?: boolean }) {
   const [open, setOpen] = useState(false);
 
   const handleSuccess = useCallback(() => {
@@ -174,11 +174,22 @@ export function AddDetailDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default">
-          <Plus className="h-4 w-4 mr-2" />
-          新規追加
-        </Button>
+        {isMobile ? (
+          <Button
+            variant="default"
+            size="icon"
+            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        ) : (
+          <Button variant="default">
+            <Plus className="h-4 w-4 mr-2" />
+            新規追加
+          </Button>
+        )}
       </DialogTrigger>
+
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>新しい項目を追加</DialogTitle>

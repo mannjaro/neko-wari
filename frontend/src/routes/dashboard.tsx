@@ -170,7 +170,11 @@ function Dashboard() {
 
                 {/* アクションボタン */}
                 <div className="flex items-center space-x-2">
-                  <AddDetailDialog />
+                  {/* デスクトップ用の追加ボタン */}
+                  <div className="hidden sm:block">
+                    <AddDetailDialog isMobile={false} />
+                  </div>
+
                   <Button
                     type="button"
                     onClick={() => setUpPasskey()}
@@ -232,6 +236,11 @@ function Dashboard() {
             />
           </Suspense>
         </main>
+
+        {/* モバイル用の右下FABボタン */}
+        <div className="sm:hidden">
+          <AddDetailDialog isMobile={true} />
+        </div>
       </div>
     </AuthGuard>
   );
