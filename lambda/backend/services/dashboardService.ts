@@ -8,30 +8,11 @@ import type {
 } from "../../shared/types";
 import { DYNAMO_KEYS } from "../../shared/constants";
 import { costDataRepository } from "../repositories/costDataRepository";
-import { userMappingRepository } from "../repositories/userMappingRepository";
-import { Logger } from "@aws-lambda-powertools/logger";
-
-const logger = new Logger({ serviceName: "dashboardService" });
 
 /**
  * Service for dashboard-related business logic
  */
 export class DashboardService {
-  /**
-   * Helper to get display name for a user ID
-   * Falls back to the User field from cost data if mapping not found
-   */
-  private async getDisplayName(userId: string, fallbackName?: string): Promise<string> {
-    try {
-      const mapping = await userMappingRepository.getUserMappingByCognitoId(userId);
-      if (mapping) {
-        return mapping.displayName;
-      }
-    } catch (error) {
-      logger.warn("Failed to get user mapping, using fallback", { userId, error });
-    }
-    return fallbackName || userId;
-  }
   /**
    * Generate monthly summary from cost data
    */
@@ -83,12 +64,9 @@ export class DashboardService {
           },
         ];
 
-        // Get display name from user mapping
-        const displayName = await this.getDisplayName(userId, item.User);
-
         userSummaryMap.set(userId, {
           userId,
-          userName: displayName,
+          userName: item.User,
           totalAmount: item.Price,
           transactionCount: 1,
           categoryBreakdown,
@@ -142,12 +120,9 @@ export class DashboardService {
       });
     }
 
-    // Get display name from user mapping
-    const displayName = await this.getDisplayName(userId, transactions[0].User);
-
     return {
       userId,
-      userName: displayName,
+      userName: transactions[0].User,
       yearMonth,
       transactions: transactions.sort((a, b) => b.Timestamp - a.Timestamp),
       summary: {

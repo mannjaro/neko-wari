@@ -13,7 +13,6 @@ import {
 import { CreateCostDetailSchema, UpdateCostDetailSchema } from "./schemas/requestSchema";
 
 import { createCostHandler, updateCostHandler, deleteCostHandler } from "./handlers/updateHandlers";
-import { authMiddleware } from "./middleware/authMiddleware";
 
 type Bindings = {
   event: LambdaEvent;
@@ -24,17 +23,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 app.get("/", (c) => c.text("Status: OK"));
 
-// Apply authentication middleware to all routes except health check
-app.use("*", async (c, next) => {
-  // Skip authentication for health check only
-  // Note: /webhook is handled by a separate Lambda function and doesn't reach this handler
-  if (c.req.path === "/") {
-    return next();
-  }
-  return authMiddleware(c, next);
-});
-
-// Create new cost entry (requires authentication)
+// Create new cost entry
 export const costCreate = app.post(
   "/cost/create",
   zValidator("json", CreateCostDetailSchema),
