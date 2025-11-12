@@ -29,6 +29,7 @@ export const FacetTypeSchema = z.enum([
   "COST_DATA",
   "USER_PROFILE",
   "MONTHLY_SUMMARY",
+  "USER_MAPPING",
 ]);
 export type FacetType = z.infer<typeof FacetTypeSchema>;
 
@@ -88,7 +89,8 @@ export type CostDataItem = z.infer<typeof CostDataItemSchema>;
 
 // Create Cost transaction data schema
 export const CreateCostDataSchema = z.object({
-  userId: z.string(),
+  userId: z.string().optional(), // Optional - extracted from JWT token when authenticated
+  displayName: z.string().optional(), // Optional display name override
   category: PaymentCategorySchema,
   memo: z.string(),
   price: z.number(),
@@ -146,12 +148,27 @@ export const MonthlySummaryItemSchema = BaseDynamoItemSchema.extend({
 });
 export type MonthlySummaryItem = z.infer<typeof MonthlySummaryItemSchema>;
 
+// User mapping facet schema - Maps external IDs to canonical user IDs
+export const UserMappingItemSchema = BaseDynamoItemSchema.extend({
+  EntityType: z.literal("USER_MAPPING"),
+  PK: z.string(), // USER_MAPPING#{cognitoUserId}
+  SK: z.literal("PROFILE#MAIN"),
+  GSI1PK: z.string().optional(), // LINE_USER#{lineUserId}
+  GSI1SK: z.literal("USER_MAPPING").optional(),
+  CognitoUserId: z.string(),
+  LineUserId: z.string().optional(),
+  DisplayName: z.string(),
+  Email: z.string().optional(),
+});
+export type UserMappingItem = z.infer<typeof UserMappingItemSchema>;
+
 // Union schema for all DynamoDB items
 export const DynamoItemSchema = z.discriminatedUnion("EntityType", [
   UserStateItemSchema,
   CostDataItemSchema,
   UserProfileItemSchema,
   MonthlySummaryItemSchema,
+  UserMappingItemSchema,
 ]);
 export type DynamoItem = z.infer<typeof DynamoItemSchema>;
 
