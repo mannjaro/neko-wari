@@ -41,7 +41,7 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   const form = useForm<z.infer<typeof CreateCostDataSchema>>({
     resolver: zodResolver(CreateCostDataSchema),
     defaultValues: {
-      displayName: "",
+      userId: "",
       category: "other",
       memo: "",
       price: 0,
@@ -72,15 +72,15 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
         <FormField
           control={form.control}
-          name="displayName"
+          name="userId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>表示名（任意）</FormLabel>
+              <FormLabel>ユーザー</FormLabel>
               <FormControl>
-                <Input placeholder="表示名を入力（省略可）" {...field} />
+                <Input placeholder="ユーザー名を入力" {...field} />
               </FormControl>
               <FormDescription>
-                支払い情報に表示する名前（省略した場合はメールアドレスが使用されます）
+                支払いをしたユーザーを入力してください
               </FormDescription>
               <FormMessage />
             </FormItem>

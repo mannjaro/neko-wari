@@ -8,7 +8,6 @@ import {
 } from "../../shared/constants";
 import { userStateRepository } from "../../backend/repositories/userStateRepository";
 import { costDataRepository } from "../../backend/repositories/costDataRepository";
-import { userMappingRepository } from "../../backend/repositories/userMappingRepository";
 import {
   createCategoryCarouselTemplate,
   createMemoQuickReply,
@@ -172,32 +171,8 @@ export const postbackEventHandler = async (
     } else {
       if (data === POSTBACK_DATA.CONFIRM_YES) {
         try {
-          // Get or create user mapping for LINE user
-          let userMapping = await userMappingRepository.getUserMappingByLineId(userId);
-          
-          if (!userMapping) {
-            // Create a new user mapping for this LINE user
-            // Use LINE user ID as the canonical ID until they link with Cognito
-            userMapping = {
-              cognitoUserId: userId, // Use LINE ID as canonical until Cognito link
-              lineUserId: userId,
-              displayName: currentState.user || "LINE User",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            };
-            await userMappingRepository.saveUserMapping(userMapping);
-            logger.info("Created new user mapping for LINE user", {
-              lineUserId: userId,
-              displayName: currentState.user,
-            });
-          }
-          
-          // Use the canonical user ID from the mapping
-          // This will be Cognito ID if linked, or LINE ID if not yet linked
-          const canonicalUserId = userMapping.cognitoUserId;
-
-          // Save cost data to DynamoDB using canonical user ID
-          await costDataRepository.saveCostData(canonicalUserId, currentState);
+          // Save cost data to DynamoDB
+          await costDataRepository.saveCostData(userId, currentState);
 
           response = {
             type: "text",

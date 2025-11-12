@@ -14,32 +14,23 @@ export type ExtendedUpdateCostData = z.infer<
   typeof ExtendedUpdateCostDataSchema
 >;
 
-const UpdateCostDetailInputSchema = z.object({
-  data: ExtendedUpdateCostDataSchema,
-  accessToken: z.string(),
-});
-
 export const updateCostDetail = createServerFn({
   method: "POST",
 })
-  .inputValidator(UpdateCostDetailInputSchema)
-  .handler(async ({ data: input }) => {
+  .inputValidator(ExtendedUpdateCostDataSchema)
+  .handler(async ({ data }) => {
     const client = hc<DetailUpdateType>(env.BACKEND_API);
     const response = await client.user[":uid"].detail[":timestamp"].$put({
       json: {
-        ...input.data,
+        ...data,
       },
       param: {
-        uid: input.data.uid,
-        timestamp: input.data.timestamp,
-      },
-      headers: {
-        Authorization: `Bearer ${input.accessToken}`,
+        uid: data.uid,
+        timestamp: data.timestamp,
       },
     });
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Fetch failed: ${response.status} - ${errorText}`);
+      throw new Error("Fetch failed");
     }
     return response.json();
   });
