@@ -40,7 +40,7 @@ export class CostDataRepository {
         EntityType: DYNAMO_KEYS.ENTITY_COST_DATA as "COST_DATA",
         CreatedAt: now,
         UpdatedAt: now,
-        User: data.displayName,
+        User: data.userId,
         Category: data.category,
         Memo: data.memo,
         Price: data.price,
