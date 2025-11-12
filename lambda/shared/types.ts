@@ -89,6 +89,7 @@ export type CostDataItem = z.infer<typeof CostDataItemSchema>;
 // Create Cost transaction data schema
 export const CreateCostDataSchema = z.object({
   userId: z.string(),
+  displayName: z.string(),
   category: PaymentCategorySchema,
   memo: z.string(),
   price: z.number(),

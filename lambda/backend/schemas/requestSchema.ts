@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const CreateCostDetailSchema = z.object({
   userId: z.string(),
+  displayName: z.string(),
   category: z.union([
     z.literal("rent"),
     z.literal("utilities"),

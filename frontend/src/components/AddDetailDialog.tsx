@@ -36,12 +36,17 @@ import { useCreateCost } from "@/hooks/useCreateCost";
 import { CreateCostDataSchema, PaymentCategorySchema } from "@/types/shared";
 import { getCategoryName } from "@/utils/categoryNames";
 import { YenInput } from "./YenInput";
+import { useAuth } from "react-oidc-context";
 
 function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
+  const auth = useAuth();
+  const username = (auth.user?.profile.username as string)?.split("_")[1] ?? "";
+  const lineUserId = username.charAt(0).toUpperCase() + username.slice(1);
   const form = useForm<z.infer<typeof CreateCostDataSchema>>({
     resolver: zodResolver(CreateCostDataSchema),
     defaultValues: {
       userId: "",
+      displayName: "",
       category: "other",
       memo: "",
       price: 0,
@@ -53,7 +58,7 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   const onSubmit = useCallback(
     async (data: z.infer<typeof CreateCostDataSchema>) => {
       try {
-        const result = await createCostDetail(data);
+        const result = await createCostDetail({...data, userId: lineUserId});
         toast("新しい項目が追加されました", {});
         console.log(result);
         form.reset();
@@ -72,7 +77,7 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
         <FormField
           control={form.control}
-          name="userId"
+          name="displayName"
           render={({ field }) => (
             <FormItem>
               <FormLabel>ユーザー</FormLabel>
