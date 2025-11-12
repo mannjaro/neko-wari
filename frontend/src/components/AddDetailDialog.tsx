@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateCost } from "@/hooks/useCreateCost";
+import { useAuthenticatedFetch } from "@/hooks/useAuthenticatedFetch";
 import { CreateCostDataSchema, PaymentCategorySchema } from "@/types/shared";
 import { getCategoryName } from "@/utils/categoryNames";
 import { YenInput } from "./YenInput";
@@ -49,11 +50,22 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   });
 
   const createCostDetail = useCreateCost();
+  const { user } = useAuthenticatedFetch();
 
   const onSubmit = useCallback(
     async (data: z.infer<typeof CreateCostDataSchema>) => {
       try {
-        const result = await createCostDetail(data);
+        // Get Cognito Sub from authenticated user
+        const userId = user?.profile?.sub;
+        if (!userId) {
+          toast.error("ユーザー情報が取得できませんでした");
+          return;
+        }
+
+        const result = await createCostDetail({
+          ...data,
+          userId,
+        });
         toast("新しい項目が追加されました", {});
         console.log(result);
         form.reset();
@@ -64,7 +76,7 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
         console.error(error);
       }
     },
-    [createCostDetail, onSuccess, form],
+    [createCostDetail, onSuccess, form, user],
   );
 
   return (
@@ -72,7 +84,7 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
         <FormField
           control={form.control}
-          name="userId"
+          name="displayName"
           render={({ field }) => (
             <FormItem>
               <FormLabel>ユーザー</FormLabel>
