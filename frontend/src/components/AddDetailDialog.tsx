@@ -45,7 +45,7 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   const form = useForm<z.infer<typeof CreateCostDataSchema>>({
     resolver: zodResolver(CreateCostDataSchema),
     defaultValues: {
-      userId: "",
+      userId: lineUserId,
       displayName: "",
       category: "other",
       memo: "",
@@ -58,7 +58,7 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   const onSubmit = useCallback(
     async (data: z.infer<typeof CreateCostDataSchema>) => {
       try {
-        const result = await createCostDetail({...data, userId: lineUserId});
+        const result = await createCostDetail(data);
         toast("新しい項目が追加されました", {});
         console.log(result);
         form.reset();
@@ -81,13 +81,25 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>ユーザー</FormLabel>
-              <FormControl>
-                <Input placeholder="ユーザー名を入力" {...field} />
-              </FormControl>
-              <FormDescription>
-                支払いをしたユーザーを入力してください
-              </FormDescription>
-              <FormMessage />
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="ユーザー" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem key="****" value="****">
+                    ****
+                  </SelectItem>
+                  <SelectItem key="****" value="****">
+                    ****
+                  </SelectItem>
+                </SelectContent>
+                <FormDescription>
+                  支払いをしたユーザーを入力してください
+                </FormDescription>
+                <FormMessage />
+              </Select>
             </FormItem>
           )}
         />
