@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { CarouselApi } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { YearlyCarousel } from "@/components/YearlyCarousel";
+import { YearSelector } from "@/components/YearSelector";
 import {
   deferredQueryOptions,
   monthlyQueryOptions,
@@ -80,6 +81,14 @@ function Dashboard() {
 
   const setUpPasskey = () => {
     window.location.href = `${COGNITO_DOMAIN}/passkeys/add?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+  };
+
+  const handleYearChange = (newYear: number) => {
+    navigate({
+      to: "/dashboard",
+      search: { year: newYear, month: currentMonth },
+      replace: true,
+    });
   };
 
   // 未認証の場合はログインページへリダイレクト
@@ -225,6 +234,9 @@ function Dashboard() {
             </div>
           </div>
         </header>
+
+        {/* 年選択バー */}
+        <YearSelector currentYear={currentYear} onYearChange={handleYearChange} />
 
         {/* メインコンテンツ */}
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
