@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { getMonthlyCost } from "@/server/getMonthly";
 import type { UserSummary } from "@/types";
 import { calcDiff } from "@/utils/calculations";
+import { AddDetailDialog } from "./AddDetailDialog";
 import { DetailDrawer } from "./DetailDrawer";
 import { PaymentSummaryCard } from "./PaymentSummaryCard";
 import { UserSummaryTable } from "./UserSummaryTable";
@@ -46,6 +47,9 @@ export function MonthlyCostTable({
       className={`transition-opacity ${isActive ? "opacity-100" : "opacity-70"}`}
     >
       <PaymentSummaryCard month={month} diffResult={diffResult} />
+      <div className="sm:hidden flex justify-end mb-4">
+        <AddDetailDialog isMobile={false} />
+      </div>
       <UserSummaryTable
         year={year}
         month={month}

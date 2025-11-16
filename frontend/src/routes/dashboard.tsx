@@ -248,11 +248,6 @@ function Dashboard() {
             />
           </Suspense>
         </main>
-
-        {/* モバイル用の右下FABボタン */}
-        <div className="sm:hidden">
-          <AddDetailDialog isMobile={true} />
-        </div>
       </div>
     </AuthGuard>
   );
