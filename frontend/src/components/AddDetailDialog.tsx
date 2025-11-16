@@ -183,7 +183,7 @@ export function AddDetailDialog({ isMobile = false }: { isMobile?: boolean }) {
             <Plus className="h-6 w-6" />
           </Button>
         ) : (
-          <Button variant="default">
+          <Button variant="outline">
             <Plus className="h-4 w-4 mr-2" />
             新規追加
           </Button>
