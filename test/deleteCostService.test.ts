@@ -1,44 +1,47 @@
 import { costService } from "../lambda/backend/services/costService";
-import { costDataRepository } from "../lambda/backend/repositories/costDataRepository";
+import { dynamoClient } from "../lambda/backend/lib/dynamoClient";
 
-jest.mock("../lambda/backend/repositories/costDataRepository", () => ({
-  costDataRepository: {
-    deleteCostData: jest.fn(),
+jest.mock("../lambda/backend/lib/dynamoClient", () => ({
+  dynamoClient: {
+    delete: jest.fn(),
   },
 }));
 
+jest.mock("change-case", () => ({
+  pascalCase: (str: string) => str,
+}));
+
 describe("CostService.deleteCostDetail", () => {
-  const mockedRepository =
-    costDataRepository as jest.Mocked<typeof costDataRepository>;
+  const mockedClient = dynamoClient as jest.Mocked<typeof dynamoClient>;
 
   beforeEach(() => {
-    mockedRepository.deleteCostData.mockReset();
+    mockedClient.delete.mockReset();
   });
 
   it("successfully deletes cost data", async () => {
-    mockedRepository.deleteCostData.mockResolvedValue();
+    mockedClient.delete.mockResolvedValue(undefined);
 
     await expect(
       costService.deleteCostDetail("user-123", 1700000000000)
     ).resolves.toBeUndefined();
 
-    expect(mockedRepository.deleteCostData).toHaveBeenCalledWith(
-      "user-123",
-      1700000000000
+    expect(mockedClient.delete).toHaveBeenCalledWith(
+      "USER#user-123",
+      "COST#1700000000000"
     );
   });
 
-  it("throws error when repository delete fails", async () => {
+  it("throws error when client delete fails", async () => {
     const error = new Error("DynamoDB delete failed");
-    mockedRepository.deleteCostData.mockRejectedValue(error);
+    mockedClient.delete.mockRejectedValue(error);
 
     await expect(
       costService.deleteCostDetail("user-123", 1700000000000)
     ).rejects.toThrow("DynamoDB delete failed");
 
-    expect(mockedRepository.deleteCostData).toHaveBeenCalledWith(
-      "user-123",
-      1700000000000
+    expect(mockedClient.delete).toHaveBeenCalledWith(
+      "USER#user-123",
+      "COST#1700000000000"
     );
   });
 });

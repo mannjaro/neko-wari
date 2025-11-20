@@ -1,9 +1,45 @@
 // index.test.ts
 import { Hono } from "hono";
 import { testClient } from "hono/testing";
-import { describe, it, expect } from "vitest"; // Or your preferred test runner
+// import { describe, it, expect } from "vitest"; // Or your preferred test runner
 import { detailUpdate, monthlyGet } from "../lambda/backend/app";
 import { costDataItemSchema } from "../lambda/backend/schemas/responseSchema";
+
+jest.mock("change-case", () => ({
+  pascalCase: (str: string) => str,
+}));
+
+jest.mock("../lambda/backend/lib/dynamoClient", () => ({
+  dynamoClient: {
+    query: jest.fn().mockResolvedValue([]),
+    update: jest.fn().mockResolvedValue({
+      PK: "USER#test",
+      SK: "COST#123",
+      Memo: "新幹線1",
+      Price: 1000,
+      Category: "transportation",
+      User: "test",
+      EntityType: "COST_DATA",
+      CreatedAt: "2025-01-01",
+      UpdatedAt: "2025-01-01",
+      Timestamp: 123,
+      YearMonth: "2025-01",
+    }),
+    get: jest.fn().mockResolvedValue({
+      PK: "USER#test",
+      SK: "COST#123",
+      Memo: "old",
+      Price: 1000,
+      Category: "transportation",
+      User: "test",
+      EntityType: "COST_DATA",
+      CreatedAt: "2025-01-01",
+      UpdatedAt: "2025-01-01",
+      Timestamp: 123,
+      YearMonth: "2025-01",
+    }),
+  },
+}));
 
 describe("Get monthly data", () => {
   const client = testClient(monthlyGet);

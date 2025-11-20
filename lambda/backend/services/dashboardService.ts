@@ -5,9 +5,10 @@ import type {
   UserDetailResponse,
   CategorySummaryResponse,
   CategorySummaryItem,
+  CostDataItem,
 } from "../../shared/types";
 import { DYNAMO_KEYS } from "../../shared/constants";
-import { costDataRepository } from "../repositories/costDataRepository";
+import { dynamoClient } from "../lib/dynamoClient";
 
 /**
  * Service for dashboard-related business logic
@@ -19,7 +20,7 @@ export class DashboardService {
   async generateMonthlySummary(
     yearMonth: string,
   ): Promise<MonthlySummaryResponse> {
-    const costData = await costDataRepository.getMonthlyCostData(yearMonth);
+    const costData = await this.getMonthlyCostData(yearMonth);
 
     const userSummaryMap = new Map<string, UserSummary>();
     let totalAmount = 0;
@@ -89,10 +90,7 @@ export class DashboardService {
     userId: string,
     yearMonth: string,
   ): Promise<UserDetailResponse> {
-    const transactions = await costDataRepository.getUserMonthlyCostData(
-      userId,
-      yearMonth,
-    );
+    const transactions = await this.getUserMonthlyCostData(userId, yearMonth);
 
     if (transactions.length === 0) {
       throw new Error(`No data found for user ${userId} in ${yearMonth}`);
@@ -139,7 +137,7 @@ export class DashboardService {
   async generateCategorySummary(
     yearMonth: string,
   ): Promise<CategorySummaryResponse> {
-    const costData = await costDataRepository.getMonthlyCostData(yearMonth);
+    const costData = await this.getMonthlyCostData(yearMonth);
 
     const categoryMap = new Map<PaymentCategory, CategorySummaryItem>();
 
@@ -170,6 +168,38 @@ export class DashboardService {
         (a, b) => b.totalAmount - a.totalAmount,
       ),
     };
+  }
+
+  /**
+   * Get monthly cost data (Private helper)
+   */
+  private async getMonthlyCostData(yearMonth: string): Promise<CostDataItem[]> {
+    const items = await dynamoClient.query<CostDataItem>(
+      "GSI1",
+      "GSI1PK = :gsi1pk",
+      {
+        ":gsi1pk": `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
+      },
+    );
+    return items;
+  }
+
+  /**
+   * Get user monthly cost data (Private helper)
+   */
+  private async getUserMonthlyCostData(
+    userId: string,
+    yearMonth: string,
+  ): Promise<CostDataItem[]> {
+    const items = await dynamoClient.query<CostDataItem>(
+      "GSI1",
+      "GSI1PK = :gsi1pk AND begins_with(GSI1SK, :gsi1sk)",
+      {
+        ":gsi1pk": `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
+        ":gsi1sk": `${DYNAMO_KEYS.USER_PREFIX}${userId}#`,
+      },
+    );
+    return items;
   }
 }
 

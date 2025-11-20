@@ -1,14 +1,14 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import type { UserState, UserStateItem } from "../../shared/types";
 import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../../shared/constants";
-import { dynamoRepository } from "./dynamoRepository";
+import { dynamoClient } from "../lib/dynamoClient";
 
-const logger = new Logger({ serviceName: "userStateRepository" });
+const logger = new Logger({ serviceName: "userService" });
 
 /**
- * Repository for user state data operations
+ * Service for user state management
  */
-export class UserStateRepository {
+export class UserService {
   /**
    * Retrieves user state from DynamoDB
    */
@@ -17,7 +17,7 @@ export class UserStateRepository {
       const pk = `${DYNAMO_KEYS.USER_PREFIX}${userId}`;
       const sk = DYNAMO_KEYS.USER_STATE_SK;
 
-      const result = await dynamoRepository.get(pk, sk);
+      const result = await dynamoClient.get<UserStateItem>(pk, sk);
 
       if (!result) {
         return null;
@@ -61,7 +61,7 @@ export class UserStateRepository {
         TTL: ttl,
       };
 
-      await dynamoRepository.put(userStateItem);
+      await dynamoClient.put<UserStateItem>(userStateItem);
     } catch (error) {
       logger.error("Error saving user state", { error, userId, state });
       throw error;
@@ -76,7 +76,7 @@ export class UserStateRepository {
       const pk = `${DYNAMO_KEYS.USER_PREFIX}${userId}`;
       const sk = DYNAMO_KEYS.USER_STATE_SK;
 
-      await dynamoRepository.delete(pk, sk);
+      await dynamoClient.delete(pk, sk);
     } catch (error) {
       logger.error("Error deleting user state", { error, userId });
       throw error;
@@ -85,4 +85,4 @@ export class UserStateRepository {
 }
 
 // Export singleton instance
-export const userStateRepository = new UserStateRepository();
+export const userService = new UserService();

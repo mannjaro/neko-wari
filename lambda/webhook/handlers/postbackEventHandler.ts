@@ -6,8 +6,8 @@ import {
   BOT_MESSAGES,
   POSTBACK_DATA,
 } from "../../shared/constants";
-import { userStateRepository } from "../../backend/repositories/userStateRepository";
-import { costDataRepository } from "../../backend/repositories/costDataRepository";
+import { userService } from "../../backend/services/userService";
+import { costService } from "../../backend/services/costService";
 import {
   createCategoryCarouselTemplate,
   createMemoQuickReply,
@@ -28,11 +28,11 @@ export const postbackEventHandler = async (
   const userId = source?.userId || "unknown";
 
   let response: line.Message;
-  const currentState = await userStateRepository.getUserState(userId);
+  const currentState = await userService.getUserState(userId);
 
   if (data === POSTBACK_DATA.CANCEL) {
     // Clear state when cancel is clicked
-    await userStateRepository.deleteUserState(userId);
+    await userService.deleteUserState(userId);
     response = {
       type: "text",
       text: BOT_MESSAGES.OPERATION_CANCELLED,
@@ -48,7 +48,7 @@ export const postbackEventHandler = async (
       switch (currentState.step) {
         case "user_selected":
           // Go back to user selection
-          await userStateRepository.saveUserState(userId, { step: "idle" });
+          await userService.saveUserState(userId, { step: "idle" });
           response = {
             type: "template",
             altText: "支払い情報を選択してください",
@@ -57,7 +57,7 @@ export const postbackEventHandler = async (
           break;
         case "waiting_memo":
           // Go back to category selection
-          await userStateRepository.saveUserState(userId, {
+          await userService.saveUserState(userId, {
             step: "user_selected",
             user: currentState.user || "",
           });
@@ -69,7 +69,7 @@ export const postbackEventHandler = async (
           break;
         case "waiting_price":
           // Go back to memo input
-          await userStateRepository.saveUserState(userId, {
+          await userService.saveUserState(userId, {
             step: "waiting_memo",
             user: currentState.user || "",
             category: currentState.category,
@@ -82,7 +82,7 @@ export const postbackEventHandler = async (
           break;
         case "confirming":
           // Go back to price input
-          await userStateRepository.saveUserState(userId, {
+          await userService.saveUserState(userId, {
             step: "waiting_price",
             user: currentState.user || "",
             category: currentState.category,
@@ -115,7 +115,7 @@ export const postbackEventHandler = async (
         data === "payment_user=****" ? "****" : "****";
 
       // Update state to user_selected
-      await userStateRepository.saveUserState(userId, {
+      await userService.saveUserState(userId, {
         step: "user_selected",
         user: selectedUser,
       });
@@ -148,7 +148,7 @@ export const postbackEventHandler = async (
         };
       } else {
         // Set user state to wait for memo input
-        await userStateRepository.saveUserState(userId, {
+        await userService.saveUserState(userId, {
           step: "waiting_memo",
           user: user || "",
           category: category,
@@ -172,7 +172,7 @@ export const postbackEventHandler = async (
       if (data === POSTBACK_DATA.CONFIRM_YES) {
         try {
           // Save cost data to DynamoDB
-          await costDataRepository.saveCostData(userId, currentState);
+          await costService.saveCostData(userId, currentState);
 
           response = {
             type: "text",
@@ -186,7 +186,7 @@ export const postbackEventHandler = async (
           };
 
           // Clear user state after successful registration
-          await userStateRepository.deleteUserState(userId);
+          await userService.deleteUserState(userId);
         } catch (error) {
           logger.error("Error saving cost data during confirmation", {
             error,
@@ -205,7 +205,7 @@ export const postbackEventHandler = async (
         };
 
         // Clear user state after cancellation
-        await userStateRepository.deleteUserState(userId);
+        await userService.deleteUserState(userId);
       }
     }
   } else {

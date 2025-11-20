@@ -57,7 +57,7 @@ function Login() {
   // エラー表示
   if (auth.error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-red-50 to-red-100 p-4">
         <div className="w-full max-w-md space-y-4 rounded-2xl bg-white p-8 shadow-2xl">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600">認証エラー</h1>
@@ -99,7 +99,7 @@ function Login() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* 左側: 情報パネル */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 to-blue-700 p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 bg-linear-to-br from-indigo-600 to-blue-700 p-12 flex-col justify-between">
         <div>
           <div className="flex items-center space-x-3 mb-12">
             <div className="h-10 w-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -137,7 +137,7 @@ function Login() {
 
             <div className="space-y-6 pt-8">
               <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <div className="shrink-0 h-8 w-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <svg
                     className="h-4 w-4 text-white"
                     fill="none"
@@ -164,7 +164,7 @@ function Login() {
               </div>
 
               <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <div className="shrink-0 h-8 w-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <svg
                     className="h-4 w-4 text-white"
                     fill="none"
@@ -191,7 +191,7 @@ function Login() {
               </div>
 
               <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <div className="shrink-0 h-8 w-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <svg
                     className="h-4 w-4 text-white"
                     fill="none"
@@ -299,7 +299,7 @@ function Login() {
               <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                 <div className="flex items-start space-x-3">
                   <svg
-                    className="h-5 w-5 text-indigo-600 mt-0.5 flex-shrink-0"
+                    className="h-5 w-5 text-indigo-600 mt-0.5 shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -323,7 +323,7 @@ function Login() {
                 </div>
                 <div className="flex items-start space-x-3">
                   <svg
-                    className="h-5 w-5 text-indigo-600 mt-0.5 flex-shrink-0"
+                    className="h-5 w-5 text-indigo-600 mt-0.5 shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

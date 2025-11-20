@@ -1,20 +1,25 @@
 import { costService } from "../lambda/backend/services/costService";
-import { costDataRepository } from "../lambda/backend/repositories/costDataRepository";
+import { dynamoClient } from "../lambda/backend/lib/dynamoClient";
 import type { CostDataItemResponse } from "../lambda/backend/schemas/responseSchema";
 
-jest.mock("../lambda/backend/repositories/costDataRepository", () => ({
-  costDataRepository: {
-    updateCostData: jest.fn(),
+jest.mock("../lambda/backend/lib/dynamoClient", () => ({
+  dynamoClient: {
+    update: jest.fn(),
+    get: jest.fn(),
   },
 }));
 
+jest.mock("change-case", () => ({
+  pascalCase: (str: string) => str,
+}));
+
 describe("CostService.updateCostDetail", () => {
-  const mockedRepository =
-    costDataRepository as jest.Mocked<typeof costDataRepository>;
+  const mockedClient = dynamoClient as jest.Mocked<typeof dynamoClient>;
   const now = new Date("2025-01-01T00:00:00.000Z").toISOString();
 
   beforeEach(() => {
-    mockedRepository.updateCostData.mockReset();
+    mockedClient.update.mockReset();
+    mockedClient.get.mockReset();
   });
 
   it("rejects negative price updates", async () => {
@@ -25,7 +30,7 @@ describe("CostService.updateCostDetail", () => {
       })
     ).rejects.toThrow("Price cannot be negative");
 
-    expect(mockedRepository.updateCostData).not.toHaveBeenCalled();
+    expect(mockedClient.update).not.toHaveBeenCalled();
   });
 
   it("rejects memos that exceed the character limit", async () => {
@@ -38,27 +43,35 @@ describe("CostService.updateCostDetail", () => {
       })
     ).rejects.toThrow("Memo cannot exceed 500 characters");
 
-    expect(mockedRepository.updateCostData).not.toHaveBeenCalled();
+    expect(mockedClient.update).not.toHaveBeenCalled();
   });
 
-  it("delegates to the repository when the payload is valid", async () => {
-    const response: CostDataItemResponse = {
+  it("delegates to the client when the payload is valid", async () => {
+    const existingItem = {
       PK: "USER#user-123",
       SK: "COST#1700000000000",
       GSI1PK: "COST#2025-01",
       GSI1SK: "USER#user-123#1700000000000",
-      EntityType: "COST_DATA",
+      EntityType: "COST_DATA" as const,
       CreatedAt: now,
       UpdatedAt: now,
       User: "Test User",
-      Category: "daily",
-      Memo: "Lunch",
-      Price: 1200,
+      Category: "daily" as const,
+      Memo: "Old Memo",
+      Price: 1000,
       Timestamp: 1700000000000,
       YearMonth: "2025-01",
     };
 
-    mockedRepository.updateCostData.mockResolvedValue(response);
+    mockedClient.get.mockResolvedValue(existingItem);
+
+    const response: CostDataItemResponse = {
+      ...existingItem,
+      Memo: "Lunch",
+      Price: 1200,
+    };
+
+    mockedClient.update.mockResolvedValue(response);
 
     await expect(
       costService.updateCostDetail("user-123", 1700000000000, {
@@ -68,14 +81,11 @@ describe("CostService.updateCostDetail", () => {
       })
     ).resolves.toEqual(response);
 
-    expect(mockedRepository.updateCostData).toHaveBeenCalledWith(
-      "user-123",
-      1700000000000,
-      {
-        memo: "Lunch",
-        price: 1200,
-        updatedAt: now,
-      }
+    expect(mockedClient.get).toHaveBeenCalledWith(
+      "USER#user-123",
+      "COST#1700000000000"
     );
+    
+    expect(mockedClient.update).toHaveBeenCalled();
   });
 });

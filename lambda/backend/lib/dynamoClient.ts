@@ -9,7 +9,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { Logger } from "@aws-lambda-powertools/logger";
 
-const logger = new Logger({ serviceName: "dynamoRepository" });
+const logger = new Logger({ serviceName: "dynamoClient" });
 
 // DynamoDB client setup
 export const dynamoDbClient = new DynamoDBClient({
@@ -21,26 +21,26 @@ export const TABLE_NAME =
 
 // Base repository interface for common DynamoDB operations
 export interface BaseRepository {
-  get(pk: string, sk: string): Promise<any>;
-  put(item: any): Promise<void>;
-  update(
+  get<T>(pk: string, sk: string): Promise<T | null>;
+  put<T>(item: T): Promise<void>;
+  update<T>(
     pk: string,
     sk: string,
     updateExpression: string,
     expressionAttributeNames?: Record<string, string>,
-    expressionAttributeValues?: Record<string, any>,
-  ): Promise<any>;
+    expressionAttributeValues?: Record<string, unknown>,
+  ): Promise<T>;
   delete(pk: string, sk: string): Promise<void>;
-  query(
+  query<T>(
     indexName: string | undefined,
     keyConditionExpression: string,
-    expressionAttributeValues: Record<string, any>,
-  ): Promise<any[]>;
+    expressionAttributeValues: Record<string, unknown>,
+  ): Promise<T[]>;
 }
 
-// Base DynamoDB repository implementation
-export class DynamoRepository implements BaseRepository {
-  async get(pk: string, sk: string): Promise<any> {
+// Base DynamoDB client implementation
+export class DynamoClient implements BaseRepository {
+  async get<T>(pk: string, sk: string): Promise<T | null> {
     try {
       const result = await docClient.send(
         new GetCommand({
@@ -48,19 +48,19 @@ export class DynamoRepository implements BaseRepository {
           Key: { PK: pk, SK: sk },
         }),
       );
-      return result.Item || null;
+      return (result.Item as T) || null;
     } catch (error) {
       logger.error("Error in DynamoDB get operation", { error, pk, sk });
       throw error;
     }
   }
 
-  async put(item: any): Promise<void> {
+  async put<T>(item: T): Promise<void> {
     try {
       await docClient.send(
         new PutCommand({
           TableName: TABLE_NAME,
-          Item: item,
+          Item: item as Record<string, unknown>,
         }),
       );
     } catch (error) {
@@ -69,13 +69,13 @@ export class DynamoRepository implements BaseRepository {
     }
   }
 
-  async update(
+  async update<T>(
     pk: string,
     sk: string,
     updateExpression: string,
     expressionAttributeNames?: Record<string, string>,
-    expressionAttributeValues?: Record<string, any>,
-  ): Promise<any> {
+    expressionAttributeValues?: Record<string, unknown>,
+  ): Promise<T> {
     try {
       const result = await docClient.send(
         new UpdateCommand({
@@ -87,7 +87,7 @@ export class DynamoRepository implements BaseRepository {
           ReturnValues: "ALL_NEW",
         }),
       );
-      return result.Attributes;
+      return result.Attributes as T;
     } catch (error) {
       logger.error("Error in DynamoDB update operation", { error, pk, sk });
       throw error;
@@ -108,14 +108,14 @@ export class DynamoRepository implements BaseRepository {
     }
   }
 
-  async query(
+  async query<T>(
     indexName: string | undefined,
     keyConditionExpression: string,
-    expressionAttributeValues: Record<string, any>,
-  ): Promise<any[]> {
+    expressionAttributeValues: Record<string, unknown>,
+  ): Promise<T[]> {
     try {
-      const allItems: any[] = [];
-      let lastEvaluatedKey: Record<string, any> | undefined;
+      const allItems: T[] = [];
+      let lastEvaluatedKey: Record<string, unknown> | undefined;
 
       do {
         const result = await docClient.send(
@@ -129,7 +129,7 @@ export class DynamoRepository implements BaseRepository {
         );
 
         if (result.Items) {
-          allItems.push(...result.Items);
+          allItems.push(...(result.Items as T[]));
         }
 
         lastEvaluatedKey = result.LastEvaluatedKey;
@@ -148,4 +148,4 @@ export class DynamoRepository implements BaseRepository {
 }
 
 // Export singleton instance
-export const dynamoRepository = new DynamoRepository();
+export const dynamoClient = new DynamoClient();

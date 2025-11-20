@@ -1,5 +1,5 @@
 // test/authUtils.test.ts
-import { describe, it, expect } from "vitest";
+// import { describe, it, expect } from "vitest";
 import { isTokenExpired, hasRefreshToken } from "../frontend/src/utils/authUtils";
 import type { User } from "oidc-client-ts";
 

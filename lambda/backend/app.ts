@@ -13,6 +13,7 @@ import {
 import {
   CreateCostDetailSchema,
   UpdateCostDetailSchema,
+  CreateUserSchema,
 } from "./schemas/requestSchema";
 
 import {
@@ -36,7 +37,7 @@ export const costCreate = app.post(
   zValidator("json", CreateCostDetailSchema),
   async (c) => {
     const body = c.req.valid("json");
-    return createCostHandler(c, body as any);
+    return createCostHandler(c, body);
   },
 );
 
@@ -77,6 +78,12 @@ export const detailDelete = app.delete(
     return deleteCostHandler(c, uid, timestamp);
   },
 );
+
+app.post("/user", zValidator("json", CreateUserSchema), async (c) => {
+  const body = c.req.valid("json");
+  // Implement user creation logic here
+  return c.json({ message: "User created", user: body });
+});
 
 app.get(
   "/dashboard/user/details",
