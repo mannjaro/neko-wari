@@ -1,20 +1,24 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { costService } from "../lambda/backend/services/costService";
 import { dynamoClient } from "../lambda/backend/lib/dynamoClient";
 import type { CostDataItemResponse } from "../lambda/backend/schemas/responseSchema";
 
-jest.mock("../lambda/backend/lib/dynamoClient", () => ({
+vi.mock("../lambda/backend/lib/dynamoClient", () => ({
   dynamoClient: {
-    update: jest.fn(),
-    get: jest.fn(),
+    update: vi.fn(),
+    get: vi.fn(),
   },
 }));
 
-jest.mock("change-case", () => ({
+vi.mock("change-case", () => ({
   pascalCase: (str: string) => str,
 }));
 
 describe("CostService.updateCostDetail", () => {
-  const mockedClient = dynamoClient as jest.Mocked<typeof dynamoClient>;
+  const mockedClient = dynamoClient as unknown as {
+    update: ReturnType<typeof vi.fn>;
+    get: ReturnType<typeof vi.fn>;
+  };
   const now = new Date("2025-01-01T00:00:00.000Z").toISOString();
 
   beforeEach(() => {

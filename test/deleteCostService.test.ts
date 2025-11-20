@@ -1,18 +1,21 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { costService } from "../lambda/backend/services/costService";
 import { dynamoClient } from "../lambda/backend/lib/dynamoClient";
 
-jest.mock("../lambda/backend/lib/dynamoClient", () => ({
+vi.mock("../lambda/backend/lib/dynamoClient", () => ({
   dynamoClient: {
-    delete: jest.fn(),
+    delete: vi.fn(),
   },
 }));
 
-jest.mock("change-case", () => ({
+vi.mock("change-case", () => ({
   pascalCase: (str: string) => str,
 }));
 
 describe("CostService.deleteCostDetail", () => {
-  const mockedClient = dynamoClient as jest.Mocked<typeof dynamoClient>;
+  const mockedClient = dynamoClient as unknown as {
+    delete: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     mockedClient.delete.mockReset();

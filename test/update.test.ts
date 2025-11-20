@@ -1,18 +1,18 @@
 // index.test.ts
 import { Hono } from "hono";
 import { testClient } from "hono/testing";
-// import { describe, it, expect } from "vitest"; // Or your preferred test runner
+import { describe, it, expect, vi } from "vitest";
 import { detailUpdate, monthlyGet } from "../lambda/backend/app";
 import { costDataItemSchema } from "../lambda/backend/schemas/responseSchema";
 
-jest.mock("change-case", () => ({
+vi.mock("change-case", () => ({
   pascalCase: (str: string) => str,
 }));
 
-jest.mock("../lambda/backend/lib/dynamoClient", () => ({
+vi.mock("../lambda/backend/lib/dynamoClient", () => ({
   dynamoClient: {
-    query: jest.fn().mockResolvedValue([]),
-    update: jest.fn().mockResolvedValue({
+    query: vi.fn().mockResolvedValue([]),
+    update: vi.fn().mockResolvedValue({
       PK: "USER#test",
       SK: "COST#123",
       Memo: "新幹線1",
@@ -25,7 +25,7 @@ jest.mock("../lambda/backend/lib/dynamoClient", () => ({
       Timestamp: 123,
       YearMonth: "2025-01",
     }),
-    get: jest.fn().mockResolvedValue({
+    get: vi.fn().mockResolvedValue({
       PK: "USER#test",
       SK: "COST#123",
       Memo: "old",
