@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { costService } from "../lambda/backend/services/costService";
+import { costService } from "../lambda/backend/features/cost/costService";
 import { dynamoClient } from "../lambda/backend/lib/dynamoClient";
 import type { CostDataItemResponse } from "../lambda/backend/schemas/responseSchema";
 

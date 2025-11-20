@@ -1,0 +1,270 @@
+import { Logger } from "@aws-lambda-powertools/logger";
+import { randomBytes } from "node:crypto";
+import type {
+  InvitationItem,
+  InvitationStatus,
+  InvitationResponse,
+} from "../../../shared/types";
+import {
+  DYNAMO_KEYS,
+  INVITATION_TTL_SECONDS,
+  INVITATION_TOKEN_LENGTH,
+} from "../../../shared/constants";
+import { dynamoClient } from "../../lib/dynamoClient";
+
+const logger = new Logger({ serviceName: "invitationService" });
+
+/**
+ * Service for invitation management
+ */
+export class InvitationService {
+  /**
+   * Generate a secure random token for invitation URL
+   */
+  private generateToken(): string {
+    return randomBytes(INVITATION_TOKEN_LENGTH).toString("hex");
+  }
+
+  /**
+   * Create a new invitation
+   */
+  async createInvitation(
+    createdBy: string,
+    expirationHours: number = 168,
+    metadata?: Record<string, unknown>,
+  ): Promise<InvitationResponse> {
+    try {
+      const now = new Date();
+      const invitationId = `${Date.now()}-${randomBytes(8).toString("hex")}`;
+      const token = this.generateToken();
+      const expiresAt = new Date(
+        now.getTime() + expirationHours * 60 * 60 * 1000,
+      );
+      const ttl = Math.floor(expiresAt.getTime() / 1000);
+
+      const invitationItem: InvitationItem = {
+        PK: `${DYNAMO_KEYS.INVITATION_PREFIX}${invitationId}`,
+        SK: "INVITATION#MAIN",
+        GSI1PK: DYNAMO_KEYS.INVITATIONS_GSI,
+        GSI1SK: `STATUS#pending#${now.toISOString()}`,
+        EntityType: "INVITATION",
+        CreatedAt: now.toISOString(),
+        UpdatedAt: now.toISOString(),
+        InvitationId: invitationId,
+        Token: token,
+        Status: "pending",
+        CreatedBy: createdBy,
+        ExpiresAt: expiresAt.toISOString(),
+        Metadata: metadata,
+        TTL: ttl,
+      };
+
+      await dynamoClient.put<InvitationItem>(invitationItem);
+
+      // Construct invitation URL (will be configured via environment variable)
+      const baseUrl = process.env.INVITATION_BASE_URL || "";
+      const invitationUrl = `${baseUrl}/invitation/${token}`;
+
+      logger.info("Invitation created", { invitationId, token, expiresAt });
+
+      return {
+        invitationId,
+        token,
+        invitationUrl,
+        expiresAt: expiresAt.toISOString(),
+      };
+    } catch (error) {
+      logger.error("Error creating invitation", { error, createdBy });
+      throw error;
+    }
+  }
+
+  /**
+   * Get invitation by token
+   */
+  async getInvitationByToken(token: string): Promise<InvitationItem | null> {
+    try {
+      // Query GSI to find invitation by token
+      const result = await dynamoClient.query<InvitationItem>(
+        "GSI1",
+        "GSI1PK = :gsi1pk",
+        {
+          ":gsi1pk": DYNAMO_KEYS.INVITATIONS_GSI,
+        },
+      );
+
+      // Filter by token in memory (not ideal for production, consider adding GSI on Token)
+      const invitation = result.find((item) => item.Token === token);
+
+      return invitation || null;
+    } catch (error) {
+      logger.error("Error getting invitation by token", { error, token });
+      return null;
+    }
+  }
+
+  /**
+   * Validate invitation (check if it's valid and not expired)
+   */
+  async validateInvitation(token: string): Promise<{
+    valid: boolean;
+    invitation?: InvitationItem;
+    reason?: string;
+  }> {
+    const invitation = await this.getInvitationByToken(token);
+
+    if (!invitation) {
+      return { valid: false, reason: "Invitation not found" };
+    }
+
+    if (invitation.Status !== "pending") {
+      return {
+        valid: false,
+        invitation,
+        reason: `Invitation already ${invitation.Status}`,
+      };
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(invitation.ExpiresAt);
+
+    if (now > expiresAt) {
+      // Mark as expired
+      await this.updateInvitationStatus(invitation.InvitationId, "expired");
+      return { valid: false, invitation, reason: "Invitation expired" };
+    }
+
+    return { valid: true, invitation };
+  }
+
+  /**
+   * Accept invitation with LINE user information
+   */
+  async acceptInvitationWithLineId(
+    token: string,
+    lineUserId: string,
+    displayName: string,
+    pictureUrl?: string,
+  ): Promise<InvitationItem> {
+    try {
+      const validation = await this.validateInvitation(token);
+
+      if (!validation.valid || !validation.invitation) {
+        throw new Error(validation.reason || "Invalid invitation");
+      }
+
+      const invitation = validation.invitation;
+      const now = new Date().toISOString();
+
+      // Update invitation status
+      const updatedInvitation: InvitationItem = {
+        ...invitation,
+        Status: "accepted",
+        AcceptedBy: lineUserId,
+        AcceptedDisplayName: displayName,
+        AcceptedPictureUrl: pictureUrl,
+        AcceptedAt: now,
+        UpdatedAt: now,
+        GSI1SK: `STATUS#accepted#${now}`,
+      };
+
+      await dynamoClient.put<InvitationItem>(updatedInvitation);
+
+      logger.info("Invitation accepted", {
+        invitationId: invitation.InvitationId,
+        lineUserId,
+        displayName,
+      });
+
+      return updatedInvitation;
+    } catch (error) {
+      logger.error("Error accepting invitation", { error, token, lineUserId });
+      throw error;
+    }
+  }
+
+  /**
+   * Update invitation status
+   */
+  async updateInvitationStatus(
+    invitationId: string,
+    status: InvitationStatus,
+  ): Promise<void> {
+    try {
+      const pk = `${DYNAMO_KEYS.INVITATION_PREFIX}${invitationId}`;
+      const sk = "INVITATION#MAIN";
+      const now = new Date().toISOString();
+
+      await dynamoClient.update(
+        pk,
+        sk,
+        "SET #status = :status, UpdatedAt = :updatedAt, GSI1SK = :gsi1sk",
+        {
+          "#status": "Status",
+        },
+        {
+          ":status": status,
+          ":updatedAt": now,
+          ":gsi1sk": `STATUS#${status}#${now}`,
+        },
+      );
+
+      logger.info("Invitation status updated", { invitationId, status });
+    } catch (error) {
+      logger.error("Error updating invitation status", {
+        error,
+        invitationId,
+        status,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * List invitations with optional filters
+   */
+  async listInvitations(
+    createdBy?: string,
+    status?: InvitationStatus,
+  ): Promise<InvitationItem[]> {
+    try {
+      const result = await dynamoClient.query<InvitationItem>(
+        "GSI1",
+        "GSI1PK = :gsi1pk",
+        {
+          ":gsi1pk": DYNAMO_KEYS.INVITATIONS_GSI,
+        },
+      );
+
+      // Filter in memory
+      let filteredResults = result;
+
+      if (createdBy) {
+        filteredResults = filteredResults.filter(
+          (item) => item.CreatedBy === createdBy,
+        );
+      }
+
+      if (status) {
+        filteredResults = filteredResults.filter(
+          (item) => item.Status === status,
+        );
+      }
+
+      return filteredResults;
+    } catch (error) {
+      logger.error("Error listing invitations", { error, createdBy, status });
+      return [];
+    }
+  }
+
+  /**
+   * Revoke (expire) an invitation
+   */
+  async revokeInvitation(invitationId: string): Promise<void> {
+    await this.updateInvitationStatus(invitationId, "expired");
+  }
+}
+
+// Export singleton instance
+export const invitationService = new InvitationService();

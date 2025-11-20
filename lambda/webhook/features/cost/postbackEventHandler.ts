@@ -1,18 +1,18 @@
 import * as line from "@line/bot-sdk";
 import { Logger } from "@aws-lambda-powertools/logger";
-import type { PaymentCategory } from "../../shared/types";
+import type { PaymentCategory } from "../../../shared/types";
 import {
   CATEGORY_NAMES,
   BOT_MESSAGES,
   POSTBACK_DATA,
-} from "../../shared/constants";
-import { userService } from "../../backend/services/userService";
-import { costService } from "../../backend/services/costService";
+} from "../../../shared/constants";
+import { userService } from "../../../backend/features/user/userService";
+import { costService } from "../../../backend/features/cost/costService";
 import {
   createCategoryCarouselTemplate,
   createMemoQuickReply,
   createUserSelectionTemplate,
-} from "../templates/lineTemplates";
+} from "./lineTemplates";
 
 const logger = new Logger({ serviceName: "postbackEventHandler" });
 

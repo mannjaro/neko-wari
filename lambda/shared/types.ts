@@ -29,6 +29,7 @@ export const FacetTypeSchema = z.enum([
   "COST_DATA",
   "USER_PROFILE",
   "MONTHLY_SUMMARY",
+  "INVITATION",
 ]);
 export type FacetType = z.infer<typeof FacetTypeSchema>;
 
@@ -124,6 +125,8 @@ export const UserProfileItemSchema = BaseDynamoItemSchema.extend({
   GSI1SK: z.string(), // USER#{userId}
   UserId: z.string(),
   DisplayName: z.string().optional(),
+  LineUserId: z.string().optional(), // LINE user ID from OAuth
+  LinePictureUrl: z.string().optional(), // LINE profile picture URL
   DefaultCategory: PaymentCategorySchema.optional(),
   TotalSpent: z.number(),
   TransactionCount: z.number(),
@@ -147,12 +150,38 @@ export const MonthlySummaryItemSchema = BaseDynamoItemSchema.extend({
 });
 export type MonthlySummaryItem = z.infer<typeof MonthlySummaryItemSchema>;
 
+// Invitation status enum
+export const InvitationStatusSchema = z.enum(["pending", "accepted", "expired"]);
+export type InvitationStatus = z.infer<typeof InvitationStatusSchema>;
+
+// Invitation facet schema
+export const InvitationItemSchema = BaseDynamoItemSchema.extend({
+  EntityType: z.literal("INVITATION"),
+  PK: z.string(), // INVITATION#{invitationId}
+  SK: z.literal("INVITATION#MAIN"),
+  GSI1PK: z.literal("INVITATIONS"),
+  GSI1SK: z.string(), // STATUS#{status}#{createdAt}
+  InvitationId: z.string(),
+  Token: z.string(), // Unique token for URL
+  Status: InvitationStatusSchema,
+  CreatedBy: z.string(), // Admin user ID
+  AcceptedBy: z.string().optional(), // LINE user ID who accepted
+  AcceptedDisplayName: z.string().optional(),
+  AcceptedPictureUrl: z.string().optional(),
+  AcceptedAt: z.string().optional(),
+  ExpiresAt: z.string(), // ISO timestamp
+  Metadata: z.record(z.string(), z.unknown()).optional(), // Additional metadata
+  TTL: z.number(),
+});
+export type InvitationItem = z.infer<typeof InvitationItemSchema>;
+
 // Union schema for all DynamoDB items
 export const DynamoItemSchema = z.discriminatedUnion("EntityType", [
   UserStateItemSchema,
   CostDataItemSchema,
   UserProfileItemSchema,
   MonthlySummaryItemSchema,
+  InvitationItemSchema,
 ]);
 export type DynamoItem = z.infer<typeof DynamoItemSchema>;
 
@@ -234,3 +263,46 @@ export const CategorySummaryResponseSchema = z.object({
 export type CategorySummaryResponse = z.infer<
   typeof CategorySummaryResponseSchema
 >;
+
+// Invitation API schemas
+export const CreateInvitationSchema = z.object({
+  createdBy: z.string().min(1),
+  expirationHours: z.number().min(1).max(168).default(168), // Max 7 days
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+export type CreateInvitation = z.infer<typeof CreateInvitationSchema>;
+
+export const InvitationResponseSchema = z.object({
+  invitationId: z.string(),
+  token: z.string(),
+  invitationUrl: z.string(),
+  expiresAt: z.string(),
+});
+export type InvitationResponse = z.infer<typeof InvitationResponseSchema>;
+
+export const LineLoginCallbackSchema = z.object({
+  code: z.string(),
+  state: z.string(),
+  error: z.string().optional(),
+  error_description: z.string().optional(),
+});
+export type LineLoginCallback = z.infer<typeof LineLoginCallbackSchema>;
+
+export const LineUserProfileSchema = z.object({
+  userId: z.string(),
+  displayName: z.string(),
+  pictureUrl: z.string().optional(),
+  statusMessage: z.string().optional(),
+});
+export type LineUserProfile = z.infer<typeof LineUserProfileSchema>;
+
+export const LineTokenResponseSchema = z.object({
+  access_token: z.string(),
+  expires_in: z.number(),
+  id_token: z.string(),
+  refresh_token: z.string(),
+  scope: z.string(),
+  token_type: z.string(),
+});
+export type LineTokenResponse = z.infer<typeof LineTokenResponseSchema>;
+

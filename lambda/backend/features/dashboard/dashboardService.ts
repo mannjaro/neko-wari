@@ -6,9 +6,9 @@ import type {
   CategorySummaryResponse,
   CategorySummaryItem,
   CostDataItem,
-} from "../../shared/types";
-import { DYNAMO_KEYS } from "../../shared/constants";
-import { dynamoClient } from "../lib/dynamoClient";
+} from "../../../shared/types";
+import { DYNAMO_KEYS } from "../../../shared/constants";
+import { dynamoClient } from "../../lib/dynamoClient";
 
 /**
  * Service for dashboard-related business logic

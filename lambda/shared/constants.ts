@@ -75,6 +75,7 @@ export const DYNAMO_KEYS = {
   PROFILE_PREFIX: "PROFILE#",
   SUMMARY_PREFIX: "SUMMARY#",
   SESSION_PREFIX: "SESSION#",
+  INVITATION_PREFIX: "INVITATION#",
 
   // Sort key patterns
   USER_STATE_SK: "SESSION#CURRENT",
@@ -83,16 +84,36 @@ export const DYNAMO_KEYS = {
   // GSI patterns
   USER_STATES_GSI: "USER_STATES",
   USER_PROFILES_GSI: "USER_PROFILES",
+  INVITATIONS_GSI: "INVITATIONS",
 
   // Entity types
   ENTITY_USER_STATE: "USER_STATE",
   ENTITY_COST_DATA: "COST_DATA",
   ENTITY_USER_PROFILE: "USER_PROFILE",
   ENTITY_MONTHLY_SUMMARY: "MONTHLY_SUMMARY",
+  ENTITY_INVITATION: "INVITATION",
 } as const;
 
 // Session TTL in seconds (24 hours)
 export const SESSION_TTL_SECONDS = 24 * 60 * 60;
+
+// Invitation TTL in seconds (7 days)
+export const INVITATION_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+// Invitation token configuration
+export const INVITATION_TOKEN_LENGTH = 32;
+
+// LINE Login OAuth configuration
+export const LINE_LOGIN_CONFIG = {
+  AUTHORIZATION_URL: "https://access.line.me/oauth2/v2.1/authorize",
+  TOKEN_URL: "https://api.line.me/oauth2/v2.1/token",
+  PROFILE_URL: "https://api.line.me/v2/profile",
+  VERIFY_TOKEN_URL: "https://api.line.me/oauth2/v2.1/verify",
+  SCOPES: ["profile", "openid", "email"],
+  CHANNEL_ID: process.env.LINE_LOGIN_CHANNEL_ID || "",
+  CHANNEL_SECRET: process.env.LINE_LOGIN_CHANNEL_SECRET || "",
+  REDIRECT_URI: process.env.LINE_LOGIN_REDIRECT_URI || "",
+} as const;
 
 // Quick reply options for memo input by category
 export const MEMO_QUICK_REPLIES_BY_CATEGORY: Record<

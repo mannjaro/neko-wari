@@ -1,7 +1,7 @@
 import * as line from "@line/bot-sdk";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { textEventHandler } from "./textEventHandler";
-import { postbackEventHandler } from "./postbackEventHandler";
+import { textEventHandler } from "../cost/textEventHandler";
+import { postbackEventHandler } from "../cost/postbackEventHandler";
 
 const logger = new Logger({ serviceName: "webhookHandler" });
 

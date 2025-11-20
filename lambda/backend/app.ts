@@ -8,7 +8,7 @@ import {
   monthlyDashboardHandler,
   userDetailsHandler,
   categorySummaryHandler,
-} from "./handlers/dashboardHandlers";
+} from "./features/dashboard/dashboardHandlers";
 
 import {
   CreateCostDetailSchema,
@@ -20,7 +20,17 @@ import {
   createCostHandler,
   updateCostHandler,
   deleteCostHandler,
-} from "./handlers/updateHandlers";
+} from "./features/cost/costHandlers";
+
+import {
+  createInvitationHandler,
+  getInvitationHandler,
+  lineLoginCallbackHandler,
+  listInvitationsHandler,
+  revokeInvitationHandler,
+} from "./features/invitation/invitationHandlers";
+
+import { CreateInvitationSchema } from "../shared/types";
 
 type Bindings = {
   event: LambdaEvent;
@@ -114,6 +124,32 @@ app.get(
     return categorySummaryHandler(c, year, month);
   },
 );
+
+// Invitation API endpoints
+app.post(
+  "/invitation/create",
+  zValidator("json", CreateInvitationSchema),
+  async (c) => {
+    const body = c.req.valid("json");
+    return createInvitationHandler(c, body);
+  },
+);
+
+app.get("/invitation/:token", async (c) => {
+  return getInvitationHandler(c);
+});
+
+app.get("/invitation/callback", async (c) => {
+  return lineLoginCallbackHandler(c);
+});
+
+app.get("/invitation/list", async (c) => {
+  return listInvitationsHandler(c);
+});
+
+app.delete("/invitation/:invitationId", async (c) => {
+  return revokeInvitationHandler(c);
+});
 
 export type CostCreateType = typeof costCreate;
 export type MonthlyGetType = typeof monthlyGet;

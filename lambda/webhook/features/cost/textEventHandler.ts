@@ -1,11 +1,11 @@
 import * as line from "@line/bot-sdk";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { BOT_MESSAGES } from "../../shared/constants";
-import { userService } from "../../backend/services/userService";
+import { BOT_MESSAGES } from "../../../shared/constants";
+import { userService } from "../../../backend/features/user/userService";
 import {
   createUserSelectionTemplate,
   createConfirmationTemplate,
-} from "../templates/lineTemplates";
+} from "./lineTemplates";
 
 const logger = new Logger({ serviceName: "textEventHandler" });
 

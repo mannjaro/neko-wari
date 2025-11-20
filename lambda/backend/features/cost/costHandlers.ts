@@ -1,6 +1,6 @@
 import type { Context } from "hono";
-import type { CreateCostData, UpdateCostData } from "../../shared/types";
-import { costService } from "../services/costService";
+import type { CreateCostData, UpdateCostData } from "../../../shared/types";
+import { costService } from "./costService";
 
 export const createCostHandler = async (c: Context, req: CreateCostData) => {
   try {

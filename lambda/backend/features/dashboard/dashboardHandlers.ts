@@ -1,12 +1,12 @@
 import type { Context } from "hono";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { dashboardService } from "../services/dashboardService";
+import { dashboardService } from "./dashboardService";
 import {
   monthlySummaryResponseSchema,
   userDetailResponseSchema,
   categorySummaryResponseSchema,
   errorResponseSchema,
-} from "../schemas/responseSchema";
+} from "../../schemas/responseSchema";
 
 const logger = new Logger({ serviceName: "dashboardHandlers" });
 

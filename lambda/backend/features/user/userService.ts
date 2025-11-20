@@ -1,7 +1,7 @@
 import { Logger } from "@aws-lambda-powertools/logger";
-import type { UserState, UserStateItem } from "../../shared/types";
-import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../../shared/constants";
-import { dynamoClient } from "../lib/dynamoClient";
+import type { UserState, UserStateItem } from "../../../shared/types";
+import { DYNAMO_KEYS, SESSION_TTL_SECONDS } from "../../../shared/constants";
+import { dynamoClient } from "../../lib/dynamoClient";
 
 const logger = new Logger({ serviceName: "userService" });
 

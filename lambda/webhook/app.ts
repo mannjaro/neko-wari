@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { env } from "hono/adapter";
 import type { LambdaEvent, LambdaContext } from "hono/aws-lambda";
 
-import { webhookHandler } from "./handlers/webhookHandler";
+import { webhookHandler } from "./features/core/webhookHandler";
 
 type Bindings = {
   event: LambdaEvent;

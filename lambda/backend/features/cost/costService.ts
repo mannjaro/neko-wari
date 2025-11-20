@@ -1,18 +1,18 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import * as changeCase from "change-case";
-import { DYNAMO_KEYS } from "../../shared/constants";
+import { DYNAMO_KEYS } from "../../../shared/constants";
 import type {
   CostDataItem,
   CreateCostData,
   UpdateCostData,
   UpdateExpressionResult,
   UserState,
-} from "../../shared/types";
+} from "../../../shared/types";
 import {
   type CostDataItemResponse,
   costDataItemSchema,
-} from "../schemas/responseSchema";
-import { dynamoClient } from "../lib/dynamoClient";
+} from "../../schemas/responseSchema";
+import { dynamoClient } from "../../lib/dynamoClient";
 
 const logger = new Logger({ serviceName: "costService" });
 
