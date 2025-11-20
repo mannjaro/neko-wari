@@ -13,7 +13,7 @@ export function YearSelector({ currentYear, onYearChange }: YearSelectorProps) {
   // 前後2年（計5年）を表示。ただし下限は2024年
   const startYear = Math.max(baseYear - 2, MIN_YEAR);
   const years = Array.from({ length: 5 }, (_, i) => startYear + i);
-  
+
   const thisYear = new Date().getFullYear();
 
   return (

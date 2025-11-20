@@ -10,9 +10,16 @@ import {
   categorySummaryHandler,
 } from "./handlers/dashboardHandlers";
 
-import { CreateCostDetailSchema, UpdateCostDetailSchema } from "./schemas/requestSchema";
+import {
+  CreateCostDetailSchema,
+  UpdateCostDetailSchema,
+} from "./schemas/requestSchema";
 
-import { createCostHandler, updateCostHandler, deleteCostHandler } from "./handlers/updateHandlers";
+import {
+  createCostHandler,
+  updateCostHandler,
+  deleteCostHandler,
+} from "./handlers/updateHandlers";
 
 type Bindings = {
   event: LambdaEvent;
@@ -30,7 +37,7 @@ export const costCreate = app.post(
   async (c) => {
     const body = c.req.valid("json");
     return createCostHandler(c, body as any);
-  }
+  },
 );
 
 // Dashboard API endpoints
@@ -41,13 +48,13 @@ export const monthlyGet = app.get(
     z.object({
       year: z.string().regex(/^\d{4}$/),
       month: z.string().regex(/^\d{2}$/),
-    })
+    }),
   ),
   // monthlyDashboardHandler
   (c) => {
     const { year, month } = c.req.valid("query");
     return monthlyDashboardHandler(c, year, month);
-  }
+  },
 );
 
 export const detailUpdate = app.put(
@@ -60,7 +67,7 @@ export const detailUpdate = app.put(
     const req = { ...body, updatedAt: now };
     console.log(uid, timestamp, body);
     return updateCostHandler(c, uid, timestamp, req);
-  }
+  },
 );
 
 export const detailDelete = app.delete(
@@ -68,7 +75,7 @@ export const detailDelete = app.delete(
   async (c) => {
     const { uid, timestamp } = c.req.param();
     return deleteCostHandler(c, uid, timestamp);
-  }
+  },
 );
 
 app.get(
@@ -79,12 +86,12 @@ app.get(
       userId: z.string(),
       year: z.string().regex(/^\d{4}$/),
       month: z.string().regex(/^\d{2}$/),
-    })
+    }),
   ),
   (c) => {
     const { userId, year, month } = c.req.valid("query");
     return userDetailsHandler(c, userId, year, month);
-  }
+  },
 );
 app.get(
   "/dashboard/category/summary",
@@ -93,12 +100,12 @@ app.get(
     z.object({
       year: z.string().regex(/^\d{4}$/),
       month: z.string().regex(/^\d{2}$/),
-    })
+    }),
   ),
   (c) => {
     const { year, month } = c.req.valid("query");
     return categorySummaryHandler(c, year, month);
-  }
+  },
 );
 
 export type CostCreateType = typeof costCreate;

@@ -8,7 +8,7 @@ const logger = new Logger({ serviceName: "webhookHandler" });
 export const webhookHandler = async (
   reqBody: string,
   LINE_CHANNEL_ACCESS_TOKEN: string,
-  LINE_CHANNEL_SECRET: string
+  LINE_CHANNEL_SECRET: string,
 ) => {
   logger.info(`Received webhook event: ${reqBody}`);
   const body = JSON.parse(reqBody || "{}");
@@ -38,7 +38,7 @@ export const webhookHandler = async (
         }
         throw err;
       }
-    })
+    }),
   );
 
   return "Webhook processed successfully";

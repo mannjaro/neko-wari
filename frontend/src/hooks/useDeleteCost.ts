@@ -3,10 +3,7 @@ import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback } from "react";
 
-import {
-  type DeleteCostData,
-  deleteCostDetail,
-} from "@/server/deleteDetail";
+import { type DeleteCostData, deleteCostDetail } from "@/server/deleteDetail";
 
 export function useDeleteCost() {
   const queryClient = useQueryClient();

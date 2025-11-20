@@ -11,7 +11,7 @@ const logger = new Logger({ serviceName: "textEventHandler" });
 
 export const textEventHandler = async (
   client: line.messagingApi.MessagingApiClient,
-  event: line.WebhookEvent
+  event: line.WebhookEvent,
 ): Promise<void> => {
   if (event.type !== "message" || event.message.type !== "text") {
     return;
@@ -77,7 +77,7 @@ export const textEventHandler = async (
           currentState.user!,
           currentState.category!,
           currentState.memo || "",
-          price
+          price,
         );
 
         response = {

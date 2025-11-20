@@ -7,7 +7,10 @@ import type { User } from "oidc-client-ts";
  * @param bufferSeconds - Number of seconds before expiration to consider the token as expired (default: 60)
  * @returns true if the token is expired or about to expire
  */
-export function isTokenExpired(user: User | null | undefined, bufferSeconds = 60): boolean {
+export function isTokenExpired(
+  user: User | null | undefined,
+  bufferSeconds = 60,
+): boolean {
   if (!user || !user.expires_at) {
     return true;
   }

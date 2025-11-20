@@ -23,7 +23,7 @@ app.post("/webhook", async (c) => {
     const result = await webhookHandler(
       reqBody,
       LINE_CHANNEL_ACCESS_TOKEN,
-      LINE_CHANNEL_SECRET
+      LINE_CHANNEL_SECRET,
     );
 
     c.status(200);

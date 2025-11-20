@@ -47,8 +47,8 @@ export function MonthlyCostTable({
       className={`transition-opacity ${isActive ? "opacity-100" : "opacity-70"}`}
     >
       <PaymentSummaryCard month={month} diffResult={diffResult} />
-      <div className="sm:hidden flex justify-end mb-4">
-        <AddDetailDialog isMobile={false} />
+      <div className="flex justify-end mb-4">
+        <AddDetailDialog />
       </div>
       <UserSummaryTable
         year={year}

@@ -95,12 +95,22 @@ export const DYNAMO_KEYS = {
 export const SESSION_TTL_SECONDS = 24 * 60 * 60;
 
 // Quick reply options for memo input by category
-export const MEMO_QUICK_REPLIES_BY_CATEGORY: Record<PaymentCategory, readonly string[]> = {
+export const MEMO_QUICK_REPLIES_BY_CATEGORY: Record<
+  PaymentCategory,
+  readonly string[]
+> = {
   rent: ["なし", "家賃", "管理費", "更新料", "その他"],
   utilities: ["なし", "電気代", "ガス代", "水道代", "その他"],
   furniture: ["なし", "家具", "家電", "リフォーム", "その他"],
   daily: ["なし", "食費", "日用品", "生活用品", "その他"],
-  transportation: ["なし", "新幹線", "レンタカー", "電車", "タクシー", "その他"],
+  transportation: [
+    "なし",
+    "新幹線",
+    "レンタカー",
+    "電車",
+    "タクシー",
+    "その他",
+  ],
   other: ["なし", "医療費", "娯楽費", "その他"],
 } as const;
 

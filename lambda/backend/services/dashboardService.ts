@@ -17,7 +17,7 @@ export class DashboardService {
    * Generate monthly summary from cost data
    */
   async generateMonthlySummary(
-    yearMonth: string
+    yearMonth: string,
   ): Promise<MonthlySummaryResponse> {
     const costData = await costDataRepository.getMonthlyCostData(yearMonth);
 
@@ -87,11 +87,11 @@ export class DashboardService {
    */
   async getUserDetailData(
     userId: string,
-    yearMonth: string
+    yearMonth: string,
   ): Promise<UserDetailResponse> {
     const transactions = await costDataRepository.getUserMonthlyCostData(
       userId,
-      yearMonth
+      yearMonth,
     );
 
     if (transactions.length === 0) {
@@ -137,7 +137,7 @@ export class DashboardService {
    * Generate category summary for dashboard
    */
   async generateCategorySummary(
-    yearMonth: string
+    yearMonth: string,
   ): Promise<CategorySummaryResponse> {
     const costData = await costDataRepository.getMonthlyCostData(yearMonth);
 
@@ -167,7 +167,7 @@ export class DashboardService {
     return {
       yearMonth,
       categories: Array.from(categoryMap.values()).sort(
-        (a, b) => b.totalAmount - a.totalAmount
+        (a, b) => b.totalAmount - a.totalAmount,
       ),
     };
   }

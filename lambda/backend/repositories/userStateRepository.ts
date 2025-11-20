@@ -16,7 +16,7 @@ export class UserStateRepository {
     try {
       const pk = `${DYNAMO_KEYS.USER_PREFIX}${userId}`;
       const sk = DYNAMO_KEYS.USER_STATE_SK;
-      
+
       const result = await dynamoRepository.get(pk, sk);
 
       if (!result) {
@@ -75,7 +75,7 @@ export class UserStateRepository {
     try {
       const pk = `${DYNAMO_KEYS.USER_PREFIX}${userId}`;
       const sk = DYNAMO_KEYS.USER_STATE_SK;
-      
+
       await dynamoRepository.delete(pk, sk);
     } catch (error) {
       logger.error("Error deleting user state", { error, userId });

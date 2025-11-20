@@ -18,7 +18,7 @@ const logger = new Logger({ serviceName: "postbackEventHandler" });
 
 export const postbackEventHandler = async (
   client: line.messagingApi.MessagingApiClient,
-  event: line.WebhookEvent
+  event: line.WebhookEvent,
 ): Promise<void> => {
   if (event.type !== "postback") {
     return;

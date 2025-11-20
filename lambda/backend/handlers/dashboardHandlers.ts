@@ -13,7 +13,7 @@ const logger = new Logger({ serviceName: "dashboardHandlers" });
 export const monthlyDashboardHandler = async (
   c: Context,
   year: string,
-  month: string
+  month: string,
 ) => {
   const yearMonth = `${year}-${month}`;
   try {
@@ -33,11 +33,14 @@ export const userDetailsHandler = async (
   c: Context,
   userId: string,
   year: string,
-  month: string
+  month: string,
 ) => {
   const yearMonth = `${year}-${month}`;
   try {
-    const userDetails = await dashboardService.getUserDetailData(userId, yearMonth);
+    const userDetails = await dashboardService.getUserDetailData(
+      userId,
+      yearMonth,
+    );
     const validatedUserDetails = userDetailResponseSchema.parse(userDetails);
     return c.json(validatedUserDetails);
   } catch (error) {
@@ -56,11 +59,12 @@ export const userDetailsHandler = async (
 export const categorySummaryHandler = async (
   c: Context,
   year: string,
-  month: string
+  month: string,
 ) => {
   const yearMonth = `${year}-${month}`;
   try {
-    const categorySummary = await dashboardService.generateCategorySummary(yearMonth);
+    const categorySummary =
+      await dashboardService.generateCategorySummary(yearMonth);
     const validatedCategorySummary =
       categorySummaryResponseSchema.parse(categorySummary);
     return c.json(validatedCategorySummary);

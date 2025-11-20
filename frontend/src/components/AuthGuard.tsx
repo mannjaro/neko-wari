@@ -29,7 +29,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
         // Check if refresh token is available
         if (!hasRefreshToken(auth.user)) {
           console.error("No refresh token available");
-          setRefreshError("セッションが期限切れです。再度ログインしてください。");
+          setRefreshError(
+            "セッションが期限切れです。再度ログインしてください。",
+          );
           return;
         }
 
@@ -37,14 +39,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
           setIsRefreshing(true);
           setRefreshError(null);
           console.log("Access token expired. Attempting silent refresh...");
-          
+
           await auth.signinSilent();
-          
+
           console.log("Token refreshed successfully");
         } catch (error) {
           console.error("Failed to refresh token:", error);
-          setRefreshError("トークンの更新に失敗しました。再度ログインしてください。");
-          
+          setRefreshError(
+            "トークンの更新に失敗しました。再度ログインしてください。",
+          );
+
           // Remove user and redirect to login after a delay
           setTimeout(() => {
             auth.removeUser();

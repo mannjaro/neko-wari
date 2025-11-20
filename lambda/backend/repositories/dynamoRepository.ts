@@ -12,7 +12,9 @@ import { Logger } from "@aws-lambda-powertools/logger";
 const logger = new Logger({ serviceName: "dynamoRepository" });
 
 // DynamoDB client setup
-export const dynamoDbClient = new DynamoDBClient({ region: process.env.AWS_REGION });
+export const dynamoDbClient = new DynamoDBClient({
+  region: process.env.AWS_REGION,
+});
 export const docClient = DynamoDBDocumentClient.from(dynamoDbClient);
 export const TABLE_NAME =
   process.env.TABLE_NAME || "LineBotStack-BackendTable11108670-E0MIZ2H6G0AW";
@@ -26,13 +28,13 @@ export interface BaseRepository {
     sk: string,
     updateExpression: string,
     expressionAttributeNames?: Record<string, string>,
-    expressionAttributeValues?: Record<string, any>
+    expressionAttributeValues?: Record<string, any>,
   ): Promise<any>;
   delete(pk: string, sk: string): Promise<void>;
   query(
     indexName: string | undefined,
     keyConditionExpression: string,
-    expressionAttributeValues: Record<string, any>
+    expressionAttributeValues: Record<string, any>,
   ): Promise<any[]>;
 }
 
@@ -44,7 +46,7 @@ export class DynamoRepository implements BaseRepository {
         new GetCommand({
           TableName: TABLE_NAME,
           Key: { PK: pk, SK: sk },
-        })
+        }),
       );
       return result.Item || null;
     } catch (error) {
@@ -59,7 +61,7 @@ export class DynamoRepository implements BaseRepository {
         new PutCommand({
           TableName: TABLE_NAME,
           Item: item,
-        })
+        }),
       );
     } catch (error) {
       logger.error("Error in DynamoDB put operation", { error, item });
@@ -72,7 +74,7 @@ export class DynamoRepository implements BaseRepository {
     sk: string,
     updateExpression: string,
     expressionAttributeNames?: Record<string, string>,
-    expressionAttributeValues?: Record<string, any>
+    expressionAttributeValues?: Record<string, any>,
   ): Promise<any> {
     try {
       const result = await docClient.send(
@@ -83,7 +85,7 @@ export class DynamoRepository implements BaseRepository {
           ExpressionAttributeNames: expressionAttributeNames,
           ExpressionAttributeValues: expressionAttributeValues,
           ReturnValues: "ALL_NEW",
-        })
+        }),
       );
       return result.Attributes;
     } catch (error) {
@@ -98,7 +100,7 @@ export class DynamoRepository implements BaseRepository {
         new DeleteCommand({
           TableName: TABLE_NAME,
           Key: { PK: pk, SK: sk },
-        })
+        }),
       );
     } catch (error) {
       logger.error("Error in DynamoDB delete operation", { error, pk, sk });
@@ -109,7 +111,7 @@ export class DynamoRepository implements BaseRepository {
   async query(
     indexName: string | undefined,
     keyConditionExpression: string,
-    expressionAttributeValues: Record<string, any>
+    expressionAttributeValues: Record<string, any>,
   ): Promise<any[]> {
     try {
       const allItems: any[] = [];
@@ -123,7 +125,7 @@ export class DynamoRepository implements BaseRepository {
             KeyConditionExpression: keyConditionExpression,
             ExpressionAttributeValues: expressionAttributeValues,
             ExclusiveStartKey: lastEvaluatedKey,
-          })
+          }),
         );
 
         if (result.Items) {

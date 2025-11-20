@@ -70,7 +70,7 @@ export function useAuthenticatedFetch() {
         throw error;
       }
     },
-    [ensureValidToken]
+    [ensureValidToken],
   );
 
   return {

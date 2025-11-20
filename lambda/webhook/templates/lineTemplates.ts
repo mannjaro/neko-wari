@@ -44,7 +44,7 @@ export const createUserSelectionTemplate = (): TemplateButtons => ({
  * Creates category selection carousel template
  */
 export const createCategoryCarouselTemplate = (
-  selectedUser: string
+  selectedUser: string,
 ): TemplateCarousel => ({
   type: "carousel",
   columns: Object.entries(CATEGORY_NAMES).map(([category, name]) => ({
@@ -69,9 +69,13 @@ export const createCategoryCarouselTemplate = (
 /**
  * Creates quick reply for memo input based on selected category
  */
-export const createMemoQuickReply = (category?: PaymentCategory): QuickReply => {
-  const memoOptions = category ? MEMO_QUICK_REPLIES_BY_CATEGORY[category] : MEMO_QUICK_REPLIES_BY_CATEGORY.other;
-  
+export const createMemoQuickReply = (
+  category?: PaymentCategory,
+): QuickReply => {
+  const memoOptions = category
+    ? MEMO_QUICK_REPLIES_BY_CATEGORY[category]
+    : MEMO_QUICK_REPLIES_BY_CATEGORY.other;
+
   return {
     items: memoOptions.map(
       (memo): QuickReplyItem => ({
@@ -81,7 +85,7 @@ export const createMemoQuickReply = (category?: PaymentCategory): QuickReply => 
           label: memo,
           text: memo,
         },
-      })
+      }),
     ),
   };
 };
@@ -93,7 +97,7 @@ export const createConfirmationTemplate = (
   user: string,
   category: PaymentCategory,
   memo: string,
-  price: number
+  price: number,
 ): TemplateConfirm => ({
   type: "confirm",
   text: `以下の内容で登録しますか？\n\n👤 ${user}さん\n📋 ${
