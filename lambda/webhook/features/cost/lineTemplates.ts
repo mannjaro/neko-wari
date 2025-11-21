@@ -1,4 +1,4 @@
-import {
+import type {
   TemplateButtons,
   TemplateCarousel,
   TemplateConfirm,
@@ -14,24 +14,22 @@ import {
   POSTBACK_DATA,
   MEMO_QUICK_REPLIES_BY_CATEGORY,
 } from "../../../shared/constants";
+import type { AcceptedUser } from "./userCache";
 
 /**
- * Creates initial user selection button template
+ * Creates initial user selection button template with dynamic users
  */
-export const createUserSelectionTemplate = (): TemplateButtons => ({
+export const createUserSelectionTemplate = (
+  users: AcceptedUser[],
+): TemplateButtons => ({
   type: "buttons",
   text: BOT_MESSAGES.START,
   actions: [
-    {
-      type: "postback",
-      label: "****",
-      data: "payment_user=****",
-    },
-    {
-      type: "postback",
-      label: "****",
-      data: "payment_user=****",
-    },
+    ...users.map((user) => ({
+      type: "postback" as const,
+      label: user.displayName,
+      data: `payment_user=${user.lineUserId}`,
+    })),
     {
       type: "postback",
       label: "キャンセル",
@@ -94,13 +92,13 @@ export const createMemoQuickReply = (
  * Creates confirmation template for final review
  */
 export const createConfirmationTemplate = (
-  user: string,
+  displayName: string,
   category: PaymentCategory,
   memo: string,
   price: number,
 ): TemplateConfirm => ({
   type: "confirm",
-  text: `以下の内容で登録しますか？\n\n👤 ${user}さん\n📋 ${
+  text: `以下の内容で登録しますか？\n\n👤 ${displayName}さん\n📋 ${
     CATEGORY_NAMES[category]
   }\n📝 ${memo || "なし"}\n💰 ${price.toLocaleString()}円`,
   actions: [

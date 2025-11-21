@@ -1,11 +1,13 @@
-import * as line from "@line/bot-sdk";
+import type * as line from "@line/bot-sdk";
 import { Logger } from "@aws-lambda-powertools/logger";
+import type { PaymentCategory } from "../../../shared/types";
 import { BOT_MESSAGES } from "../../../shared/constants";
 import { userService } from "../../../backend/features/user/userService";
 import {
   createUserSelectionTemplate,
   createConfirmationTemplate,
 } from "./lineTemplates";
+import { getAcceptedUsers } from "./userCache";
 
 const logger = new Logger({ serviceName: "textEventHandler" });
 
@@ -26,13 +28,23 @@ export const textEventHandler = async (
     // Reset user state and start fresh
     await userService.saveUserState(userId, { step: "idle" });
 
-    const buttonTemplate = createUserSelectionTemplate();
+    // Fetch accepted users
+    const users = await getAcceptedUsers();
 
-    response = {
-      type: "template",
-      altText: BOT_MESSAGES.START,
-      template: buttonTemplate,
-    };
+    if (users.length === 0) {
+      response = {
+        type: "text",
+        text: "❌ 登録済みユーザーが見つかりません。管理者に連絡してください。",
+      };
+    } else {
+      const buttonTemplate = createUserSelectionTemplate(users);
+
+      response = {
+        type: "template",
+        altText: BOT_MESSAGES.START,
+        template: buttonTemplate,
+      };
+    }
   } else if (text === "やめる" || text === "キャンセル" || text === "終了") {
     // Cancel current session and clear state
     await userService.deleteUserState(userId);
@@ -60,7 +72,7 @@ export const textEventHandler = async (
     } else if (currentState?.step === "waiting_price") {
       const price = parseFloat(text?.replace(/[,¥円]/g, "") || "0");
 
-      if (isNaN(price) || price <= 0) {
+      if (Number.isNaN(price) || price <= 0) {
         response = {
           type: "text",
           text: BOT_MESSAGES.PRICE_ERROR,
@@ -73,9 +85,17 @@ export const textEventHandler = async (
           price: price,
         });
 
+        // Look up display name from LINE user ID
+        const users = await getAcceptedUsers();
+        const selectedUser = users.find(
+          (u) => u.lineUserId === currentState.user,
+        );
+        const displayName =
+          selectedUser?.displayName || currentState.user || "";
+
         const confirmTemplate = createConfirmationTemplate(
-          currentState.user!,
-          currentState.category!,
+          displayName,
+          currentState.category as PaymentCategory,
           currentState.memo || "",
           price,
         );

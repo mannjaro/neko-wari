@@ -11,7 +11,8 @@
     "watch": "tsc -w",
     "test": "vitest",
     "cdk": "cdk deploy --all --require-approval never",
-    "cdk:watch": "cdk watch --hotswap --no-rollback"
+    "cdk:watch": "cdk watch --hotswap --no-rollback",
+    "migrate:users": "tsx scripts/migrateUserToLineId.ts"
   },
   "devDependencies": {
     "@aws-lambda-powertools/logger": "^2.28.1",

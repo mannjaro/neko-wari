@@ -1,4 +1,4 @@
-import * as line from "@line/bot-sdk";
+import type * as line from "@line/bot-sdk";
 import { Logger } from "@aws-lambda-powertools/logger";
 import type { PaymentCategory } from "../../../shared/types";
 import {
@@ -13,6 +13,7 @@ import {
   createMemoQuickReply,
   createUserSelectionTemplate,
 } from "./lineTemplates";
+import { getAcceptedUsers } from "./userCache";
 
 const logger = new Logger({ serviceName: "postbackEventHandler" });
 
@@ -46,16 +47,18 @@ export const postbackEventHandler = async (
       };
     } else {
       switch (currentState.step) {
-        case "user_selected":
+        case "user_selected": {
           // Go back to user selection
           await userService.saveUserState(userId, { step: "idle" });
+          const usersForBack = await getAcceptedUsers();
           response = {
             type: "template",
             altText: "支払い情報を選択してください",
-            template: createUserSelectionTemplate(),
+            template: createUserSelectionTemplate(usersForBack),
           };
           break;
-        case "waiting_memo":
+        }
+        case "waiting_memo": {
           // Go back to category selection
           await userService.saveUserState(userId, {
             step: "user_selected",
@@ -67,20 +70,29 @@ export const postbackEventHandler = async (
             template: createCategoryCarouselTemplate(currentState.user || ""),
           };
           break;
-        case "waiting_price":
+        }
+        case "waiting_price": {
           // Go back to memo input
           await userService.saveUserState(userId, {
             step: "waiting_memo",
             user: currentState.user || "",
             category: currentState.category,
           });
+          // Look up display name
+          const usersForPrice = await getAcceptedUsers();
+          const userForPrice = usersForPrice.find(
+            (u) => u.lineUserId === currentState.user,
+          );
+          const displayNameForPrice =
+            userForPrice?.displayName || currentState.user || "";
           response = {
             type: "text",
-            text: `${currentState.user}さんの${CATEGORY_NAMES[currentState.category!]}を選択しました。\n\n📝 備考があれば入力してください（下から選択または直接入力）。`,
+            text: `${displayNameForPrice}さんの${CATEGORY_NAMES[currentState.category as PaymentCategory]}を選択しました。\n\n📝 備考があれば入力してください（下から選択または直接入力）。`,
             quickReply: createMemoQuickReply(currentState.category),
           };
           break;
-        case "confirming":
+        }
+        case "confirming": {
           // Go back to price input
           await userService.saveUserState(userId, {
             step: "waiting_price",
@@ -93,6 +105,7 @@ export const postbackEventHandler = async (
             text: BOT_MESSAGES.MEMO_SAVED,
           };
           break;
+        }
         default:
           response = {
             type: "text",
@@ -101,9 +114,10 @@ export const postbackEventHandler = async (
       }
     }
   } else if (
-    data === "payment_user=****" ||
-    data === "payment_user=****"
+    data?.startsWith("payment_user=") &&
+    data !== POSTBACK_DATA.CANCEL
   ) {
+    // Handle dynamic user selection
     // Validate step: should be idle or just started
     if (!currentState || currentState.step !== "idle") {
       response = {
@@ -111,22 +125,38 @@ export const postbackEventHandler = async (
         text: BOT_MESSAGES.INVALID_OPERATION,
       };
     } else {
-      const selectedUser =
-        data === "payment_user=****" ? "****" : "****";
+      // Extract LINE user ID from postback data
+      const lineUserId = data.substring(13); // Remove "payment_user=" prefix
 
-      // Update state to user_selected
-      await userService.saveUserState(userId, {
-        step: "user_selected",
-        user: selectedUser,
-      });
+      // Fetch users and validate selection
+      const users = await getAcceptedUsers();
+      const selectedUser = users.find((u) => u.lineUserId === lineUserId);
 
-      const carouselTemplate = createCategoryCarouselTemplate(selectedUser);
+      if (!selectedUser) {
+        // User not found - restart flow
+        await userService.saveUserState(userId, { step: "idle" });
+        const freshUsers = await getAcceptedUsers();
+        response = {
+          type: "template",
+          altText:
+            "選択されたユーザーが見つかりません。最初からやり直してください。",
+          template: createUserSelectionTemplate(freshUsers),
+        };
+      } else {
+        // Update state to user_selected with LINE user ID
+        await userService.saveUserState(userId, {
+          step: "user_selected",
+          user: lineUserId, // Store LINE user ID, not display name
+        });
 
-      response = {
-        type: "template",
-        altText: "支払いカテゴリを選択してください",
-        template: carouselTemplate,
-      };
+        const carouselTemplate = createCategoryCarouselTemplate(lineUserId);
+
+        response = {
+          type: "template",
+          altText: "支払いカテゴリを選択してください",
+          template: carouselTemplate,
+        };
+      }
     }
   } else if (data?.startsWith("category=")) {
     // Validate step: should have user selected
@@ -138,10 +168,10 @@ export const postbackEventHandler = async (
     } else {
       const params = new URLSearchParams(data);
       const category = params.get("category") as PaymentCategory;
-      const user = params.get("user");
+      const lineUserId = params.get("user");
 
       // Validate that the user matches current state
-      if (user !== currentState.user) {
+      if (lineUserId !== currentState.user) {
         response = {
           type: "text",
           text: BOT_MESSAGES.INVALID_OPERATION,
@@ -150,13 +180,18 @@ export const postbackEventHandler = async (
         // Set user state to wait for memo input
         await userService.saveUserState(userId, {
           step: "waiting_memo",
-          user: user || "",
+          user: lineUserId || "",
           category: category,
         });
 
+        // Look up display name for message
+        const users = await getAcceptedUsers();
+        const selectedUser = users.find((u) => u.lineUserId === lineUserId);
+        const displayName = selectedUser?.displayName || lineUserId || "";
+
         response = {
           type: "text",
-          text: `${user}さんの${CATEGORY_NAMES[category]}を選択しました。\n\n📝 備考があれば入力してください（下から選択または直接入力）。`,
+          text: `${displayName}さんの${CATEGORY_NAMES[category]}を選択しました。\n\n📝 備考があれば入力してください（下から選択または直接入力）。`,
           quickReply: createMemoQuickReply(category),
         };
       }
@@ -174,11 +209,19 @@ export const postbackEventHandler = async (
           // Save cost data to DynamoDB
           await costService.saveCostData(userId, currentState);
 
+          // Look up display name for confirmation message
+          const usersForConfirm = await getAcceptedUsers();
+          const userForConfirm = usersForConfirm.find(
+            (u) => u.lineUserId === currentState.user,
+          );
+          const displayNameForConfirm =
+            userForConfirm?.displayName || currentState.user || "";
+
           response = {
             type: "text",
             text: `✅ 支払い情報を登録しました！\n\n👤 ${
-              currentState.user
-            }さん\n📋 ${CATEGORY_NAMES[currentState.category!]}\n📝 ${
+              displayNameForConfirm
+            }さん\n📋 ${CATEGORY_NAMES[currentState.category as PaymentCategory]}\n📝 ${
               currentState.memo || "なし"
             }\n💰 ${(currentState.price || 0).toLocaleString()}円${
               BOT_MESSAGES.NEW_ENTRY_HINT
