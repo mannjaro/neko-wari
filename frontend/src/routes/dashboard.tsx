@@ -12,7 +12,6 @@ import {
   monthlyQueryOptions,
 } from "@/hooks/useQueryOptions";
 import { UserControl } from "@/components/UserControl";
-import { CLIENT_ID, COGNITO_DOMAIN, REDIRECT_URI } from "@/utils/auth";
 
 const searchSchema = z.object({
   year: z.number().optional(),
@@ -78,10 +77,6 @@ function Dashboard() {
   const currentYear = year ?? now.getFullYear();
   const currentMonth = month ?? now.getMonth() + 1;
 
-  const setUpPasskey = () => {
-    window.location.href = `${COGNITO_DOMAIN}/passkeys/add?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
-  };
-
   const handleYearChange = (newYear: number) => {
     navigate({
       to: "/dashboard",
@@ -137,7 +132,7 @@ function Dashboard() {
             <div className="flex items-center">
               {/* ユーザー情報 & メニュー */}
               <div className="flex items-center space-x-3">
-                <UserControl setUpPasskey={setUpPasskey} />
+                <UserControl />
               </div>
             </div>
           </div>

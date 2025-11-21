@@ -9,10 +9,14 @@ import {
 import { useAuth } from "react-oidc-context";
 import { Key, LogOut, UserCog, Home } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import { CLIENT_ID, COGNITO_DOMAIN, REDIRECT_URI } from "@/utils/auth";
 
-export function UserControl({ setUpPasskey }: { setUpPasskey: () => void }) {
+export function UserControl() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const setUpPasskey = () => {
+    window.location.href = `${COGNITO_DOMAIN}/passkeys/add?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+  };
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
