@@ -146,16 +146,17 @@ export const invitationCreate = app.post(
   },
 );
 
-export const invitationGet = app.get("/invitation/:token", async (c) => {
-  return getInvitationHandler(c);
-});
-
+// Define static routes before dynamic routes to prevent shadowing
 export const invitationCallback = app.get("/invitation/callback", async (c) => {
   return lineLoginCallbackHandler(c);
 });
 
 export const invitationList = app.get("/invitation/list", async (c) => {
   return listInvitationsHandler(c);
+});
+
+export const invitationGet = app.get("/invitation/:token", async (c) => {
+  return getInvitationHandler(c);
 });
 
 export const invitationRevoke = app.delete(

@@ -84,6 +84,8 @@ export class InvitationService {
    */
   async getInvitationByToken(token: string): Promise<InvitationItem | null> {
     try {
+      logger.info("Looking up invitation by token", { token });
+
       // Query GSI to find invitation by token
       const result = await dynamoClient.query<InvitationItem>(
         "GSI1",
@@ -93,8 +95,24 @@ export class InvitationService {
         },
       );
 
+      logger.info("Query result", {
+        resultCount: result.length,
+        tokens: result.map((item) => item.Token),
+      });
+
       // Filter by token in memory (not ideal for production, consider adding GSI on Token)
       const invitation = result.find((item) => item.Token === token);
+
+      if (invitation) {
+        logger.info("Invitation found", {
+          invitationId: invitation.InvitationId,
+        });
+      } else {
+        logger.warn("Invitation not found", {
+          token,
+          availableTokens: result.map((item) => item.Token),
+        });
+      }
 
       return invitation || null;
     } catch (error) {

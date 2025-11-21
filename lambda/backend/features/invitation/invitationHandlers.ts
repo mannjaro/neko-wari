@@ -116,23 +116,63 @@ export async function lineLoginCallbackHandler(c: Context) {
     }
 
     if (!code || !stateParam) {
+      logger.error("Missing required parameters", { code, stateParam });
       return c.json({ error: "Missing required parameters" }, 400);
     }
 
+    logger.info("Callback received", {
+      code: code.substring(0, 10) + "...",
+      stateParam: stateParam.substring(0, 50) + "...",
+    });
+
     // Decode state parameter
-    const stateJson = Buffer.from(stateParam, "base64").toString("utf-8");
-    const state = JSON.parse(stateJson);
+    let state: { token: string; nonce: string };
+    try {
+      const stateJson = Buffer.from(stateParam, "base64").toString("utf-8");
+      logger.info("State decoded", { stateJson });
+      state = JSON.parse(stateJson);
+      logger.info("State parsed", { token: state.token });
+    } catch (error) {
+      logger.error("Failed to decode state parameter", { error, stateParam });
+      return c.html(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Error</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              body { font-family: sans-serif; text-align: center; padding: 50px; }
+              .error { color: #d32f2f; }
+            </style>
+          </head>
+          <body>
+            <h1 class="error">Error</h1>
+            <p>Invalid state parameter. Please try again.</p>
+          </body>
+        </html>
+      `);
+    }
+
     const { token } = state;
 
     // Exchange code for token
+    logger.info("Exchanging code for LINE access token");
     const tokenResponse = await lineLoginService.exchangeCodeForToken(code);
+    logger.info("LINE access token obtained");
 
     // Get user profile
+    logger.info("Getting LINE user profile");
     const userProfile = await lineLoginService.getUserProfile(
       tokenResponse.access_token,
     );
+    logger.info("LINE user profile obtained", { userId: userProfile.userId });
 
     // Accept invitation with LINE user info
+    logger.info("Accepting invitation", {
+      token,
+      lineUserId: userProfile.userId,
+    });
     const acceptedInvitation =
       await invitationService.acceptInvitationWithLineId(
         token,
