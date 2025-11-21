@@ -1,10 +1,8 @@
 // src/routes/dashboard.tsx
 
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useAuth } from "react-oidc-context";
 import { z } from "zod";
-import { AuthGuard } from "@/components/AuthGuard";
 import type { CarouselApi } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { YearlyCarousel } from "@/components/YearlyCarousel";
@@ -14,24 +12,27 @@ import {
   monthlyQueryOptions,
 } from "@/hooks/useQueryOptions";
 import { UserControl } from "@/components/UserControl";
+import { CLIENT_ID, COGNITO_DOMAIN, REDIRECT_URI } from "@/utils/auth";
 
 const searchSchema = z.object({
   year: z.number().optional(),
   month: z.number().min(1).max(12).optional(),
 });
 
-// 環境に応じた設定
-const CLIENT_ID = "52egt02nn47oubgatq6vadtgs4";
-const COGNITO_DOMAIN =
-  "https://payment-dashboard.auth.ap-northeast-1.amazoncognito.com";
-const REDIRECT_URI = import.meta.env.DEV
-  ? "http://localhost:3000"
-  : "https://advanced-payment-dashboard.zk-****.workers.dev";
-
 export const Route = createFileRoute("/dashboard")({
   validateSearch: searchSchema,
   component: Dashboard,
   loaderDeps: ({ search: { year, month } }) => ({ year, month }),
+  beforeLoad: ({ context, location }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({
+        to: "/login",
+        search: {
+          redirect: location.href,
+        },
+      });
+    }
+  },
   loader: ({ context, deps: { year, month } }) => {
     const now = new Date();
     const currentYear = year ?? now.getFullYear();
@@ -72,7 +73,6 @@ function Dashboard() {
   const navigate = useNavigate();
   const [api, setApi] = useState<CarouselApi>();
   const initialSetRef = useRef(false);
-  const auth = useAuth();
 
   const now = new Date();
   const currentYear = year ?? now.getFullYear();
@@ -89,13 +89,6 @@ function Dashboard() {
       replace: true,
     });
   };
-
-  // 未認証の場合はログインページへリダイレクト
-  useEffect(() => {
-    if (!auth.isLoading && !auth.isAuthenticated) {
-      navigate({ to: "/login" });
-    }
-  }, [auth.isLoading, auth.isAuthenticated, navigate]);
 
   // Carousel APIの設定
   useEffect(() => {
@@ -129,60 +122,41 @@ function Dashboard() {
     }
   }, [currentMonth, api]);
 
-  // ローディング中はスケルトンを表示
-  if (auth.isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <SkeletonDemo />
-      </div>
-    );
-  }
-
-  // 未認証の場合は何も表示しない（リダイレクト処理中）
-  if (!auth.isAuthenticated) {
-    return null;
-  }
-
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
-        {/* ユーザー情報ヘッダ */}
-        <header className="bg-white shadow-sm">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <h1 className="text-xl font-semibold text-gray-900">
-                  支払い管理ボード
-                </h1>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* ユーザー情報ヘッダ */}
+      <header className="bg-white shadow-sm">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-xl font-semibold text-gray-900">
+                支払い管理ボード
+              </h1>
+            </div>
 
-              <div className="flex items-center">
-                {/* ユーザー情報 & メニュー */}
-                <div className="flex items-center space-x-3">
-                  <UserControl setUpPasskey={setUpPasskey} />
-                </div>
+            <div className="flex items-center">
+              {/* ユーザー情報 & メニュー */}
+              <div className="flex items-center space-x-3">
+                <UserControl setUpPasskey={setUpPasskey} />
               </div>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* 年選択バー */}
-        <YearSelector
-          currentYear={currentYear}
-          onYearChange={handleYearChange}
-        />
+      {/* 年選択バー */}
+      <YearSelector currentYear={currentYear} onYearChange={handleYearChange} />
 
-        {/* メインコンテンツ */}
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <Suspense fallback={<SkeletonDemo />}>
-            <YearlyCarousel
-              year={currentYear}
-              currentMonth={currentMonth}
-              setApi={setApi}
-            />
-          </Suspense>
-        </main>
-      </div>
-    </AuthGuard>
+      {/* メインコンテンツ */}
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <Suspense fallback={<SkeletonDemo />}>
+          <YearlyCarousel
+            year={currentYear}
+            currentMonth={currentMonth}
+            setApi={setApi}
+          />
+        </Suspense>
+      </main>
+    </div>
   );
 }

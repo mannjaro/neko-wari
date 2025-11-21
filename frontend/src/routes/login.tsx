@@ -1,19 +1,26 @@
 // src/routes/login.tsx
 
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "react-oidc-context";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/login")({
   component: Login,
+  beforeLoad: ({ context }) => {
+    if (context.auth.isAuthenticated) {
+      throw redirect({
+        to: "/dashboard",
+      });
+    }
+  },
 });
 
 function Login() {
   const auth = useAuth();
   const navigate = useNavigate();
 
-  // すでにログインしている場合はダッシュボードへリダイレクト
+  // Fallback redirect if beforeLoad missed it (e.g. initial load before context sync)
   useEffect(() => {
     if (auth.isAuthenticated) {
       navigate({ to: "/dashboard" });

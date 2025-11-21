@@ -7,44 +7,21 @@ import {
   HeadContent,
   Outlet,
   Scripts,
+  useRouter,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { NotFound } from "@/components/NotFound";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "react-oidc-context";
-import { WebStorageStateStore } from "oidc-client-ts";
+import type { AuthState } from "@/utils/auth";
+import { cognitoAuthConfig } from "@/utils/auth";
+import { AuthProvider, useAuth } from "react-oidc-context";
+import { useEffect } from "react";
 
 import appCss from "@/styles/app.css?url";
 
-const REDIRECT_URI = import.meta.env.DEV
-  ? "http://localhost:3000"
-  : "https://advanced-payment-dashboard.zk-****.workers.dev";
-
-const cognitoAuthConfig = {
-  authority:
-    "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_ntfS5MRXx",
-  client_id: "52egt02nn47oubgatq6vadtgs4",
-  redirect_uri: REDIRECT_URI,
-  response_type: "code",
-  scope: "aws.cognito.signin.user.admin email openid phone profile",
-  automaticSilentRenew: true,
-  loadUserInfo: true,
-  // Increase the silent renew timeout to handle longer refresh operations
-  silentRequestTimeoutInSeconds: 30,
-  // Configure token refresh to happen before expiration (60 seconds before)
-  accessTokenExpiringNotificationTimeInSeconds: 60,
-  userStore:
-    typeof window !== "undefined"
-      ? new WebStorageStateStore({ store: window.localStorage })
-      : undefined,
-  onSigninCallback: (_user: unknown): void => {
-    // 認証後にダッシュボードへリダイレクト
-    window.location.href = "/dashboard";
-  },
-};
-
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
+  auth: AuthState;
 }>()({
   head: () => ({
     meta: [
@@ -85,6 +62,31 @@ export const Route = createRootRouteWithContext<{
   notFoundComponent: NotFound,
 });
 
+function AuthSync() {
+  const auth = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Update the router context with the latest auth state
+    // This allows beforeLoad to access the correct auth state
+    // We use a type assertion because context is technically read-only in types but mutable at runtime
+    const context = router.options.context as { auth: AuthState };
+    context.auth = {
+      isAuthenticated: auth.isAuthenticated,
+      user: auth.user,
+      isLoading: auth.isLoading,
+      signinRedirect: auth.signinRedirect,
+    };
+
+    // Invalidate the router to re-run beforeLoad checks if needed
+    if (!auth.isLoading) {
+      router.invalidate();
+    }
+  }, [auth, router]);
+
+  return null;
+}
+
 function RootComponent() {
   return (
     <RootDocument>
@@ -100,7 +102,10 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <HeadContent />
       </head>
       <body>
-        <AuthProvider {...cognitoAuthConfig}>{children}</AuthProvider>
+        <AuthProvider {...cognitoAuthConfig}>
+          <AuthSync />
+          {children}
+        </AuthProvider>
         <Scripts />
         <Toaster />
       </body>

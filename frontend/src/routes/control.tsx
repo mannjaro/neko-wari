@@ -1,17 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { UserManagementPage } from "@/components/control/UserManagementPage";
 import { UserControl } from "@/components/UserControl";
+import { CLIENT_ID, COGNITO_DOMAIN, REDIRECT_URI } from "@/utils/auth";
 
 export const Route = createFileRoute("/control")({
+  beforeLoad: ({ context }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({
+        to: "/login",
+      });
+    }
+  },
   component: Control,
 });
-
-const CLIENT_ID = "52egt02nn47oubgatq6vadtgs4";
-const COGNITO_DOMAIN =
-  "https://payment-dashboard.auth.ap-northeast-1.amazoncognito.com";
-const REDIRECT_URI = import.meta.env.DEV
-  ? "http://localhost:3000"
-  : "https://advanced-payment-dashboard.zk-****.workers.dev";
 
 function Control() {
   const setUpPasskey = () => {
