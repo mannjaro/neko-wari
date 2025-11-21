@@ -151,7 +151,11 @@ export const MonthlySummaryItemSchema = BaseDynamoItemSchema.extend({
 export type MonthlySummaryItem = z.infer<typeof MonthlySummaryItemSchema>;
 
 // Invitation status enum
-export const InvitationStatusSchema = z.enum(["pending", "accepted", "expired"]);
+export const InvitationStatusSchema = z.enum([
+  "pending",
+  "accepted",
+  "expired",
+]);
 export type InvitationStatus = z.infer<typeof InvitationStatusSchema>;
 
 // Invitation facet schema
@@ -171,7 +175,7 @@ export const InvitationItemSchema = BaseDynamoItemSchema.extend({
   AcceptedAt: z.string().optional(),
   ExpiresAt: z.string(), // ISO timestamp
   Metadata: z.record(z.string(), z.unknown()).optional(), // Additional metadata
-  TTL: z.number(),
+  TTL: z.number().optional(), // Only set for pending/expired invitations
 });
 export type InvitationItem = z.infer<typeof InvitationItemSchema>;
 
@@ -305,4 +309,3 @@ export const LineTokenResponseSchema = z.object({
   token_type: z.string(),
 });
 export type LineTokenResponse = z.infer<typeof LineTokenResponseSchema>;
-

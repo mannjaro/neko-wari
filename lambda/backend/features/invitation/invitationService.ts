@@ -173,25 +173,46 @@ export class InvitationService {
 
       const invitation = validation.invitation;
       const now = new Date().toISOString();
+      const pk = invitation.PK;
+      const sk = invitation.SK;
 
-      // Update invitation status
-      const updatedInvitation: InvitationItem = {
-        ...invitation,
-        Status: "accepted",
-        AcceptedBy: lineUserId,
-        AcceptedDisplayName: displayName,
-        AcceptedPictureUrl: pictureUrl,
-        AcceptedAt: now,
-        UpdatedAt: now,
-        GSI1SK: `STATUS#accepted#${now}`,
+      // Build update expression to set accepted fields and remove TTL
+      const updateExpression = pictureUrl
+        ? "SET #status = :status, AcceptedBy = :acceptedBy, AcceptedDisplayName = :displayName, AcceptedPictureUrl = :pictureUrl, AcceptedAt = :acceptedAt, UpdatedAt = :updatedAt, GSI1SK = :gsi1sk REMOVE #ttl"
+        : "SET #status = :status, AcceptedBy = :acceptedBy, AcceptedDisplayName = :displayName, AcceptedAt = :acceptedAt, UpdatedAt = :updatedAt, GSI1SK = :gsi1sk REMOVE #ttl";
+
+      const expressionAttributeNames = {
+        "#status": "Status",
+        "#ttl": "TTL",
       };
 
-      await dynamoClient.put<InvitationItem>(updatedInvitation);
+      const expressionAttributeValues: Record<string, unknown> = {
+        ":status": "accepted",
+        ":acceptedBy": lineUserId,
+        ":displayName": displayName,
+        ":acceptedAt": now,
+        ":updatedAt": now,
+        ":gsi1sk": `STATUS#accepted#${now}`,
+      };
 
-      logger.info("Invitation accepted", {
+      if (pictureUrl) {
+        expressionAttributeValues[":pictureUrl"] = pictureUrl;
+      }
+
+      // Update invitation and remove TTL
+      const updatedInvitation = await dynamoClient.update<InvitationItem>(
+        pk,
+        sk,
+        updateExpression,
+        expressionAttributeNames,
+        expressionAttributeValues,
+      );
+
+      logger.info("Invitation accepted and TTL removed", {
         invitationId: invitation.InvitationId,
         lineUserId,
         displayName,
+        hasTTL: updatedInvitation.TTL !== undefined,
       });
 
       return updatedInvitation;
