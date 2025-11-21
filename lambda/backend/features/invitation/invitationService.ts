@@ -382,8 +382,11 @@ export class InvitationService {
       const updatedInvitation = await dynamoClient.update<InvitationItem>(
         pk,
         sk,
-        "SET AcceptedDisplayName = :displayName, UpdatedAt = :updatedAt",
-        {},
+        "SET #AcceptedDisplayName = :displayName, #UpdatedAt = :updatedAt",
+        {
+          "#AcceptedDisplayName": "AcceptedDisplayName",
+          "#UpdatedAt": "UpdatedAt",
+        },
         {
           ":displayName": displayName,
           ":updatedAt": now,
