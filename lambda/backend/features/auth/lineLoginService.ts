@@ -1,9 +1,6 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { LINE_LOGIN_CONFIG } from "../../../shared/constants";
-import type {
-  LineTokenResponse,
-  LineUserProfile,
-} from "../../../shared/types";
+import type { LineTokenResponse, LineUserProfile } from "../../../shared/types";
 
 const logger = new Logger({ serviceName: "lineLoginService" });
 

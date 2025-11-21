@@ -126,7 +126,7 @@ app.get(
 );
 
 // Invitation API endpoints
-app.post(
+export const invitationCreate = app.post(
   "/invitation/create",
   zValidator("json", CreateInvitationSchema),
   async (c) => {
@@ -135,25 +135,31 @@ app.post(
   },
 );
 
-app.get("/invitation/:token", async (c) => {
+export const invitationGet = app.get("/invitation/:token", async (c) => {
   return getInvitationHandler(c);
 });
 
-app.get("/invitation/callback", async (c) => {
+export const invitationCallback = app.get("/invitation/callback", async (c) => {
   return lineLoginCallbackHandler(c);
 });
 
-app.get("/invitation/list", async (c) => {
+export const invitationList = app.get("/invitation/list", async (c) => {
   return listInvitationsHandler(c);
 });
 
-app.delete("/invitation/:invitationId", async (c) => {
-  return revokeInvitationHandler(c);
-});
+export const invitationRevoke = app.delete(
+  "/invitation/:invitationId",
+  async (c) => {
+    return revokeInvitationHandler(c);
+  },
+);
 
 export type CostCreateType = typeof costCreate;
 export type MonthlyGetType = typeof monthlyGet;
 export type DetailUpdateType = typeof detailUpdate;
 export type DetailDeleteType = typeof detailDelete;
+export type InvitationCreateType = typeof invitationCreate;
+export type InvitationListType = typeof invitationList;
+export type InvitationRevokeType = typeof invitationRevoke;
 
 export default app;

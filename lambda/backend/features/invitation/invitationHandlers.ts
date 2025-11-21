@@ -2,13 +2,8 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import type { Context } from "hono";
 import { invitationService } from "./invitationService";
 import { lineLoginService } from "../auth/lineLoginService";
-import type {
-  CreateInvitation,
-  LineLoginCallback,
-  InvitationStatus,
-} from "../../../shared/types";
+import type { CreateInvitation, InvitationStatus } from "../../../shared/types";
 import { randomBytes } from "node:crypto";
-import { userService } from "../user/userService";
 
 const logger = new Logger({ serviceName: "invitationHandlers" });
 
