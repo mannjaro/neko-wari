@@ -350,6 +350,62 @@ export class InvitationService {
   async revokeInvitation(invitationId: string): Promise<void> {
     await this.updateInvitationStatus(invitationId, "expired");
   }
+
+  /**
+   * Update display name for a user (by LINE user ID)
+   */
+  async updateDisplayName(
+    lineUserId: string,
+    displayName: string,
+  ): Promise<InvitationItem> {
+    try {
+      logger.info("Updating display name", { lineUserId, displayName });
+
+      // Find the accepted invitation for this LINE user
+      const acceptedInvitations = await this.listInvitations(
+        undefined,
+        "accepted",
+      );
+      const invitation = acceptedInvitations.find(
+        (inv) => inv.AcceptedBy === lineUserId,
+      );
+
+      if (!invitation) {
+        throw new Error("User not found");
+      }
+
+      const now = new Date().toISOString();
+      const pk = invitation.PK;
+      const sk = invitation.SK;
+
+      // Update the display name
+      const updatedInvitation = await dynamoClient.update<InvitationItem>(
+        pk,
+        sk,
+        "SET AcceptedDisplayName = :displayName, UpdatedAt = :updatedAt",
+        {},
+        {
+          ":displayName": displayName,
+          ":updatedAt": now,
+        },
+      );
+
+      logger.info("Display name updated", {
+        lineUserId,
+        displayName,
+        invitationId: invitation.InvitationId,
+      });
+
+      return updatedInvitation;
+    } catch (error) {
+      logger.error("Error updating display name", {
+        error,
+        lineUserId,
+        displayName,
+      });
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance

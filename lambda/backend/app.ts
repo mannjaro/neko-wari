@@ -32,7 +32,12 @@ import {
   revokeInvitationHandler,
 } from "./features/invitation/invitationHandlers";
 
-import { listUsersHandler } from "./features/user/userHandlers";
+import {
+  listUsersHandler,
+  updateDisplayNameHandler,
+} from "./features/user/userHandlers";
+
+import { UpdateDisplayNameSchema } from "./features/user/schemas";
 
 import { CreateInvitationSchema } from "../shared/types";
 
@@ -173,6 +178,16 @@ export const userList = app.get("/users", async (c) => {
   return listUsersHandler(c);
 });
 
+export const userUpdateDisplayName = app.put(
+  "/users/:lineUserId/display-name",
+  zValidator("json", UpdateDisplayNameSchema),
+  async (c) => {
+    const { lineUserId } = c.req.param();
+    const { displayName } = c.req.valid("json");
+    return updateDisplayNameHandler(c, lineUserId, displayName);
+  },
+);
+
 export type CostCreateType = typeof costCreate;
 export type MonthlyGetType = typeof monthlyGet;
 export type DetailUpdateType = typeof detailUpdate;
@@ -181,5 +196,6 @@ export type InvitationCreateType = typeof invitationCreate;
 export type InvitationListType = typeof invitationList;
 export type InvitationRevokeType = typeof invitationRevoke;
 export type UserListType = typeof userList;
+export type UserUpdateDisplayNameType = typeof userUpdateDisplayName;
 
 export default app;

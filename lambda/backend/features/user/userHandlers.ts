@@ -34,3 +34,43 @@ export async function listUsersHandler(c: Context) {
     return c.json({ error: "Failed to list users" }, 500);
   }
 }
+
+/**
+ * Handler for updating user display name
+ */
+export async function updateDisplayNameHandler(
+  c: Context,
+  lineUserId: string,
+  displayName: string,
+) {
+  try {
+    logger.info("Updating display name", { lineUserId, displayName });
+
+    // Update the display name
+    const updatedInvitation = await invitationService.updateDisplayName(
+      lineUserId,
+      displayName,
+    );
+
+    // Return updated user data
+    const user = {
+      id: updatedInvitation.AcceptedBy || "",
+      lineUserId: updatedInvitation.AcceptedBy || "",
+      displayName: updatedInvitation.AcceptedDisplayName || "Unknown",
+      pictureUrl: updatedInvitation.AcceptedPictureUrl,
+      acceptedAt: updatedInvitation.AcceptedAt || "",
+      invitationId: updatedInvitation.InvitationId,
+      createdBy: updatedInvitation.CreatedBy,
+    };
+
+    logger.info("Display name updated successfully", { lineUserId, user });
+
+    return c.json({ user });
+  } catch (error) {
+    logger.error("Error in updateDisplayNameHandler", { error, lineUserId });
+    if (error instanceof Error && error.message === "User not found") {
+      return c.json({ error: "User not found" }, 404);
+    }
+    return c.json({ error: "Failed to update display name" }, 500);
+  }
+}

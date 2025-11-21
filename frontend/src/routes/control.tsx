@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   MoreHorizontal,
@@ -63,6 +63,7 @@ import {
 
 import { createInvitation } from "../server/createInvitation";
 import { listUsers } from "../server/listUsers";
+import { updateDisplayName } from "../server/updateDisplayName";
 
 // --- User interface ---
 interface User {
@@ -191,6 +192,85 @@ function CreateInvitationDialog() {
             </Button>
           )}
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditDisplayNameDialog({ user }: { user: User }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [displayName, setDisplayName] = useState(user.displayName);
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async (data: { lineUserId: string; displayName: string }) =>
+      await updateDisplayName({ data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("表示名を更新しました");
+      setIsOpen(false);
+    },
+    onError: (error: Error) => {
+      toast.error(`表示名の更新に失敗しました: ${error.message}`);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!displayName.trim()) {
+      toast.error("表示名を入力してください");
+      return;
+    }
+    mutation.mutate({
+      lineUserId: user.lineUserId,
+      displayName: displayName.trim(),
+    });
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <Edit className="mr-2 h-4 w-4" /> 表示名を変更
+        </DropdownMenuItem>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>表示名の変更</DialogTitle>
+          <DialogDescription>
+            {user.displayName} の表示名を変更します。
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="displayName">新しい表示名</Label>
+              <Input
+                id="displayName"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="表示名を入力"
+                disabled={mutation.isPending}
+              />
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-end">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsOpen(false)}
+              disabled={mutation.isPending}
+            >
+              キャンセル
+            </Button>
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              保存
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
@@ -358,9 +438,7 @@ function UserManagementPage() {
                                 <DropdownMenuLabel>
                                   アクション
                                 </DropdownMenuLabel>
-                                <DropdownMenuItem>
-                                  <Edit className="mr-2 h-4 w-4" /> 編集
-                                </DropdownMenuItem>
+                                <EditDisplayNameDialog user={user} />
                                 <DropdownMenuItem>
                                   <Lock className="mr-2 h-4 w-4" /> 権限変更
                                 </DropdownMenuItem>
