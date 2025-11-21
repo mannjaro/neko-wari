@@ -1,6 +1,8 @@
 import { Hono } from "hono";
+import { logger } from "hono/logger";
 import type { LambdaEvent, LambdaContext } from "hono/aws-lambda";
 import { zValidator } from "@hono/zod-validator";
+import { Logger } from "@aws-lambda-powertools/logger";
 
 import { z } from "zod";
 
@@ -37,7 +39,16 @@ type Bindings = {
   lambdaContext: LambdaContext;
 };
 
+const appLogger = new Logger({ serviceName: "backend" });
+
 const app = new Hono<{ Bindings: Bindings }>();
+
+app.use(logger());
+
+app.onError((err, c) => {
+  appLogger.error("Unhandled error", { error: err });
+  return c.json({ message: "Internal Server Error" }, 500);
+});
 
 app.get("/", (c) => c.text("Status: OK"));
 
