@@ -32,6 +32,8 @@ import {
   revokeInvitationHandler,
 } from "./features/invitation/invitationHandlers";
 
+import { listUsersHandler } from "./features/user/userHandlers";
+
 import { CreateInvitationSchema } from "../shared/types";
 
 type Bindings = {
@@ -166,6 +168,11 @@ export const invitationRevoke = app.delete(
   },
 );
 
+// User API endpoints
+export const userList = app.get("/users", async (c) => {
+  return listUsersHandler(c);
+});
+
 export type CostCreateType = typeof costCreate;
 export type MonthlyGetType = typeof monthlyGet;
 export type DetailUpdateType = typeof detailUpdate;
@@ -173,5 +180,6 @@ export type DetailDeleteType = typeof detailDelete;
 export type InvitationCreateType = typeof invitationCreate;
 export type InvitationListType = typeof invitationList;
 export type InvitationRevokeType = typeof invitationRevoke;
+export type UserListType = typeof userList;
 
 export default app;
