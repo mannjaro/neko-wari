@@ -9,11 +9,29 @@ import type {
 } from "../../../shared/types";
 import { DYNAMO_KEYS } from "../../../shared/constants";
 import { dynamoClient } from "../../lib/dynamoClient";
+import { invitationService } from "../invitation/invitationService";
 
 /**
  * Service for dashboard-related business logic
  */
 export class DashboardService {
+  /**
+   * Build mapping from LINE user ID to display name from accepted invitations
+   */
+  private async getUserIdToDisplayNameMap(): Promise<Map<string, string>> {
+    const acceptedInvitations = await invitationService.listInvitations(
+      undefined,
+      "accepted",
+    );
+    const userMap = new Map<string, string>();
+    for (const invitation of acceptedInvitations) {
+      if (invitation.AcceptedBy && invitation.AcceptedDisplayName) {
+        userMap.set(invitation.AcceptedBy, invitation.AcceptedDisplayName);
+      }
+    }
+    return userMap;
+  }
+
   /**
    * Generate monthly summary from cost data
    */
@@ -21,6 +39,7 @@ export class DashboardService {
     yearMonth: string,
   ): Promise<MonthlySummaryResponse> {
     const costData = await this.getMonthlyCostData(yearMonth);
+    const userDisplayNameMap = await this.getUserIdToDisplayNameMap();
 
     const userSummaryMap = new Map<string, UserSummary>();
     let totalAmount = 0;
@@ -44,6 +63,7 @@ export class DashboardService {
       totalTransactions++;
 
       const userId = item.PK.replace(`${DYNAMO_KEYS.USER_PREFIX}`, "");
+      const displayName = userDisplayNameMap.get(userId) || item.User;
       const existing = userSummaryMap.get(userId);
 
       if (existing) {
@@ -67,7 +87,7 @@ export class DashboardService {
 
         userSummaryMap.set(userId, {
           userId,
-          userName: item.User,
+          userName: displayName,
           totalAmount: item.Price,
           transactionCount: 1,
           categoryBreakdown,
@@ -91,6 +111,7 @@ export class DashboardService {
     yearMonth: string,
   ): Promise<UserDetailResponse> {
     const transactions = await this.getUserMonthlyCostData(userId, yearMonth);
+    const userDisplayNameMap = await this.getUserIdToDisplayNameMap();
 
     if (transactions.length === 0) {
       throw new Error(`No data found for user ${userId} in ${yearMonth}`);
@@ -120,7 +141,7 @@ export class DashboardService {
 
     return {
       userId,
-      userName: transactions[0].User,
+      userName: userDisplayNameMap.get(userId) || transactions[0].User,
       yearMonth,
       transactions: transactions.sort((a, b) => b.Timestamp - a.Timestamp),
       summary: {
@@ -138,20 +159,23 @@ export class DashboardService {
     yearMonth: string,
   ): Promise<CategorySummaryResponse> {
     const costData = await this.getMonthlyCostData(yearMonth);
+    const userDisplayNameMap = await this.getUserIdToDisplayNameMap();
 
     const categoryMap = new Map<PaymentCategory, CategorySummaryItem>();
 
     for (const item of costData) {
+      const userId = item.PK.replace(`${DYNAMO_KEYS.USER_PREFIX}`, "");
+      const displayName = userDisplayNameMap.get(userId) || item.User;
       const existing = categoryMap.get(item.Category);
 
       if (existing) {
         existing.totalAmount += item.Price;
         existing.transactionCount++;
-        existing.userBreakdown[item.User] =
-          (existing.userBreakdown[item.User] || 0) + item.Price;
+        existing.userBreakdown[displayName] =
+          (existing.userBreakdown[displayName] || 0) + item.Price;
       } else {
         const userBreakdown = {} as Record<string, number>;
-        userBreakdown[item.User] = item.Price;
+        userBreakdown[displayName] = item.Price;
 
         categoryMap.set(item.Category, {
           category: item.Category,
