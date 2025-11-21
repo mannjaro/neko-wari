@@ -32,9 +32,6 @@ export class Backend extends Construct {
       readCapacity: 1,
     });
 
-    const api = new apigwv2.HttpApi(this, "Api", {
-      // defaultIntegration: new apigwIntegv2.HttpLambdaIntegration("Integ", fn),
-    });
 
     // Create a Layer with Powertools for AWS Lambda (TypeScript)
     const powertoolsLayer = lambda.LayerVersion.fromLayerVersionArn(
@@ -61,19 +58,25 @@ export class Backend extends Construct {
         LINE_CHANNEL_SECRET: process.env.LINE_CHANNEL_SECRET || "",
         LINE_LOGIN_CHANNEL_ID: process.env.LINE_LOGIN_CHANNEL_ID || "",
         LINE_LOGIN_CHANNEL_SECRET: process.env.LINE_LOGIN_CHANNEL_SECRET || "",
-        LINE_LOGIN_REDIRECT_URI: process.env.LINE_LOGIN_REDIRECT_URI || api.apiEndpoint,
-        INVITATION_BASE_URL: process.env.INVITATION_BASE_URL || api.apiEndpoint,
       },
       bundling: {
         externalModules: ["@aws-lambda-powertools/*", "@aws-sdk/*"],
       },
     });
 
-    api.addRoutes({
-      path: "/",
-      methods: [apigwv2.HttpMethod.ANY],
-      integration: new apigwIntegv2.HttpLambdaIntegration("Integ", fn),
+    const api = new apigwv2.HttpApi(this, "Api", {
+      defaultIntegration: new apigwIntegv2.HttpLambdaIntegration("Integ", fn),
     });
+
+    fn.addEnvironment(
+      "LINE_LOGIN_REDIRECT_URI",
+      process.env.LINE_LOGIN_REDIRECT_URI ||
+        `${api.apiEndpoint}/invitation/callback`,
+    );
+    fn.addEnvironment(
+      "INVITATION_BASE_URL",
+      process.env.INVITATION_BASE_URL || api.apiEndpoint,
+    );
 
     const webhookFn = new NodejsFunction(this, "WebhookFn", {
       entry: "lambda/webhook/handler.ts", // Path to your Lambda function code

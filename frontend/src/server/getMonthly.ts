@@ -29,7 +29,7 @@ export const getMonthlyCost = createServerFn({
       },
     });
     if (!response.ok) {
-      throw new Error("Fetch failed");
+      throw new Error(`Fetch failed ${await response.text()}`);
     }
     return response.json();
   });
