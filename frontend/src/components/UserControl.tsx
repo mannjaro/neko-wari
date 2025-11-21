@@ -50,10 +50,6 @@ export function UserControl({ setUpPasskey }: { setUpPasskey: () => void }) {
           <Key />
           Passkey設定
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => auth.removeUser()}>
-          <LogOut />
-          ログアウト
-        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() =>
             navigate({
@@ -63,6 +59,10 @@ export function UserControl({ setUpPasskey }: { setUpPasskey: () => void }) {
         >
           <UserCog />
           ユーザー設定
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => auth.removeUser()}>
+          <LogOut />
+          ログアウト
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
