@@ -156,6 +156,41 @@ export class InvitationService {
   }
 
   /**
+   * Check if a LINE user has already accepted any invitation
+   */
+  async checkUserAlreadyRegistered(
+    lineUserId: string,
+  ): Promise<InvitationItem | null> {
+    try {
+      logger.info("Checking if user already registered", { lineUserId });
+
+      // Query all accepted invitations
+      const acceptedInvitations = await this.listInvitations(
+        undefined,
+        "accepted",
+      );
+
+      // Find if this LINE user has already accepted an invitation
+      const existingInvitation = acceptedInvitations.find(
+        (invitation) => invitation.AcceptedBy === lineUserId,
+      );
+
+      if (existingInvitation) {
+        logger.info("User already registered", {
+          lineUserId,
+          invitationId: existingInvitation.InvitationId,
+        });
+        return existingInvitation;
+      }
+
+      return null;
+    } catch (error) {
+      logger.error("Error checking user registration", { error, lineUserId });
+      return null;
+    }
+  }
+
+  /**
    * Accept invitation with LINE user information
    */
   async acceptInvitationWithLineId(
@@ -165,6 +200,18 @@ export class InvitationService {
     pictureUrl?: string,
   ): Promise<InvitationItem> {
     try {
+      // Check if user is already registered
+      const existingInvitation =
+        await this.checkUserAlreadyRegistered(lineUserId);
+      if (existingInvitation) {
+        logger.warn("User already registered, rejecting invitation", {
+          lineUserId,
+          existingInvitationId: existingInvitation.InvitationId,
+          newToken: token,
+        });
+        throw new Error("USER_ALREADY_REGISTERED");
+      }
+
       const validation = await this.validateInvitation(token);
 
       if (!validation.valid || !validation.invitation) {

@@ -173,69 +173,149 @@ export async function lineLoginCallbackHandler(c: Context) {
       token,
       lineUserId: userProfile.userId,
     });
-    const acceptedInvitation =
-      await invitationService.acceptInvitationWithLineId(
-        token,
-        userProfile.userId,
-        userProfile.displayName,
-        userProfile.pictureUrl,
-      );
 
-    logger.info("Invitation accepted via LINE Login", {
-      invitationId: acceptedInvitation.InvitationId,
-      lineUserId: userProfile.userId,
-    });
+    try {
+      const acceptedInvitation =
+        await invitationService.acceptInvitationWithLineId(
+          token,
+          userProfile.userId,
+          userProfile.displayName,
+          userProfile.pictureUrl,
+        );
 
-    // Return success page
-    return c.html(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Welcome!</title>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>
-            body { 
-              font-family: sans-serif; 
-              text-align: center; 
-              padding: 50px;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-            }
-            .success { 
-              background: white;
-              color: #333;
-              padding: 40px;
-              border-radius: 10px;
-              box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-              max-width: 500px;
-              margin: 0 auto;
-            }
-            h1 { color: #667eea; }
-            .profile {
-              margin: 20px 0;
-            }
-            .profile img {
-              width: 80px;
-              height: 80px;
-              border-radius: 50%;
-              margin-bottom: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="success">
-            <h1>✓ Welcome!</h1>
-            <div class="profile">
-              ${userProfile.pictureUrl ? `<img src="${userProfile.pictureUrl}" alt="Profile">` : ""}
-              <p><strong>${userProfile.displayName}</strong></p>
+      logger.info("Invitation accepted via LINE Login", {
+        invitationId: acceptedInvitation.InvitationId,
+        lineUserId: userProfile.userId,
+      });
+
+      // Return success page
+      return c.html(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Welcome!</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              body { 
+                font-family: sans-serif; 
+                text-align: center; 
+                padding: 50px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+              }
+              .success { 
+                background: white;
+                color: #333;
+                padding: 40px;
+                border-radius: 10px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                max-width: 500px;
+                margin: 0 auto;
+              }
+              h1 { color: #667eea; }
+              .profile {
+                margin: 20px 0;
+              }
+              .profile img {
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                margin-bottom: 10px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="success">
+              <h1>✓ Welcome!</h1>
+              <div class="profile">
+                ${userProfile.pictureUrl ? `<img src="${userProfile.pictureUrl}" alt="Profile">` : ""}
+                <p><strong>${userProfile.displayName}</strong></p>
+              </div>
+              <p>Your invitation has been accepted successfully.</p>
+              <p>You can now close this window and start using the service.</p>
             </div>
-            <p>Your invitation has been accepted successfully.</p>
-            <p>You can now close this window and start using the service.</p>
-          </div>
-        </body>
-      </html>
-    `);
+          </body>
+        </html>
+      `);
+    } catch (invitationError) {
+      // Check if user is already registered
+      if (
+        invitationError instanceof Error &&
+        invitationError.message === "USER_ALREADY_REGISTERED"
+      ) {
+        logger.info("User already registered, showing info page", {
+          lineUserId: userProfile.userId,
+        });
+
+        return c.html(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Already Registered</title>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <style>
+                body { 
+                  font-family: sans-serif; 
+                  text-align: center; 
+                  padding: 50px;
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  color: white;
+                }
+                .info { 
+                  background: white;
+                  color: #333;
+                  padding: 40px;
+                  border-radius: 10px;
+                  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                  max-width: 500px;
+                  margin: 0 auto;
+                }
+                h1 { color: #f59e0b; }
+                .profile {
+                  margin: 20px 0;
+                }
+                .profile img {
+                  width: 80px;
+                  height: 80px;
+                  border-radius: 50%;
+                  margin-bottom: 10px;
+                }
+                .message {
+                  margin: 20px 0;
+                  line-height: 1.6;
+                }
+                .footer {
+                  margin-top: 30px;
+                  color: #666;
+                  font-size: 14px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="info">
+                <h1>⚠️ 既に登録済みです</h1>
+                <div class="profile">
+                  ${userProfile.pictureUrl ? `<img src="${userProfile.pictureUrl}" alt="Profile">` : ""}
+                  <p><strong>${userProfile.displayName}</strong></p>
+                </div>
+                <div class="message">
+                  <p>このアカウントは既にシステムに登録されています。</p>
+                  <p>新しい招待URLを使用する必要はありません。</p>
+                </div>
+                <div class="footer">
+                  <p>このウィンドウを閉じてください。</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+
+      // Re-throw other errors to be caught by outer catch
+      throw invitationError;
+    }
   } catch (error) {
     logger.error("Error in lineLoginCallbackHandler", { error });
     return c.html(`
