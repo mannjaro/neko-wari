@@ -30,7 +30,7 @@ export function MonthlyCostTable({
   }
 
   const paymentsMap = new Map(
-    data.userSummaries.map((user) => [user.userName, user.totalAmount]),
+    data.userSummaries.map((user) => [user.userId, user.totalAmount]),
   );
   const diffResult = calcDiff(paymentsMap);
 
@@ -46,7 +46,11 @@ export function MonthlyCostTable({
     <div
       className={`transition-opacity ${isActive ? "opacity-100" : "opacity-70"}`}
     >
-      <PaymentSummaryCard month={month} diffResult={diffResult} />
+      <PaymentSummaryCard
+        month={month}
+        diffResult={diffResult}
+        userSummaries={data.userSummaries}
+      />
       <div className="flex justify-end mb-4">
         <AddDetailDialog />
       </div>

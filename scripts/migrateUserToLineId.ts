@@ -28,15 +28,6 @@ const REGION = process.env.AWS_REGION || "us-east-1";
 // Hardcoded display names to migrate
 const LEGACY_DISPLAY_NAMES = ["****", "****"];
 
-interface InvitationItem {
-  PK: string;
-  SK: string;
-  EntityType: string;
-  Status: string;
-  AcceptedBy?: string;
-  AcceptedDisplayName?: string;
-}
-
 interface CostDataItem {
   PK: string;
   SK: string;
@@ -52,31 +43,6 @@ interface CostDataItem {
 // Initialize DynamoDB client
 const client = new DynamoDBClient({ region: REGION });
 const docClient = DynamoDBDocumentClient.from(client);
-
-/**
- * Fetch all accepted invitations
- */
-async function fetchAcceptedInvitations(): Promise<InvitationItem[]> {
-  console.log("📥 Fetching accepted invitations...");
-
-  const params = {
-    TableName: TABLE_NAME,
-    FilterExpression: "EntityType = :entityType AND #status = :status",
-    ExpressionAttributeNames: {
-      "#status": "Status",
-    },
-    ExpressionAttributeValues: {
-      ":entityType": "INVITATION",
-      ":status": "accepted",
-    },
-  };
-
-  const result = await docClient.send(new ScanCommand(params));
-  const invitations = (result.Items || []) as InvitationItem[];
-
-  console.log(`✅ Found ${invitations.length} accepted invitation(s)`);
-  return invitations;
-}
 
 /**
  * Fetch all cost data items with legacy display names
@@ -108,20 +74,24 @@ async function fetchLegacyCostData(): Promise<CostDataItem[]> {
 }
 
 /**
- * Build mapping from display names to LINE user IDs
+ * Build mapping from display names to LINE user IDs based on existing cost data
+ * This extracts the LINE user ID from the PK field of cost items
  */
 function buildDisplayNameMapping(
-  invitations: InvitationItem[],
+  costData: CostDataItem[],
 ): Map<string, string> {
   const mapping = new Map<string, string>();
 
-  for (const invitation of invitations) {
-    if (invitation.AcceptedDisplayName && invitation.AcceptedBy) {
-      mapping.set(invitation.AcceptedDisplayName, invitation.AcceptedBy);
+  // Group cost items by their User (display name) and extract LINE user ID from PK
+  for (const item of costData) {
+    if (!mapping.has(item.User)) {
+      // Extract LINE user ID from PK: USER#{lineUserId}
+      const lineUserId = item.PK.replace("USER#", "");
+      mapping.set(item.User, lineUserId);
     }
   }
 
-  console.log("\n📋 Display name to LINE user ID mapping:");
+  console.log("\n📋 Display name to LINE user ID mapping (from cost data):");
   for (const [displayName, lineUserId] of mapping.entries()) {
     console.log(`  ${displayName} → ${lineUserId}`);
   }
@@ -237,15 +207,7 @@ async function main() {
 
   try {
     // Fetch data
-    const invitations = await fetchAcceptedInvitations();
     const costData = await fetchLegacyCostData();
-
-    if (invitations.length === 0) {
-      console.error(
-        "\n❌ Error: No accepted invitations found. Cannot build mapping.",
-      );
-      process.exit(1);
-    }
 
     if (costData.length === 0) {
       console.log(
@@ -254,8 +216,8 @@ async function main() {
       process.exit(0);
     }
 
-    // Build mapping
-    const mapping = buildDisplayNameMapping(invitations);
+    // Build mapping from cost data (extract LINE user IDs from PK)
+    const mapping = buildDisplayNameMapping(costData);
 
     // Check if all legacy names have mappings
     const missingMappings = LEGACY_DISPLAY_NAMES.filter(

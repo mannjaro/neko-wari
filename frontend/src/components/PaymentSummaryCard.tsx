@@ -6,17 +6,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { DiffAmount } from "@/types";
+import type { DiffAmount, UserSummary } from "@/types";
 import { Price } from "./Price";
 
 interface PaymentSummaryCardProps {
   month: number;
   diffResult: DiffAmount | null;
+  userSummaries: UserSummary[];
 }
 
 export function PaymentSummaryCard({
   month,
   diffResult,
+  userSummaries,
 }: PaymentSummaryCardProps) {
   if (!diffResult) {
     return (
@@ -55,7 +57,11 @@ export function PaymentSummaryCard({
         <div>
           <p className="text-sm text-gray-600 mb-1">From to</p>
           <span className="font-medium">
-            {diffResult.from} → {diffResult.to}
+            {userSummaries.find((u) => u.userId === diffResult.from)
+              ?.userName || diffResult.from}{" "}
+            →{" "}
+            {userSummaries.find((u) => u.userId === diffResult.to)?.userName ||
+              diffResult.to}
           </span>
         </div>
       </CardFooter>
