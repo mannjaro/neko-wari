@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "react-oidc-context";
-import { Key, LogOut, UserCog } from "lucide-react";
+import { Key, LogOut, UserCog, Home } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 
 export function UserControl({ setUpPasskey }: { setUpPasskey: () => void }) {
@@ -42,6 +42,10 @@ export function UserControl({ setUpPasskey }: { setUpPasskey: () => void }) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate({ to: "/" })}>
+          <Home />
+          ホーム
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setUpPasskey()}>
           <Key />
           Passkey設定

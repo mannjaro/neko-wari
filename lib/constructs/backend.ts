@@ -9,6 +9,7 @@ import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 
 export class Backend extends Construct {
   readonly api: apigwv2.IApi;
+  readonly table: dynamodb.ITable;
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id);
     const db = new dynamodb.Table(this, "Table", {
@@ -113,5 +114,6 @@ export class Backend extends Construct {
     db.grantReadWriteData(webhookFn);
 
     this.api = api;
+    this.table = db;
   }
 }

@@ -2,7 +2,7 @@ import * as cdk from "aws-cdk-lib";
 import { Auth } from "./constructs/auth";
 import { Backend } from "./constructs/backend";
 
-import { Construct } from "constructs";
+import type { Construct } from "constructs";
 
 export class LineBotSampleStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -10,8 +10,8 @@ export class LineBotSampleStack extends cdk.Stack {
 
     cdk.RemovalPolicies.of(this).destroy();
 
-    const auth = new Auth(this, "Auth");
     const backend = new Backend(this, "Backend");
+    new Auth(this, "Auth", { table: backend.table });
     new cdk.CfnOutput(this, "ApiEndpoint", {
       value: backend.api.apiEndpoint ?? "",
     });
