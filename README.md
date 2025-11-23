@@ -1,5 +1,7 @@
 # neko-wari
 
-![logo](/docs/images/logo-icon.png)
+<p align="center">
+  <img src="/docs/images/logo-icon.png" alt="logo">
+</p>
 
 ![workflow](https://github.com/mannjaro/neko-wari/actions/workflows/deploy.yml/badge.svg)
