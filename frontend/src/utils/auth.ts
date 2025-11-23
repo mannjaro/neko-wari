@@ -1,16 +1,19 @@
 import { WebStorageStateStore } from "oidc-client-ts";
 import type { AuthContextProps } from "react-oidc-context";
 
-export const CLIENT_ID = "52egt02nn47oubgatq6vadtgs4";
+export const CLIENT_ID =
+  import.meta.env.VITE_COGNITO_CLIENT_ID || "your-client-id-here";
 export const COGNITO_DOMAIN =
-  "https://payment-dashboard.auth.ap-northeast-1.amazoncognito.com";
+  import.meta.env.VITE_COGNITO_DOMAIN ||
+  "https://your-cognito-domain.auth.ap-northeast-1.amazoncognito.com";
 export const REDIRECT_URI = import.meta.env.DEV
-  ? "http://localhost:3000"
-  : "https://advanced-payment-dashboard.zk-****.workers.dev";
+  ? import.meta.env.VITE_REDIRECT_URI || "http://localhost:3000"
+  : import.meta.env.VITE_REDIRECT_URI;
 
 export const cognitoAuthConfig = {
   authority:
-    "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_ntfS5MRXx",
+    import.meta.env.VITE_COGNITO_AUTHORITY_URL ||
+    "https://cognito-idp.ap-northeast-1.amazonaws.com/your-user-pool-id",
   client_id: CLIENT_ID,
   redirect_uri: REDIRECT_URI,
   response_type: "code",

@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +38,7 @@ import { CreateCostDataSchema, PaymentCategorySchema } from "@/types/shared";
 import { getCategoryName } from "@/utils/categoryNames";
 import { YenInput } from "./YenInput";
 import { useAuth } from "react-oidc-context";
+import { listUsers } from "@/server/listUsers";
 
 function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   const auth = useAuth();
@@ -54,6 +56,13 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   });
 
   const createCostDetail = useCreateCost();
+
+  const { data: usersData, isLoading: isLoadingUsers } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => listUsers(),
+  });
+
+  const users = usersData?.users || [];
 
   const onSubmit = useCallback(
     async (data: z.infer<typeof CreateCostDataSchema>) => {
@@ -88,12 +97,21 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem key="****" value="****">
-                    ****
-                  </SelectItem>
-                  <SelectItem key="****" value="****">
-                    ****
-                  </SelectItem>
+                  {isLoadingUsers ? (
+                    <SelectItem value="loading" disabled>
+                      読み込み中...
+                    </SelectItem>
+                  ) : users.length === 0 ? (
+                    <SelectItem value="empty" disabled>
+                      ユーザーが見つかりません
+                    </SelectItem>
+                  ) : (
+                    users.map((user) => (
+                      <SelectItem key={user.id} value={user.displayName}>
+                        {user.displayName}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
                 <FormDescription>
                   支払いをしたユーザーを入力してください

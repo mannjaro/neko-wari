@@ -268,15 +268,15 @@ Tests cover:
 
 The application uses the following Cognito configuration:
 
-- **Authority**: `https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_ntfS5MRXx`
-- **Client ID**: `52egt02nn47oubgatq6vadtgs4`
+- **Authority**: `https://cognito-idp.ap-northeast-1.amazonaws.com/your-userpool-id`
+- **Client ID**: `*****`
 - **Scopes**: `aws.cognito.signin.user.admin email openid phone profile`
 
 ### Environment-Specific Settings
 
 The redirect URI is environment-specific:
 - **Development**: `http://localhost:3000`
-- **Production**: `https://advanced-payment-dashboard.zk-****.workers.dev`
+- **Production**: `https://your-workers-url`
 
 ## Best Practices
 
