@@ -17,6 +17,14 @@ export async function createInvitationHandler(
   try {
     const { createdBy, expirationHours, metadata } = body;
 
+    // Check if system is initialized
+    if (createdBy === "system") {
+      const isInitialized = await invitationService.isSystemInitialized();
+      if (isInitialized) {
+        return c.json({ error: "System is already initialized" }, 403);
+      }
+    }
+
     const invitation = await invitationService.createInvitation(
       createdBy,
       expirationHours,
@@ -374,7 +382,19 @@ export async function revokeInvitationHandler(c: Context) {
 
     return c.json({ message: "Invitation revoked successfully" });
   } catch (error) {
-    logger.error("Error in revokeInvitationHandler", { error });
     return c.json({ error: "Failed to revoke invitation" }, 500);
+  }
+}
+
+/**
+ * Handler for checking system initialization status
+ */
+export async function getSystemInitStatusHandler(c: Context) {
+  try {
+    const initialized = await invitationService.isSystemInitialized();
+    return c.json({ initialized });
+  } catch (error) {
+    logger.error("Error in getSystemInitStatusHandler", { error });
+    return c.json({ error: "Failed to check system status" }, 500);
   }
 }

@@ -1,9 +1,11 @@
 // src/routes/login.tsx
 
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { Button } from "@/components/ui/button";
+import { getSystemInitStatus } from "@/server/getSystemInitStatus";
+import { createSystemInvitation } from "@/server/createSystemInvitation";
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -19,6 +21,38 @@ export const Route = createFileRoute("/login")({
 function Login() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const [isInitialized, setIsInitialized] = useState<boolean | null>(null);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [isCheckingInit, setIsCheckingInit] = useState(true);
+  const [isCreatingInvite, setIsCreatingInvite] = useState(false);
+
+  useEffect(() => {
+    getSystemInitStatus()
+      .then((res) => {
+        setIsInitialized(res.initialized);
+      })
+      .catch((err) => {
+        console.error("Failed to check init status", err);
+        // Default to true (show login) on error to avoid blocking access
+        setIsInitialized(true);
+      })
+      .finally(() => {
+        setIsCheckingInit(false);
+      });
+  }, []);
+
+  const handleCreateInvite = async () => {
+    setIsCreatingInvite(true);
+    try {
+      const res = await createSystemInvitation();
+      setInviteLink(res.invitationUrl);
+    } catch (err) {
+      console.error("Failed to create invite", err);
+      alert("招待リンクの作成に失敗しました");
+    } finally {
+      setIsCreatingInvite(false);
+    }
+  };
 
   // Fallback redirect if beforeLoad missed it (e.g. initial load before context sync)
   useEffect(() => {
@@ -50,7 +84,8 @@ function Login() {
   }, [auth.error]);
 
   // 認証状態のローディング中はスケルトンを表示
-  if (auth.isLoading) {
+  // 認証状態のローディング中はスケルトンを表示
+  if (auth.isLoading || isCheckingInit) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -261,36 +296,109 @@ function Login() {
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                ようこそ
+                {isInitialized === false ? "初期セットアップ" : "ようこそ"}
               </h2>
               <p className="text-gray-600">
-                続けるにはアカウントにサインインしてください
+                {isInitialized === false
+                  ? "まだユーザーが登録されていません。最初のユーザーを招待してください。"
+                  : "続けるにはアカウントにサインインしてください"}
               </p>
             </div>
 
             <div className="pt-4 space-y-4">
-              <Button
-                type="button"
-                onClick={() => auth.signinRedirect()}
-                className="w-full h-12 text-base font-medium bg-indigo-600 hover:bg-indigo-700 transition-colors"
-                size="lg"
-              >
-                <svg
-                  className="mr-2 h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
+              {isInitialized === false ? (
+                <div className="space-y-4">
+                  {!inviteLink ? (
+                    <Button
+                      type="button"
+                      onClick={handleCreateInvite}
+                      disabled={isCreatingInvite}
+                      className="w-full h-12 text-base font-medium bg-indigo-600 hover:bg-indigo-700 transition-colors"
+                      size="lg"
+                    >
+                      {isCreatingInvite ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                      ) : (
+                        <svg
+                          className="mr-2 h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                      )}
+                      招待リンクを作成
+                    </Button>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                        <p className="text-sm text-green-800 font-medium mb-2">
+                          招待リンクが作成されました
+                        </p>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            readOnly
+                            value={inviteLink}
+                            className="flex-1 p-2 text-sm border rounded bg-white"
+                            onClick={(e) => e.currentTarget.select()}
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              navigator.clipboard.writeText(inviteLink);
+                              alert("コピーしました");
+                            }}
+                          >
+                            コピー
+                          </Button>
+                        </div>
+                        <p className="mt-2 text-xs text-green-600">
+                          このリンクからユーザー登録を行ってください。登録完了後、通常のログイン画面が表示されます。
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => window.location.reload()}
+                      >
+                        ログイン画面に戻る
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={() => auth.signinRedirect()}
+                  className="w-full h-12 text-base font-medium bg-indigo-600 hover:bg-indigo-700 transition-colors"
+                  size="lg"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                  />
-                </svg>
-                サインイン
-              </Button>
+                  <svg
+                    className="mr-2 h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                    />
+                  </svg>
+                  サインイン
+                </Button>
+              )}
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">

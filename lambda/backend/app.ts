@@ -30,6 +30,7 @@ import {
   lineLoginCallbackHandler,
   listInvitationsHandler,
   revokeInvitationHandler,
+  getSystemInitStatusHandler,
 } from "./features/invitation/invitationHandlers";
 
 import {
@@ -173,6 +174,10 @@ export const invitationRevoke = app.delete(
   },
 );
 
+export const systemInitStatus = app.get("/system/init-status", async (c) => {
+  return getSystemInitStatusHandler(c);
+});
+
 // User API endpoints
 export const userList = app.get("/users", async (c) => {
   return listUsersHandler(c);
@@ -195,6 +200,7 @@ export type DetailDeleteType = typeof detailDelete;
 export type InvitationCreateType = typeof invitationCreate;
 export type InvitationListType = typeof invitationList;
 export type InvitationRevokeType = typeof invitationRevoke;
+export type SystemInitStatusType = typeof systemInitStatus;
 export type UserListType = typeof userList;
 export type UserUpdateDisplayNameType = typeof userUpdateDisplayName;
 

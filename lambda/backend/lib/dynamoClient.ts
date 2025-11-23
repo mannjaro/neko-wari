@@ -35,6 +35,7 @@ export interface BaseRepository {
     indexName: string | undefined,
     keyConditionExpression: string,
     expressionAttributeValues: Record<string, unknown>,
+    limit?: number,
   ): Promise<T[]>;
 }
 
@@ -112,6 +113,7 @@ export class DynamoClient implements BaseRepository {
     indexName: string | undefined,
     keyConditionExpression: string,
     expressionAttributeValues: Record<string, unknown>,
+    limit?: number,
   ): Promise<T[]> {
     try {
       const allItems: T[] = [];
@@ -125,6 +127,7 @@ export class DynamoClient implements BaseRepository {
             KeyConditionExpression: keyConditionExpression,
             ExpressionAttributeValues: expressionAttributeValues,
             ExclusiveStartKey: lastEvaluatedKey,
+            Limit: limit,
           }),
         );
 

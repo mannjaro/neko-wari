@@ -19,6 +19,36 @@ const logger = new Logger({ serviceName: "invitationService" });
  */
 export class InvitationService {
   /**
+   * Check if system is initialized (has at least one accepted invitation)
+   */
+  async isSystemInitialized(): Promise<boolean> {
+    try {
+      // We need to check if any of the items are accepted invitations
+      // Since GSI1 contains all invitations (pending, accepted, expired),
+      // and we can't easily filter by status AND limit 1 efficiently without a specific index for accepted invitations.
+      // However, for bootstrapping, we just need to know if ANY user exists.
+      // Users are defined by accepted invitations.
+      // Wait, the GSI1SK is `STATUS#<status>#<timestamp>`.
+      // So we can query for accepted invitations specifically.
+
+      const acceptedResult = await dynamoClient.query<InvitationItem>(
+        "GSI1",
+        "GSI1PK = :gsi1pk AND begins_with(GSI1SK, :status)",
+        {
+          ":gsi1pk": DYNAMO_KEYS.INVITATIONS_GSI,
+          ":status": "STATUS#accepted",
+        },
+        1,
+      );
+
+      return acceptedResult.length > 0;
+    } catch (error) {
+      logger.error("Error checking system initialization", { error });
+      return false; // Fail safe
+    }
+  }
+
+  /**
    * Generate a secure random token for invitation URL
    */
   private generateToken(): string {
