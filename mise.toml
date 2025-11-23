@@ -1,5 +1,5 @@
 [tools]
-node = "latest"
+node = "lts"
 
 [env]
 _.file = '.env'
