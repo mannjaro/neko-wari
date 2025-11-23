@@ -1,20 +1,3 @@
-# Welcome to your CDK TypeScript project
+# neko-wari
 
-This is a blank project for CDK development with TypeScript.
-
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
-
-## Documentation
-
-* [Authentication and Token Management](docs/AUTHENTICATION.md) - Automatic access token refresh with AWS Cognito
-* [Implementation History](IMPLEMENTATION_HISTORY.md) - Detailed implementation history of the LINE Bot
-* [Claude Instructions](CLAUDE.md) - Project overview and architecture guide
-
-## Useful commands
-
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `npx cdk deploy`  deploy this stack to your default AWS account/region
-* `npx cdk diff`    compare deployed stack with current state
-* `npx cdk synth`   emits the synthesized CloudFormation template
+[![Open in Visual Studio Code](https://img.shields.io/static/v1?logo=visualstudiocode&label=&message=Open%20in%20Visual%20Studio%20Code&labelColor=2c2c32&color=007acc&logoColor=007acc)](https://open.vscode.dev/mannjaro/neko-wari)
