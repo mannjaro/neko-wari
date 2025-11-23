@@ -1,3 +1,5 @@
 # neko-wari
 
-[![Open in Visual Studio Code](https://img.shields.io/static/v1?logo=visualstudiocode&label=&message=Open%20in%20Visual%20Studio%20Code&labelColor=2c2c32&color=007acc&logoColor=007acc)](https://open.vscode.dev/mannjaro/neko-wari)
+![logo](https://github.com/mannjaro/neko-wari/docs/images/logo-icon.png)
+
+![workflow](https://github.com/mannjaro/neko-wari/actions/workflows/deploy.yml/badge.svg)
