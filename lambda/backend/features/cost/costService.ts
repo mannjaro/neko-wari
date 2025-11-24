@@ -12,7 +12,7 @@ import {
   type CostDataItemResponse,
   costDataItemSchema,
 } from "../../schemas/responseSchema";
-import { dynamoClient } from "../../lib/dynamoClient";
+import { type BaseRepository, dynamoClient } from "../../lib/dynamoClient";
 
 const logger = new Logger({ serviceName: "costService" });
 
@@ -23,6 +23,11 @@ export class CostService {
   /**
    * Create new cost data with business logic validation
    */
+  private readonly repository: BaseRepository;
+
+  constructor(repository: BaseRepository = dynamoClient) {
+    this.repository = repository;
+  }
   async createCostDetail(data: CreateCostData): Promise<CostDataItemResponse> {
     logger.debug("Creating cost detail", { data });
 
@@ -52,7 +57,7 @@ export class CostService {
         YearMonth: yearMonth,
       };
 
-      await dynamoClient.put<CostDataItem>(costItem);
+      await this.repository.put<CostDataItem>(costItem);
 
       logger.info("Cost detail created successfully", {
         userId: data.userId,
@@ -104,7 +109,7 @@ export class CostService {
         YearMonth: yearMonth,
       };
 
-      await dynamoClient.put<CostDataItem>(costItem);
+      await this.repository.put<CostDataItem>(costItem);
 
       logger.info("Cost data saved successfully", {
         userId,
@@ -136,7 +141,7 @@ export class CostService {
       const prevCostItem = await this.getCostDataItem(userId, timestamp);
       const updateExpressions = this.buildUpdateExpression(updateData);
 
-      const result = await dynamoClient.update<CostDataItem>(
+      const result = await this.repository.update<CostDataItem>(
         prevCostItem.PK,
         prevCostItem.SK,
         updateExpressions.UpdateExpression,
@@ -173,7 +178,7 @@ export class CostService {
       const pk = `${DYNAMO_KEYS.USER_PREFIX}${userId}`;
       const sk = `${DYNAMO_KEYS.COST_PREFIX}${timestamp}`;
 
-      await dynamoClient.delete(pk, sk);
+      await this.repository.delete(pk, sk);
 
       logger.info("Cost detail deleted successfully", { userId, timestamp });
     } catch (error) {
@@ -187,7 +192,7 @@ export class CostService {
    */
   async getMonthlyCostData(yearMonth: string): Promise<CostDataItem[]> {
     try {
-      const items = await dynamoClient.query<CostDataItem>(
+      const items = await this.repository.query<CostDataItem>(
         "GSI1",
         "GSI1PK = :gsi1pk",
         {
@@ -210,7 +215,7 @@ export class CostService {
     yearMonth: string,
   ): Promise<CostDataItem[]> {
     try {
-      const items = await dynamoClient.query<CostDataItem>(
+      const items = await this.repository.query<CostDataItem>(
         "GSI1",
         "GSI1PK = :gsi1pk AND begins_with(GSI1SK, :gsi1sk)",
         {
@@ -241,7 +246,7 @@ export class CostService {
       const pk = `${DYNAMO_KEYS.USER_PREFIX}${userId}`;
       const sk = `${DYNAMO_KEYS.COST_PREFIX}${timestamp}`;
 
-      const result = await dynamoClient.get<CostDataItem>(pk, sk);
+      const result = await this.repository.get<CostDataItem>(pk, sk);
 
       if (!result) {
         throw new Error("Selected item is not exist");
