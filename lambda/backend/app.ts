@@ -38,9 +38,22 @@ import {
   updateDisplayNameHandler,
 } from "./features/user/userHandlers";
 
+import {
+  createSettlementHandler,
+  completeSettlementHandler,
+  cancelSettlementHandler,
+  getSettlementHandler,
+  getMonthlySettlementsHandler,
+  getUserSettlementsHandler,
+} from "./features/settlement/settlementHandlers";
+
 import { UpdateDisplayNameSchema } from "./features/user/schemas";
 
-import { CreateInvitationSchema } from "../shared/types";
+import {
+  CreateInvitationSchema,
+  CreateSettlementSchema,
+  CompleteSettlementSchema,
+} from "../shared/types";
 
 type Bindings = {
   event: LambdaEvent;
@@ -193,6 +206,57 @@ export const userUpdateDisplayName = app.put(
   },
 );
 
+// Settlement API endpoints
+export const settlementCreate = app.post(
+  "/settlement/create",
+  zValidator("json", CreateSettlementSchema),
+  async (c) => {
+    const body = c.req.valid("json");
+    return createSettlementHandler(c, body);
+  },
+);
+
+export const settlementComplete = app.post(
+  "/settlement/complete",
+  zValidator("json", CompleteSettlementSchema),
+  async (c) => {
+    const body = c.req.valid("json");
+    return completeSettlementHandler(c, body);
+  },
+);
+
+export const settlementCancel = app.delete(
+  "/settlement/:userId/:yearMonth",
+  async (c) => {
+    const { userId, yearMonth } = c.req.param();
+    return cancelSettlementHandler(c, userId, yearMonth);
+  },
+);
+
+export const settlementGet = app.get(
+  "/settlement/:userId/:yearMonth",
+  async (c) => {
+    const { userId, yearMonth } = c.req.param();
+    return getSettlementHandler(c, userId, yearMonth);
+  },
+);
+
+export const settlementMonthlyGet = app.get(
+  "/settlement/monthly/:yearMonth",
+  async (c) => {
+    const { yearMonth } = c.req.param();
+    return getMonthlySettlementsHandler(c, yearMonth);
+  },
+);
+
+export const settlementUserGet = app.get(
+  "/settlement/user/:userId",
+  async (c) => {
+    const { userId } = c.req.param();
+    return getUserSettlementsHandler(c, userId);
+  },
+);
+
 export type CostCreateType = typeof costCreate;
 export type MonthlyGetType = typeof monthlyGet;
 export type DetailUpdateType = typeof detailUpdate;
@@ -203,5 +267,11 @@ export type InvitationRevokeType = typeof invitationRevoke;
 export type SystemInitStatusType = typeof systemInitStatus;
 export type UserListType = typeof userList;
 export type UserUpdateDisplayNameType = typeof userUpdateDisplayName;
+export type SettlementCreateType = typeof settlementCreate;
+export type SettlementCompleteType = typeof settlementComplete;
+export type SettlementCancelType = typeof settlementCancel;
+export type SettlementGetType = typeof settlementGet;
+export type SettlementMonthlyGetType = typeof settlementMonthlyGet;
+export type SettlementUserGetType = typeof settlementUserGet;
 
 export default app;
