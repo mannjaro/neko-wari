@@ -83,12 +83,18 @@ export function PaymentSummaryCard({
   }
 
   return (
-    <Card className="mb-6">
+    <Card
+      className={`mb-6 transition-all ${
+        isCompleted
+          ? "border-2 border-green-500 bg-green-50/50 shadow-lg shadow-green-100"
+          : ""
+      }`}
+    >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>{month}月 支払い金額</span>
           {isCompleted && (
-            <span className="flex items-center gap-1 text-sm font-normal text-green-600">
+            <span className="flex items-center gap-2 text-base font-semibold text-green-700 bg-green-100 px-4 py-2 rounded-full shadow-sm">
               <CheckCircle2 className="w-5 h-5" />
               精算完了
             </span>
@@ -101,7 +107,8 @@ export function PaymentSummaryCard({
           <Price amount={diffResult.amount} />
         </div>
         {isCompleted && payerSettlement?.completedAt && (
-          <p className="text-sm text-gray-600 mt-2">
+          <p className="text-sm text-green-700 font-medium mt-2 flex items-center gap-1">
+            <CheckCircle2 className="w-4 h-4" />
             完了日:{" "}
             {new Date(payerSettlement.completedAt).toLocaleDateString("ja-JP")}
           </p>
@@ -118,38 +125,49 @@ export function PaymentSummaryCard({
               diffResult.to}
           </span>
         </div>
-        {!isCompleted && onCompleteSettlement && (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button variant="default" disabled={isCompleting}>
-                {isCompleting ? "処理中..." : "精算完了"}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>精算を完了しますか？</DialogTitle>
-                <DialogDescription>
-                  {year}年{month}月の精算を完了としてマークします。
-                  <br />
-                  支払い済みの場合のみ、完了してください。
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="sm:justify-start">
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary" disabled={isCompleting}>
-                    キャンセル
-                  </Button>
-                </DialogClose>
-                <Button
-                  type="button"
-                  onClick={handleComplete}
-                  disabled={isCompleting}
-                >
-                  {isCompleting ? "処理中..." : "完了する"}
+        {isCompleted ? (
+          <div className="flex items-center gap-2 text-green-700 font-semibold bg-green-100 px-4 py-2 rounded-md">
+            <CheckCircle2 className="w-5 h-5" />
+            支払い完了
+          </div>
+        ) : (
+          onCompleteSettlement && (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button variant="default" disabled={isCompleting}>
+                  {isCompleting ? "処理中..." : "精算完了"}
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>精算を完了しますか？</DialogTitle>
+                  <DialogDescription>
+                    {year}年{month}月の精算を完了としてマークします。
+                    <br />
+                    支払い済みの場合のみ、完了してください。
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="sm:justify-start">
+                  <DialogClose asChild>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={isCompleting}
+                    >
+                      キャンセル
+                    </Button>
+                  </DialogClose>
+                  <Button
+                    type="button"
+                    onClick={handleComplete}
+                    disabled={isCompleting}
+                  >
+                    {isCompleting ? "処理中..." : "完了する"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )
         )}
       </CardFooter>
     </Card>

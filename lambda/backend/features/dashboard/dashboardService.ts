@@ -133,15 +133,19 @@ export class DashboardService {
     const existingSettlements =
       await settlementService.getMonthlySettlements(yearMonth);
 
-    const payerSettlementExists = existingSettlements.some(
+    const payerSettlement = existingSettlements.find(
       (s) => s.UserId === payer.userId,
     );
-    const receiverSettlementExists = existingSettlements.some(
+    const receiverSettlement = existingSettlements.find(
       (s) => s.UserId === receiver.userId,
     );
 
-    // Create settlement for payer if not exists
-    if (!payerSettlementExists && diff > 0) {
+    // Only create settlement for payer if not exists OR if existing is cancelled
+    const shouldCreatePayerSettlement =
+      !payerSettlement ||
+      (payerSettlement.Status === "cancelled" && diff > 0);
+
+    if (shouldCreatePayerSettlement && diff > 0) {
       try {
         await settlementService.createSettlement({
           userId: payer.userId,
@@ -155,8 +159,12 @@ export class DashboardService {
       }
     }
 
-    // Create settlement for receiver if not exists
-    if (!receiverSettlementExists && diff > 0) {
+    // Only create settlement for receiver if not exists OR if existing is cancelled
+    const shouldCreateReceiverSettlement =
+      !receiverSettlement ||
+      (receiverSettlement.Status === "cancelled" && diff > 0);
+
+    if (shouldCreateReceiverSettlement && diff > 0) {
       try {
         await settlementService.createSettlement({
           userId: receiver.userId,
