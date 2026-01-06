@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import type { getMonthlyCost } from "@/server/getMonthly";
 import type { UserSummary, SettlementStatusData } from "@/types";
 import { calcDiff } from "@/utils/calculations";
@@ -8,7 +9,6 @@ import { PaymentSummaryCard } from "./PaymentSummaryCard";
 import { UserSummaryTable } from "./UserSummaryTable";
 import { getMonthlySettlements } from "@/server/getMonthlySettlements";
 import { completeSettlement } from "@/server/completeSettlement";
-import { useToast } from "@/hooks/use-toast";
 
 export function MonthlyCostTable({
   year,
@@ -25,7 +25,6 @@ export function MonthlyCostTable({
   const [selectedUserId, setSelectedUserId] = useState<string>();
   const [settlements, setSettlements] = useState<SettlementStatusData[]>([]);
   const [isLoadingSettlements, setIsLoadingSettlements] = useState(false);
-  const { toast } = useToast();
 
   const yearMonth = `${year}-${String(month).padStart(2, "0")}`;
 
@@ -77,17 +76,10 @@ export function MonthlyCostTable({
       const result = await getMonthlySettlements({ data: { yearMonth } });
       setSettlements(Array.isArray(result) ? result : []);
 
-      toast({
-        title: "精算完了",
-        description: `${year}年${month}月の精算を完了しました。`,
-      });
+      toast.success(`${year}年${month}月の精算を完了しました。`);
     } catch (error) {
       console.error("Failed to complete settlement:", error);
-      toast({
-        title: "エラー",
-        description: "精算の完了に失敗しました。もう一度お試しください。",
-        variant: "destructive",
-      });
+      toast.error("精算の完了に失敗しました。もう一度お試しください。");
     }
   };
 
