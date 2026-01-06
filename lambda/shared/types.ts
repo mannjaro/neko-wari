@@ -30,6 +30,7 @@ export const FacetTypeSchema = z.enum([
   "USER_PROFILE",
   "MONTHLY_SUMMARY",
   "INVITATION",
+  "SETTLEMENT_STATUS",
 ]);
 export type FacetType = z.infer<typeof FacetTypeSchema>;
 
@@ -158,6 +159,22 @@ export const InvitationStatusSchema = z.enum([
 ]);
 export type InvitationStatus = z.infer<typeof InvitationStatusSchema>;
 
+// Settlement status enum
+export const SettlementStatusSchema = z.enum([
+  "pending",
+  "completed",
+  "cancelled",
+]);
+export type SettlementStatus = z.infer<typeof SettlementStatusSchema>;
+
+// Settlement direction enum
+export const SettlementDirectionSchema = z.enum([
+  "pay", // This user needs to pay
+  "receive", // This user should receive
+  "even", // No settlement needed
+]);
+export type SettlementDirection = z.infer<typeof SettlementDirectionSchema>;
+
 // Invitation facet schema
 export const InvitationItemSchema = BaseDynamoItemSchema.extend({
   EntityType: z.literal("INVITATION"),
@@ -179,6 +196,25 @@ export const InvitationItemSchema = BaseDynamoItemSchema.extend({
 });
 export type InvitationItem = z.infer<typeof InvitationItemSchema>;
 
+// Settlement status facet schema
+export const SettlementStatusItemSchema = BaseDynamoItemSchema.extend({
+  EntityType: z.literal("SETTLEMENT_STATUS"),
+  PK: z.string(), // USER#{userId}
+  SK: z.string(), // SETTLEMENT#{YYYY-MM}
+  GSI1PK: z.string(), // SETTLEMENT#{YYYY-MM}
+  GSI1SK: z.string(), // USER#{userId}
+  UserId: z.string(),
+  YearMonth: z.string(), // YYYY-MM
+  Status: SettlementStatusSchema,
+  SettlementAmount: z.number(), // Amount to pay or receive
+  SettlementDirection: SettlementDirectionSchema,
+  OtherUserId: z.string().optional(), // The other party in the settlement
+  CompletedAt: z.string().optional(), // ISO timestamp
+  CompletedBy: z.string().optional(), // User ID who marked as complete
+  Notes: z.string().optional(),
+});
+export type SettlementStatusItem = z.infer<typeof SettlementStatusItemSchema>;
+
 // Union schema for all DynamoDB items
 export const DynamoItemSchema = z.discriminatedUnion("EntityType", [
   UserStateItemSchema,
@@ -186,6 +222,7 @@ export const DynamoItemSchema = z.discriminatedUnion("EntityType", [
   UserProfileItemSchema,
   MonthlySummaryItemSchema,
   InvitationItemSchema,
+  SettlementStatusItemSchema,
 ]);
 export type DynamoItem = z.infer<typeof DynamoItemSchema>;
 
@@ -309,3 +346,37 @@ export const LineTokenResponseSchema = z.object({
   token_type: z.string(),
 });
 export type LineTokenResponse = z.infer<typeof LineTokenResponseSchema>;
+
+// Settlement API schemas
+export const CreateSettlementSchema = z.object({
+  userId: z.string().min(1),
+  yearMonth: z.string().regex(/^\d{4}-\d{2}$/),
+  settlementAmount: z.number(),
+  settlementDirection: SettlementDirectionSchema,
+  otherUserId: z.string().optional(),
+  notes: z.string().optional(),
+});
+export type CreateSettlement = z.infer<typeof CreateSettlementSchema>;
+
+export const CompleteSettlementSchema = z.object({
+  userId: z.string().min(1),
+  yearMonth: z.string().regex(/^\d{4}-\d{2}$/),
+  completedBy: z.string().min(1),
+  notes: z.string().optional(),
+});
+export type CompleteSettlement = z.infer<typeof CompleteSettlementSchema>;
+
+export const SettlementResponseSchema = z.object({
+  userId: z.string(),
+  yearMonth: z.string(),
+  status: SettlementStatusSchema,
+  settlementAmount: z.number(),
+  settlementDirection: SettlementDirectionSchema,
+  otherUserId: z.string().optional(),
+  completedAt: z.string().optional(),
+  completedBy: z.string().optional(),
+  notes: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type SettlementResponse = z.infer<typeof SettlementResponseSchema>;

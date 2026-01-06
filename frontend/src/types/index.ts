@@ -1,4 +1,8 @@
-import type { PaymentCategory } from "@shared/types";
+import type {
+  PaymentCategory,
+  SettlementStatus,
+  SettlementDirection,
+} from "@shared/types";
 
 export type DiffAmount = {
   amount: number;
@@ -24,4 +28,18 @@ export interface DetailDrawerProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   user?: UserSummary;
+}
+
+export interface SettlementStatusData {
+  userId: string;
+  yearMonth: string;
+  status: SettlementStatus;
+  settlementAmount: number;
+  settlementDirection: SettlementDirection;
+  otherUserId?: string;
+  completedAt?: string;
+  completedBy?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }

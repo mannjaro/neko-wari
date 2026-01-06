@@ -10,6 +10,7 @@ import type {
 import { DYNAMO_KEYS } from "../../../shared/constants";
 import { dynamoClient } from "../../lib/dynamoClient";
 import { invitationService } from "../invitation/invitationService";
+import { settlementService } from "../settlement/settlementService";
 
 /**
  * Service for dashboard-related business logic
@@ -95,12 +96,79 @@ export class DashboardService {
       }
     }
 
+    const userSummaries = Array.from(userSummaryMap.values());
+
+    // Auto-create settlement records if there are exactly 2 users
+    if (userSummaries.length === 2) {
+      await this.autoCreateSettlements(yearMonth, userSummaries);
+    }
+
     return {
       yearMonth,
       totalAmount,
       totalTransactions,
-      userSummaries: Array.from(userSummaryMap.values()),
+      userSummaries,
     };
+  }
+
+  /**
+   * Auto-create settlement records for 2-user bill splitting
+   */
+  private async autoCreateSettlements(
+    yearMonth: string,
+    userSummaries: UserSummary[],
+  ): Promise<void> {
+    if (userSummaries.length !== 2) {
+      return; // Only support 2-user settlements
+    }
+
+    const [user1, user2] = userSummaries;
+    const diff = Math.abs(user1.totalAmount - user2.totalAmount) / 2;
+
+    // Determine who pays and who receives
+    const payer = user1.totalAmount < user2.totalAmount ? user1 : user2;
+    const receiver = user1.totalAmount < user2.totalAmount ? user2 : user1;
+
+    // Check if settlements already exist
+    const existingSettlements =
+      await settlementService.getMonthlySettlements(yearMonth);
+
+    const payerSettlementExists = existingSettlements.some(
+      (s) => s.UserId === payer.userId,
+    );
+    const receiverSettlementExists = existingSettlements.some(
+      (s) => s.UserId === receiver.userId,
+    );
+
+    // Create settlement for payer if not exists
+    if (!payerSettlementExists && diff > 0) {
+      try {
+        await settlementService.createSettlement({
+          userId: payer.userId,
+          yearMonth,
+          settlementAmount: diff,
+          settlementDirection: "pay",
+          otherUserId: receiver.userId,
+        });
+      } catch (error) {
+        console.error("Failed to create payer settlement:", error);
+      }
+    }
+
+    // Create settlement for receiver if not exists
+    if (!receiverSettlementExists && diff > 0) {
+      try {
+        await settlementService.createSettlement({
+          userId: receiver.userId,
+          yearMonth,
+          settlementAmount: diff,
+          settlementDirection: "receive",
+          otherUserId: payer.userId,
+        });
+      } catch (error) {
+        console.error("Failed to create receiver settlement:", error);
+      }
+    }
   }
 
   /**
