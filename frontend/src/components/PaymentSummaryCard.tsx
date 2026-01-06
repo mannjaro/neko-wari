@@ -9,16 +9,15 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import type { DiffAmount, UserSummary, SettlementStatusData } from "@/types";
 import { Price } from "./Price";
 import { CheckCircle2 } from "lucide-react";
@@ -40,6 +39,7 @@ export function PaymentSummaryCard({
   settlements,
   onCompleteSettlement,
 }: PaymentSummaryCardProps) {
+  const [open, setOpen] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
 
   // Check if settlement is completed for the payer
@@ -54,6 +54,7 @@ export function PaymentSummaryCard({
     setIsCompleting(true);
     try {
       await onCompleteSettlement();
+      setOpen(false);
     } finally {
       setIsCompleting(false);
     }
@@ -118,29 +119,37 @@ export function PaymentSummaryCard({
           </span>
         </div>
         {!isCompleted && onCompleteSettlement && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
               <Button variant="default" disabled={isCompleting}>
                 {isCompleting ? "処理中..." : "精算完了"}
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>精算を完了しますか？</AlertDialogTitle>
-                <AlertDialogDescription>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>精算を完了しますか？</DialogTitle>
+                <DialogDescription>
                   {year}年{month}月の精算を完了としてマークします。
                   <br />
                   支払い済みの場合のみ、完了してください。
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>キャンセル</AlertDialogCancel>
-                <AlertDialogAction onClick={handleComplete}>
-                  完了する
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="sm:justify-start">
+                <DialogClose asChild>
+                  <Button type="button" variant="secondary" disabled={isCompleting}>
+                    キャンセル
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="button"
+                  onClick={handleComplete}
+                  disabled={isCompleting}
+                >
+                  {isCompleting ? "処理中..." : "完了する"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
       </CardFooter>
     </Card>
