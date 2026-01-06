@@ -48,6 +48,16 @@ export function PaymentSummaryCard({
     : null;
   const isCompleted = payerSettlement?.status === "completed";
 
+  // Debug logging
+  console.log("PaymentSummaryCard Debug:", {
+    diffResult,
+    settlements,
+    payerSettlement,
+    isCompleted,
+    fromUserId: diffResult?.from,
+    settlementUserIds: settlements.map((s) => s.userId),
+  });
+
   const handleComplete = async () => {
     if (!diffResult || !onCompleteSettlement) return;
 

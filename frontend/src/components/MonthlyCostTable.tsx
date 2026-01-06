@@ -31,9 +31,11 @@ export function MonthlyCostTable({
   // Load settlements when component mounts or month changes
   useEffect(() => {
     const loadSettlements = async () => {
+      console.log("Loading settlements for:", yearMonth);
       setIsLoadingSettlements(true);
       try {
         const result = await getMonthlySettlements({ data: { yearMonth } });
+        console.log("Loaded settlements:", result);
         setSettlements(Array.isArray(result) ? result : []);
       } catch (error) {
         console.error("Failed to load settlements:", error);
@@ -62,9 +64,15 @@ export function MonthlyCostTable({
   const handleCompleteSettlement = async () => {
     if (!diffResult) return;
 
+    console.log("Completing settlement for:", {
+      userId: diffResult.from,
+      yearMonth,
+      diffResult,
+    });
+
     try {
       // Mark the payer's settlement as complete
-      await completeSettlement({
+      const completeResult = await completeSettlement({
         data: {
           userId: diffResult.from,
           yearMonth,
@@ -72,8 +80,12 @@ export function MonthlyCostTable({
         },
       });
 
+      console.log("Settlement completed:", completeResult);
+
       // Reload settlements
       const result = await getMonthlySettlements({ data: { yearMonth } });
+      console.log("Reloaded settlements:", result);
+
       setSettlements(Array.isArray(result) ? result : []);
 
       toast.success(`${year}年${month}月の精算を完了しました。`);
