@@ -225,22 +225,6 @@ export const settlementComplete = app.post(
   },
 );
 
-export const settlementCancel = app.delete(
-  "/settlement/:userId/:yearMonth",
-  async (c) => {
-    const { userId, yearMonth } = c.req.param();
-    return cancelSettlementHandler(c, userId, yearMonth);
-  },
-);
-
-export const settlementGet = app.get(
-  "/settlement/:userId/:yearMonth",
-  async (c) => {
-    const { userId, yearMonth } = c.req.param();
-    return getSettlementHandler(c, userId, yearMonth);
-  },
-);
-
 export const settlementMonthlyGet = app.get(
   "/settlement/monthly/:yearMonth",
   async (c) => {
@@ -254,6 +238,22 @@ export const settlementUserGet = app.get(
   async (c) => {
     const { userId } = c.req.param();
     return getUserSettlementsHandler(c, userId);
+  },
+);
+
+export const settlementCancel = app.delete(
+  "/settlement/:userId/:yearMonth",
+  async (c) => {
+    const { userId, yearMonth } = c.req.param();
+    return cancelSettlementHandler(c, userId, yearMonth);
+  },
+);
+
+export const settlementGet = app.get(
+  "/settlement/:userId/:yearMonth",
+  async (c) => {
+    const { userId, yearMonth } = c.req.param();
+    return getSettlementHandler(c, userId, yearMonth);
   },
 );
 
