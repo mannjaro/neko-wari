@@ -83,12 +83,46 @@ export class SettlementService {
       const existingSettlement =
         await this.repository.get<SettlementStatusItem>(pk, sk);
 
+      const now = new Date().toISOString();
+
+      // レコードが存在しない場合は新規作成して完了状態で保存
       if (!existingSettlement) {
-        throw new Error(
-          `Settlement not found for user ${data.userId} in ${data.yearMonth}`,
-        );
+        logger.info("Settlement not found, creating new one as completed", {
+          userId: data.userId,
+          yearMonth: data.yearMonth,
+        });
+
+        const newSettlementItem: SettlementStatusItem = {
+          PK: pk,
+          SK: sk,
+          GSI1PK: `${DYNAMO_KEYS.SETTLEMENT_PREFIX}${data.yearMonth}`,
+          GSI1SK: `${DYNAMO_KEYS.USER_PREFIX}${data.userId}`,
+          EntityType: DYNAMO_KEYS.ENTITY_SETTLEMENT_STATUS as "SETTLEMENT_STATUS",
+          CreatedAt: now,
+          UpdatedAt: now,
+          UserId: data.userId,
+          YearMonth: data.yearMonth,
+          Status: "completed",
+          SettlementAmount: 0,
+          SettlementDirection: "even",
+          OtherUserId: "",
+          Notes: data.notes || "",
+          CompletedAt: now,
+          CompletedBy: data.completedBy,
+        };
+
+        await this.repository.put<SettlementStatusItem>(newSettlementItem);
+
+        logger.info("Settlement created as completed successfully", {
+          userId: data.userId,
+          yearMonth: data.yearMonth,
+          completedBy: data.completedBy,
+        });
+
+        return newSettlementItem;
       }
 
+      // 既にcompletedの場合はそのまま返す
       if (existingSettlement.Status === "completed") {
         logger.warn("Settlement already completed", {
           userId: data.userId,
@@ -97,9 +131,7 @@ export class SettlementService {
         return existingSettlement;
       }
 
-      const now = new Date().toISOString();
-
-      // Update to completed status
+      // 既存レコードをcompletedに更新
       const result = await this.repository.update<SettlementStatusItem>(
         pk,
         sk,
