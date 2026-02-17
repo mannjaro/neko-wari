@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import {
   Carousel,
@@ -14,12 +14,14 @@ import { MonthlyCostTable } from "./MonthlyCostTable";
 export function YearlyCarousel({
   year,
   currentMonth,
-  setApi,
+  onMonthChange,
 }: {
   year: number;
   currentMonth: number;
-  setApi: (api: CarouselApi) => void;
+  onMonthChange: (year: number, month: number) => void;
 }) {
+  const [api, setApi] = useState<CarouselApi>();
+
   // 前年12月 + 今年1〜12月 + 翌年1月 の14枚構成
   // インデックス: 0=前年12月, 1=1月, ..., 12=12月, 13=翌年1月
   const months = useMemo(
@@ -41,6 +43,47 @@ export function YearlyCarousel({
     () => ({ startIndex: initialMonth }),
     [initialMonth],
   );
+
+  // コールバックと現在月をrefで保持（selectハンドラ内でstaleな値を参照しないように）
+  const onMonthChangeRef = useRef(onMonthChange);
+  onMonthChangeRef.current = onMonthChange;
+  const currentMonthRef = useRef(currentMonth);
+  currentMonthRef.current = currentMonth;
+
+  // Carousel selectイベントのリスナー（年跨ぎ対応）
+  useEffect(() => {
+    if (!api) return;
+
+    const onSelect = () => {
+      const selected = api.selectedScrollSnap();
+      const mo = currentMonthRef.current;
+
+      if (selected === 0) {
+        // 前年12月へ
+        onMonthChangeRef.current(year - 1, 12);
+      } else if (selected === 13) {
+        // 翌年1月へ
+        onMonthChangeRef.current(year + 1, 1);
+      } else if (selected !== mo) {
+        onMonthChangeRef.current(year, selected);
+      }
+    };
+
+    api.on("select", onSelect);
+    return () => {
+      api.off("select", onSelect);
+    };
+  }, [api, year]);
+
+  // 月が変更された時にスライドを対応する位置へスムーズスクロール
+  // 14枚構成では月番号がそのままスライドインデックスに対応
+  useEffect(() => {
+    if (!api) return;
+    const targetSlide = currentMonth;
+    if (api.selectedScrollSnap() !== targetSlide) {
+      api.scrollTo(targetSlide, false);
+    }
+  }, [currentMonth, api]);
 
   return (
     <Carousel opts={carouselOpts} setApi={setApi} className="max-w-4xl mx-auto">
