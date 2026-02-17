@@ -44,6 +44,14 @@ export const Route = createFileRoute("/dashboard")({
       );
     }
 
+    // 年跨ぎスクロール用に前年12月・翌年1月もprefetch
+    context.queryClient.prefetchQuery(
+      monthlyQueryOptions(currentYear - 1, 12),
+    );
+    context.queryClient.prefetchQuery(
+      monthlyQueryOptions(currentYear + 1, 1),
+    );
+
     context.queryClient.prefetchQuery(
       deferredQueryOptions(currentYear, currentMonth),
     );
@@ -71,11 +79,18 @@ function Dashboard() {
   const { year, month } = Route.useSearch();
   const navigate = useNavigate();
   const [api, setApi] = useState<CarouselApi>();
-  const initialSetRef = useRef(false);
 
   const now = new Date();
   const currentYear = year ?? now.getFullYear();
   const currentMonth = month ?? now.getMonth() + 1;
+
+  // selectハンドラ内でstaleな値を参照しないようrefで保持
+  const currentYearRef = useRef(currentYear);
+  const currentMonthRef = useRef(currentMonth);
+  useEffect(() => {
+    currentYearRef.current = currentYear;
+    currentMonthRef.current = currentMonth;
+  }, [currentYear, currentMonth]);
 
   const handleYearChange = (newYear: number) => {
     navigate({
@@ -85,35 +100,52 @@ function Dashboard() {
     });
   };
 
-  // Carousel APIの設定
+  // Carousel selectイベントのリスナー（年跨ぎ対応）
+  // 14枚構成: index 0=前年12月, 1〜12=当年1〜12月, 13=翌年1月
   useEffect(() => {
-    if (!api || initialSetRef.current) return;
+    if (!api) return;
 
-    // 初期位置を設定（滑らかに）
-    api.scrollTo(currentMonth - 1, true);
-    initialSetRef.current = true;
-
-    api.on("select", () => {
+    const onSelect = () => {
       const selected = api.selectedScrollSnap();
-      const newMonth = selected + 1; // 0ベースから1ベースに変換
+      const yr = currentYearRef.current;
+      const mo = currentMonthRef.current;
 
-      if (newMonth !== currentMonth) {
+      if (selected === 0) {
+        // 前年12月へ
         navigate({
           to: "/dashboard",
-          search: { year: currentYear, month: newMonth },
+          search: { year: yr - 1, month: 12 },
+          replace: true,
+        });
+      } else if (selected === 13) {
+        // 翌年1月へ
+        navigate({
+          to: "/dashboard",
+          search: { year: yr + 1, month: 1 },
+          replace: true,
+        });
+      } else if (selected !== mo) {
+        navigate({
+          to: "/dashboard",
+          search: { year: yr, month: selected },
           replace: true,
         });
       }
-    });
-  }, [api, currentYear, currentMonth, navigate]);
+    };
 
-  // URLが変更された時にスライドを対応する月に移動
+    api.on("select", onSelect);
+    return () => {
+      api.off("select", onSelect);
+    };
+  }, [api, navigate]);
+
+  // URLの月が変更された時にスライドを対応する位置へスムーズスクロール
+  // 14枚構成では月番号がそのままスライドインデックスに対応
   useEffect(() => {
-    if (api) {
-      const targetSlide = currentMonth - 1; // 0ベースに変換
-      if (api.selectedScrollSnap() !== targetSlide) {
-        api.scrollTo(targetSlide, false); // 滑らかなアニメーションを有効化
-      }
+    if (!api) return;
+    const targetSlide = currentMonth;
+    if (api.selectedScrollSnap() !== targetSlide) {
+      api.scrollTo(targetSlide, false);
     }
   }, [currentMonth, api]);
 
@@ -146,6 +178,7 @@ function Dashboard() {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Suspense fallback={<SkeletonDemo />}>
           <YearlyCarousel
+            key={currentYear}
             year={currentYear}
             currentMonth={currentMonth}
             setApi={setApi}
