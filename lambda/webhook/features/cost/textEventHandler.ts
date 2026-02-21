@@ -4,7 +4,7 @@ import type { PaymentCategory } from "../../../shared/types";
 import { BOT_MESSAGES } from "../../../shared/constants";
 import { userService } from "../../../backend/features/user/userService";
 import {
-  createUserSelectionTemplate,
+  createCategoryCarouselTemplate,
   createConfirmationTemplate,
 } from "./lineTemplates";
 import { getAcceptedUsers } from "./userCache";
@@ -25,26 +25,19 @@ export const textEventHandler = async (
   let response: line.Message;
 
   if (text === "入力を始める") {
-    // Reset user state and start fresh
-    await userService.saveUserState(userId, { step: "idle" });
+    // Set state to user_selected with the current user and show category selection
+    await userService.saveUserState(userId, {
+      step: "user_selected",
+      user: userId,
+    });
 
-    // Fetch accepted users
-    const users = await getAcceptedUsers();
+    const carouselTemplate = createCategoryCarouselTemplate(userId);
 
-    if (users.length === 0) {
-      response = {
-        type: "text",
-        text: "❌ 登録済みユーザーが見つかりません。管理者に連絡してください。",
-      };
-    } else {
-      const buttonTemplate = createUserSelectionTemplate(users);
-
-      response = {
-        type: "template",
-        altText: BOT_MESSAGES.START,
-        template: buttonTemplate,
-      };
-    }
+    response = {
+      type: "template",
+      altText: "支払いカテゴリを選択してください",
+      template: carouselTemplate,
+    };
   } else if (text === "やめる" || text === "キャンセル" || text === "終了") {
     // Cancel current session and clear state
     await userService.deleteUserState(userId);

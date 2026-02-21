@@ -11,7 +11,6 @@ import { costService } from "../../../backend/features/cost/costService";
 import {
   createCategoryCarouselTemplate,
   createMemoQuickReply,
-  createUserSelectionTemplate,
 } from "./lineTemplates";
 import { getAcceptedUsers } from "./userCache";
 
@@ -48,13 +47,11 @@ export const postbackEventHandler = async (
     } else {
       switch (currentState.step) {
         case "user_selected": {
-          // Go back to user selection
-          await userService.saveUserState(userId, { step: "idle" });
-          const usersForBack = await getAcceptedUsers();
+          // No previous step to go back to - cancel and reset
+          await userService.deleteUserState(userId);
           response = {
-            type: "template",
-            altText: "支払い情報を選択してください",
-            template: createUserSelectionTemplate(usersForBack),
+            type: "text",
+            text: BOT_MESSAGES.OPERATION_CANCELLED,
           };
           break;
         }
@@ -111,51 +108,6 @@ export const postbackEventHandler = async (
             type: "text",
             text: BOT_MESSAGES.INVALID_OPERATION,
           };
-      }
-    }
-  } else if (
-    data?.startsWith("payment_user=") &&
-    data !== POSTBACK_DATA.CANCEL
-  ) {
-    // Handle dynamic user selection
-    // Validate step: should be idle or just started
-    if (!currentState || currentState.step !== "idle") {
-      response = {
-        type: "text",
-        text: BOT_MESSAGES.INVALID_OPERATION,
-      };
-    } else {
-      // Extract LINE user ID from postback data
-      const lineUserId = data.substring(13); // Remove "payment_user=" prefix
-
-      // Fetch users and validate selection
-      const users = await getAcceptedUsers();
-      const selectedUser = users.find((u) => u.lineUserId === lineUserId);
-
-      if (!selectedUser) {
-        // User not found - restart flow
-        await userService.saveUserState(userId, { step: "idle" });
-        const freshUsers = await getAcceptedUsers();
-        response = {
-          type: "template",
-          altText:
-            "選択されたユーザーが見つかりません。最初からやり直してください。",
-          template: createUserSelectionTemplate(freshUsers),
-        };
-      } else {
-        // Update state to user_selected with LINE user ID
-        await userService.saveUserState(userId, {
-          step: "user_selected",
-          user: lineUserId, // Store LINE user ID, not display name
-        });
-
-        const carouselTemplate = createCategoryCarouselTemplate(lineUserId);
-
-        response = {
-          type: "template",
-          altText: "支払いカテゴリを選択してください",
-          template: carouselTemplate,
-        };
       }
     }
   } else if (data?.startsWith("category=")) {

@@ -1,5 +1,4 @@
 import type {
-  TemplateButtons,
   TemplateCarousel,
   TemplateConfirm,
   QuickReply,
@@ -10,33 +9,9 @@ import {
   CATEGORY_NAMES,
   CATEGORY_IMAGES,
   CATEGORY_DESCRIPTIONS,
-  BOT_MESSAGES,
   POSTBACK_DATA,
   MEMO_QUICK_REPLIES_BY_CATEGORY,
 } from "../../../shared/constants";
-import type { AcceptedUser } from "./userCache";
-
-/**
- * Creates initial user selection button template with dynamic users
- */
-export const createUserSelectionTemplate = (
-  users: AcceptedUser[],
-): TemplateButtons => ({
-  type: "buttons",
-  text: BOT_MESSAGES.START,
-  actions: [
-    ...users.map((user) => ({
-      type: "postback" as const,
-      label: user.displayName,
-      data: `payment_user=${user.lineUserId}`,
-    })),
-    {
-      type: "postback",
-      label: "キャンセル",
-      data: POSTBACK_DATA.CANCEL,
-    },
-  ],
-});
 
 /**
  * Creates category selection carousel template
