@@ -22,11 +22,11 @@ export function YearlyCarousel({
 }) {
   const [api, setApi] = useState<CarouselApi>();
 
-  // 前年12月 + 今年1〜12月 + 翌年1月 の14枚構成
-  // インデックス: 0=前年12月, 1=1月, ..., 12=12月, 13=翌年1月
+  // (前年12月 +) 今年1〜12月 + 翌年1月 の構成
+  // 前年がAPIの対応範囲（2025年以上）の場合のみ前年12月を先頭に追加
   const months = useMemo(
     () => [
-      { year: year - 1, month: 12 },
+      ...(year - 1 >= 2025 ? [{ year: year - 1, month: 12 }] : []),
       ...Array.from({ length: 12 }, (_, i) => ({ year, month: i + 1 })),
       { year: year + 1, month: 1 },
     ],
@@ -40,7 +40,13 @@ export function YearlyCarousel({
   // 初期表示位置を固定（re-renderで変わらないようにする）
   const [initialMonth] = useState(currentMonth);
   const carouselOpts = useMemo(
-    () => ({ startIndex: initialMonth }),
+    () => ({
+      startIndex: months.findIndex(
+        ({ year: y, month: m }) => y === year && m === initialMonth,
+      ),
+    }),
+    // months/yearはyearが変わった時のみ変化するが、コンポーネントはkey={year}で再マウントされるため安全
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [initialMonth],
   );
 
@@ -50,22 +56,24 @@ export function YearlyCarousel({
   const currentMonthRef = useRef(currentMonth);
   currentMonthRef.current = currentMonth;
 
+  // monthsのrefを保持（selectハンドラ内でstaleな値を参照しないように）
+  const monthsRef = useRef(months);
+  monthsRef.current = months;
+
   // Carousel selectイベントのリスナー（年跨ぎ対応）
   useEffect(() => {
     if (!api) return;
 
     const onSelect = () => {
       const selected = api.selectedScrollSnap();
-      const mo = currentMonthRef.current;
+      const { year: selectedYear, month: selectedMonth } =
+        monthsRef.current[selected];
 
-      if (selected === 0) {
-        // 前年12月へ
-        onMonthChangeRef.current(year - 1, 12);
-      } else if (selected === 13) {
-        // 翌年1月へ
-        onMonthChangeRef.current(year + 1, 1);
-      } else if (selected !== mo) {
-        onMonthChangeRef.current(year, selected);
+      if (
+        selectedYear !== year ||
+        selectedMonth !== currentMonthRef.current
+      ) {
+        onMonthChangeRef.current(selectedYear, selectedMonth);
       }
     };
 
@@ -76,14 +84,15 @@ export function YearlyCarousel({
   }, [api, year]);
 
   // 月が変更された時にスライドを対応する位置へスムーズスクロール
-  // 14枚構成では月番号がそのままスライドインデックスに対応
   useEffect(() => {
     if (!api) return;
-    const targetSlide = currentMonth;
-    if (api.selectedScrollSnap() !== targetSlide) {
+    const targetSlide = months.findIndex(
+      ({ year: y, month: m }) => y === year && m === currentMonth,
+    );
+    if (targetSlide !== -1 && api.selectedScrollSnap() !== targetSlide) {
       api.scrollTo(targetSlide, false);
     }
-  }, [currentMonth, api]);
+  }, [currentMonth, api, months, year]);
 
   return (
     <Carousel opts={carouselOpts} setApi={setApi} className="max-w-4xl mx-auto">

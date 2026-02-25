@@ -43,10 +43,12 @@ export const Route = createFileRoute("/dashboard")({
       );
     }
 
-    // 年跨ぎスクロール用に前年12月・翌年1月もprefetch
-    context.queryClient.prefetchQuery(
-      monthlyQueryOptions(currentYear - 1, 12),
-    );
+    // 年跨ぎスクロール用に前年12月・翌年1月もprefetch（2025年以前はAPIが対応していないのでスキップ）
+    if (currentYear - 1 >= 2025) {
+      context.queryClient.prefetchQuery(
+        monthlyQueryOptions(currentYear - 1, 12),
+      );
+    }
     context.queryClient.prefetchQuery(
       monthlyQueryOptions(currentYear + 1, 1),
     );
