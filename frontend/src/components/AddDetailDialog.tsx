@@ -37,11 +37,11 @@ import { useCreateCost } from "@/hooks/useCreateCost";
 import { CreateCostDataSchema, PaymentCategorySchema } from "@/types/shared";
 import { getCategoryName } from "@/utils/categoryNames";
 import { YenInput } from "./YenInput";
-import { useAuth } from "react-oidc-context";
+import { useAppAuth } from "@/features/auth";
 import { listUsers } from "@/server/listUsers";
 
 function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
-  const auth = useAuth();
+  const auth = useAppAuth();
   const username = (auth.user?.profile.username as string)?.split("_")[1] ?? "";
   const lineUserId = username.charAt(0).toUpperCase() + username.slice(1);
   const form = useForm<z.infer<typeof CreateCostDataSchema>>({

@@ -1,5 +1,4 @@
 import { WebStorageStateStore } from "oidc-client-ts";
-import type { AuthContextProps } from "react-oidc-context";
 
 export const CLIENT_ID =
   import.meta.env.VITE_COGNITO_CLIENT_ID || "your-client-id-here";
@@ -30,9 +29,7 @@ export const cognitoAuthConfig = {
       : undefined,
 };
 
+/** Minimal auth state stored in the TanStack Router context (used in beforeLoad). */
 export interface AuthState {
   isAuthenticated: boolean;
-  user: AuthContextProps["user"];
-  isLoading: boolean;
-  signinRedirect: AuthContextProps["signinRedirect"];
 }

@@ -1,5 +1,5 @@
 // src/components/AuthGuard.tsx
-import { useAuth } from "react-oidc-context";
+import { useAppAuth } from "@/features/auth";
 import { useEffect, useState } from "react";
 import { isTokenExpired, hasRefreshToken } from "@/utils/authUtils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,7 +13,7 @@ interface AuthGuardProps {
  * Automatically refreshes the token if it's expired but the refresh token is still valid
  */
 export function AuthGuard({ children }: AuthGuardProps) {
-  const auth = useAuth();
+  const auth = useAppAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
 

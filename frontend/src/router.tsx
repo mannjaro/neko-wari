@@ -14,10 +14,7 @@ export function createRouter() {
       queryClient,
       auth: {
         isAuthenticated: false,
-        isLoading: true,
-        user: undefined,
-        signinRedirect: async () => {},
-      } as unknown as AuthState, // Initial safe default
+      } as AuthState,
     },
     defaultPreload: "intent",
     // Since we're using React Query, we don't want loader calls to ever be stale
