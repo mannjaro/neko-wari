@@ -2,7 +2,7 @@
 
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAppAuth } from "@/features/auth";
 import { Button } from "@/components/ui/button";
 import { getSystemInitStatus } from "@/server/getSystemInitStatus";
 import { createSystemInvitation } from "@/server/createSystemInvitation";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function Login() {
-  const auth = useAuth();
+  const auth = useAppAuth();
   const navigate = useNavigate();
   const [isInitialized, setIsInitialized] = useState<boolean | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
@@ -115,7 +115,7 @@ function Login() {
               type="button"
               onClick={() => {
                 auth.clearStaleState();
-                auth.signinRedirect();
+                auth.signIn();
               }}
               className="w-full"
             >
@@ -378,7 +378,7 @@ function Login() {
               ) : (
                 <Button
                   type="button"
-                  onClick={() => auth.signinRedirect()}
+                  onClick={() => auth.signIn()}
                   className="w-full h-12 text-base font-medium bg-indigo-600 hover:bg-indigo-700 transition-colors"
                   size="lg"
                 >
