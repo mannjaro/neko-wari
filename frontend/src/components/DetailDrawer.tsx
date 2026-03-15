@@ -62,7 +62,18 @@ export function DetailDrawer({
                   <TableCell>
                     {getCategoryName(category as PaymentCategory)}
                   </TableCell>
-                  <TableCell>{item.memo}</TableCell>
+                  <TableCell>
+                    {item.memo}
+                    <span
+                      className={`ml-2 inline-block px-1.5 py-0.5 rounded text-xs font-medium ${
+                        item.costType === "charge"
+                          ? "bg-orange-100 text-orange-700"
+                          : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
+                      {item.costType === "charge" ? "請求" : "折半"}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <Price amount={item.amount} />
                   </TableCell>

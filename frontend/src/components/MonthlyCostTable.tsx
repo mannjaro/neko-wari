@@ -55,9 +55,15 @@ export function MonthlyCostTable({
   }
 
   const paymentsMap = new Map(
-    data.userSummaries.map((user) => [user.userId, user.totalAmount]),
+    data.userSummaries.map((user) => [
+      user.userId,
+      user.totalAmount - user.chargeAmount,
+    ]),
   );
-  const diffResult = calcDiff(paymentsMap);
+  const chargeAmountsMap = new Map(
+    data.userSummaries.map((user) => [user.userId, user.chargeAmount]),
+  );
+  const diffResult = calcDiff(paymentsMap, chargeAmountsMap);
 
   const handleCompleteSettlement = async () => {
     if (!diffResult) return;

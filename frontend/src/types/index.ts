@@ -6,6 +6,8 @@ import type {
 
 export type DiffAmount = {
   amount: number;
+  splitAmount: number;
+  chargeAmount: number;
   from: string;
   to: string;
 };
@@ -14,12 +16,14 @@ export interface UserSummary {
   userId: string;
   userName: string;
   totalAmount: number;
+  chargeAmount: number;
   transactionCount: number;
   categoryBreakdown: {
     [K in PaymentCategory]: {
       amount: number;
       memo: string;
       timestamp: number;
+      costType?: "split" | "charge";
     }[];
   };
 }

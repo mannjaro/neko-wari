@@ -1,30 +1,64 @@
 import type { DiffAmount } from "@/types";
 
-export function calcDiff(payments: Map<string, number>): DiffAmount | null {
-  // 立替額から支払い情報を計算する
-  // 1人の場合: その人の半額を相手が支払うべき
-  // 2人の場合: より多く支払った人に対して他方の人が払うべき金額を計算
+export function calcDiff(
+  payments: Map<string, number>,
+  chargeAmounts?: Map<string, number>,
+): DiffAmount | null {
+  // payments = split-only totals per user
+  // chargeAmounts = charge-only totals per user
   const entries = Array.from(payments.entries());
 
   if (entries.length === 0 || entries.length > 2) {
     return null;
   }
 
-  // 1人または2人の場合の共通処理
   const amounts = entries.map(([, amount]) => amount);
   const users = entries.map(([user]) => user);
 
-  const maxAmount = Math.max(...amounts);
-  const minAmount = amounts.length === 1 ? 0 : Math.min(...amounts);
-  const diff = (maxAmount - minAmount) / 2;
+  if (entries.length === 1) {
+    const splitAmount = amounts[0] / 2;
+    const chargeAmount = chargeAmounts?.get(users[0]) ?? 0;
+    const total = splitAmount + chargeAmount;
+    return {
+      amount: total,
+      splitAmount,
+      chargeAmount,
+      from: "相手",
+      to: users[0],
+    };
+  }
 
-  const payerIndex = amounts.indexOf(maxAmount);
-  const payer = users[payerIndex];
-  const receiver = amounts.length === 1 ? "相手" : users[1 - payerIndex];
+  // 2 users
+  const [user1, user2] = users as [string, string];
+  const [split1, split2] = amounts as [number, number];
+  const charge1 = chargeAmounts?.get(user1) ?? 0;
+  const charge2 = chargeAmounts?.get(user2) ?? 0;
 
-  if (!payer || (!receiver && amounts.length > 1)) {
+  // splitDiff > 0 means user1 should receive from user2
+  const splitDiff = (split1 - split2) / 2;
+  // chargeDiff > 0 means user1's charges → user2 pays user1
+  const chargeDiff = charge1 - charge2;
+  const net = splitDiff + chargeDiff;
+
+  if (!user1 || !user2) {
     return null;
   }
 
-  return { amount: diff, from: receiver || "相手", to: payer };
+  if (net >= 0) {
+    return {
+      amount: net,
+      splitAmount: Math.abs(splitDiff),
+      chargeAmount: Math.abs(chargeDiff),
+      from: user2,
+      to: user1,
+    };
+  } else {
+    return {
+      amount: Math.abs(net),
+      splitAmount: Math.abs(splitDiff),
+      chargeAmount: Math.abs(chargeDiff),
+      from: user1,
+      to: user2,
+    };
+  }
 }

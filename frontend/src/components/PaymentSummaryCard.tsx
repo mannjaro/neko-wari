@@ -100,11 +100,21 @@ export function PaymentSummaryCard({
             </span>
           )}
         </CardTitle>
-        <CardDescription> （多い方 - 少ない方） / 2</CardDescription>
+        <CardDescription> 折半分 + 請求分</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">
           <Price amount={diffResult.amount} />
+        </div>
+        <div className="mt-2 text-sm text-gray-600 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="inline-block px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-medium">折半</span>
+            <Price amount={diffResult.splitAmount} />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-block px-2 py-0.5 rounded bg-orange-100 text-orange-700 text-xs font-medium">請求</span>
+            <Price amount={diffResult.chargeAmount} />
+          </div>
         </div>
         {isCompleted && payerSettlement?.completedAt && (
           <p className="text-sm text-green-700 font-medium mt-2 flex items-center gap-1">
