@@ -34,7 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateCost } from "@/hooks/useCreateCost";
-import { CreateCostDataSchema, PaymentCategorySchema, CostTypeSchema } from "@/types/shared";
+import { CreateCostDataSchema, PaymentCategorySchema } from "@/types/shared";
 import { getCategoryName } from "@/utils/categoryNames";
 import { YenInput } from "./YenInput";
 import { useAuth } from "react-oidc-context";
@@ -160,11 +160,8 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {CostTypeSchema.options.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type === "split" ? "折半" : "請求"}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="split">折半</SelectItem>
+                  <SelectItem value="charge">請求</SelectItem>
                 </SelectContent>
                 <FormDescription>折半: 2人で割り勘 / 請求: 全額を相手に請求</FormDescription>
                 <FormMessage />
