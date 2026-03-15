@@ -13,8 +13,7 @@ import type { ReactNode } from "react";
 import { NotFound } from "@/components/NotFound";
 import { Toaster } from "@/components/ui/sonner";
 import type { AuthState } from "@/utils/auth";
-import { cognitoAuthConfig } from "@/utils/auth";
-import { AuthProvider, useAuth } from "react-oidc-context";
+import { AppAuthProvider, useAppAuth } from "@/features/auth";
 import { useEffect } from "react";
 
 import appCss from "@/styles/app.css?url";
@@ -63,19 +62,15 @@ export const Route = createRootRouteWithContext<{
 });
 
 function AuthSync() {
-  const auth = useAuth();
+  const auth = useAppAuth();
   const router = useRouter();
 
   useEffect(() => {
     // Update the router context with the latest auth state
     // This allows beforeLoad to access the correct auth state
-    // We use a type assertion because context is technically read-only in types but mutable at runtime
     const context = router.options.context as { auth: AuthState };
     context.auth = {
       isAuthenticated: auth.isAuthenticated,
-      user: auth.user,
-      isLoading: auth.isLoading,
-      signinRedirect: auth.signinRedirect,
     };
 
     // Invalidate the router to re-run beforeLoad checks if needed
@@ -102,10 +97,10 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <HeadContent />
       </head>
       <body>
-        <AuthProvider {...cognitoAuthConfig}>
+        <AppAuthProvider>
           <AuthSync />
           {children}
-        </AuthProvider>
+        </AppAuthProvider>
         <Scripts />
         <Toaster />
       </body>
