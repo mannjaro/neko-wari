@@ -16,7 +16,7 @@ export interface UserSummary {
   userId: string;
   userName: string;
   totalAmount: number;
-  chargeAmount: number;
+  chargeAmount?: number;
   transactionCount: number;
   categoryBreakdown: {
     [K in PaymentCategory]: {

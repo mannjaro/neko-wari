@@ -57,11 +57,11 @@ export function MonthlyCostTable({
   const paymentsMap = new Map(
     data.userSummaries.map((user) => [
       user.userId,
-      user.totalAmount - user.chargeAmount,
+      user.totalAmount - (user.chargeAmount ?? 0),
     ]),
   );
   const chargeAmountsMap = new Map(
-    data.userSummaries.map((user) => [user.userId, user.chargeAmount]),
+    data.userSummaries.map((user) => [user.userId, user.chargeAmount ?? 0]),
   );
   const diffResult = calcDiff(paymentsMap, chargeAmountsMap);
 
