@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
-import { useCallback, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useCallback, useEffect, useState } from "react";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
@@ -40,11 +40,13 @@ import { YenInput } from "./YenInput";
 import { useAuth } from "react-oidc-context";
 import { listUsers } from "@/server/listUsers";
 
+type FormValues = z.infer<typeof CreateCostDataSchema>;
+
 function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   const auth = useAuth();
   const username = (auth.user?.profile.username as string)?.split("_")[1] ?? "";
   const lineUserId = username.charAt(0).toUpperCase() + username.slice(1);
-  const form = useForm<z.infer<typeof CreateCostDataSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(CreateCostDataSchema),
     defaultValues: {
       userId: lineUserId,
@@ -58,70 +60,36 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const createCostDetail = useCreateCost();
 
-  const { data: usersData, isLoading: isLoadingUsers } = useQuery({
+  const { data: usersData } = useQuery({
     queryKey: ["users"],
     queryFn: () => listUsers(),
   });
 
-  const users = usersData?.users || [];
+  useEffect(() => {
+    const users = usersData?.users || [];
+    const currentUser = users.find((u) => u.id === lineUserId);
+    if (currentUser) {
+      form.setValue("displayName", currentUser.displayName);
+    }
+  }, [usersData, lineUserId, form]);
 
-  const onSubmit = useCallback(
-    async (data: z.infer<typeof CreateCostDataSchema>) => {
-      try {
-        const result = await createCostDetail(data);
-        toast("新しい項目が追加されました", {});
-        console.log(result);
-        form.reset();
-        onSuccess?.();
-        return result;
-      } catch (error) {
-        toast.error("エラーが発生しました");
-        console.error(error);
-      }
-    },
-    [createCostDetail, onSuccess, form],
-  );
+  const onSubmit: SubmitHandler<FormValues> = async (data) => {
+    try {
+      const result = await createCostDetail(data);
+      toast("新しい項目が追加されました", {});
+      console.log(result);
+      form.reset();
+      onSuccess?.();
+      return result;
+    } catch (error) {
+      toast.error("エラーが発生しました");
+      console.error(error);
+    }
+  };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
-        <FormField
-          control={form.control}
-          name="displayName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>ユーザー</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="ユーザー" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {isLoadingUsers ? (
-                    <SelectItem value="loading" disabled>
-                      読み込み中...
-                    </SelectItem>
-                  ) : users.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      ユーザーが見つかりません
-                    </SelectItem>
-                  ) : (
-                    users.map((user) => (
-                      <SelectItem key={user.id} value={user.displayName}>
-                        {user.displayName}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-                <FormDescription>
-                  支払いをしたユーザーを入力してください
-                </FormDescription>
-                <FormMessage />
-              </Select>
-            </FormItem>
-          )}
-        />
         <FormField
           control={form.control}
           name="category"
@@ -225,7 +193,7 @@ export function AddDetailDialog() {
         <DialogHeader>
           <DialogTitle>新しい項目を追加</DialogTitle>
           <DialogDescription>
-            カテゴリ、備考、金額、ユーザーを入力してください
+            カテゴリ、備考、金額を入力してください
           </DialogDescription>
         </DialogHeader>
         <div>
