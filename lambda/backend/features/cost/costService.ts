@@ -55,6 +55,7 @@ export class CostService {
         Price: data.price,
         Timestamp: timestamp,
         YearMonth: yearMonth,
+        CostType: data.costType ?? "split",
       };
 
       await this.repository.put<CostDataItem>(costItem);
@@ -107,6 +108,7 @@ export class CostService {
         Price: state.price || 0,
         Timestamp: timestamp,
         YearMonth: yearMonth,
+        CostType: "split",
       };
 
       await this.repository.put<CostDataItem>(costItem);

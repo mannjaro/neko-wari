@@ -36,6 +36,7 @@ describe("CostService", () => {
         category: "daily" as const,
         memo: 'Lunch with team',
         price: 2500,
+        costType: "split" as const,
       }
 
       mockRepo.put.mockResolvedValue(undefined)

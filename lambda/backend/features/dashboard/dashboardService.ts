@@ -49,7 +49,7 @@ export class DashboardService {
     // Helper function to create empty category breakdown
     const createEmptyCategoryBreakdown = (): Record<
       PaymentCategory,
-      Array<{ amount: number; memo: string; timestamp: number }>
+      Array<{ amount: number; memo: string; timestamp: number; costType?: "split" | "charge" }>
     > => ({
       rent: [],
       utilities: [],
@@ -66,15 +66,18 @@ export class DashboardService {
       const userId = item.PK.replace(`${DYNAMO_KEYS.USER_PREFIX}`, "");
       const displayName = userDisplayNameMap.get(userId) || item.User;
       const existing = userSummaryMap.get(userId);
+      const isCharge = item.CostType === "charge";
 
       if (existing) {
         existing.totalAmount += item.Price;
+        if (isCharge) existing.chargeAmount += item.Price;
         existing.transactionCount++;
 
         existing.categoryBreakdown[item.Category].push({
           amount: item.Price,
           memo: item.Memo || "",
           timestamp: item.Timestamp,
+          costType: item.CostType,
         });
       } else {
         const categoryBreakdown = createEmptyCategoryBreakdown();
@@ -83,6 +86,7 @@ export class DashboardService {
             amount: item.Price,
             memo: item.Memo || "",
             timestamp: item.Timestamp,
+            costType: item.CostType,
           },
         ];
 
@@ -90,6 +94,7 @@ export class DashboardService {
           userId,
           userName: displayName,
           totalAmount: item.Price,
+          chargeAmount: isCharge ? item.Price : 0,
           transactionCount: 1,
           categoryBreakdown,
         });
@@ -123,11 +128,15 @@ export class DashboardService {
     }
 
     const [user1, user2] = userSummaries;
-    const diff = Math.abs(user1.totalAmount - user2.totalAmount) / 2;
+    const splitDiff =
+      (user1.totalAmount - user1.chargeAmount - (user2.totalAmount - user2.chargeAmount)) / 2;
+    const chargeDiff = user1.chargeAmount - user2.chargeAmount;
+    const net = splitDiff + chargeDiff;
+    const diff = Math.abs(net);
 
-    // Determine who pays and who receives
-    const payer = user1.totalAmount < user2.totalAmount ? user1 : user2;
-    const receiver = user1.totalAmount < user2.totalAmount ? user2 : user1;
+    // Determine who pays and who receives based on net settlement
+    const payer = net > 0 ? user2 : user1;
+    const receiver = net > 0 ? user1 : user2;
 
     // Check if settlements already exist
     const existingSettlements =

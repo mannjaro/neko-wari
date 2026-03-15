@@ -1,6 +1,10 @@
 // Shared schema definitions for the LINE Bot application using Zod
 import { z } from "zod";
 
+// Cost type schema and type
+export const CostTypeSchema = z.enum(["split", "charge"]);
+export type CostType = z.infer<typeof CostTypeSchema>;
+
 // Payment category schema and type
 export const PaymentCategorySchema = z.enum([
   "rent",
@@ -85,6 +89,7 @@ export const CostDataItemSchema = BaseDynamoItemSchema.extend({
   Price: z.number(),
   Timestamp: z.number(),
   YearMonth: z.string(), // YYYY-MM for monthly queries
+  CostType: CostTypeSchema.default("split"),
 });
 export type CostDataItem = z.infer<typeof CostDataItemSchema>;
 
@@ -95,6 +100,7 @@ export const CreateCostDataSchema = z.object({
   category: PaymentCategorySchema,
   memo: z.string(),
   price: z.number().gt(0),
+  costType: CostTypeSchema.default("split"),
 });
 export type CreateCostData = z.infer<typeof CreateCostDataSchema>;
 
@@ -244,6 +250,7 @@ export const UserSummarySchema = z.object({
   userId: z.string(),
   userName: z.string(),
   totalAmount: z.number(),
+  chargeAmount: z.number(),
   transactionCount: z.number(),
   categoryBreakdown: z.record(
     PaymentCategorySchema,
@@ -252,6 +259,7 @@ export const UserSummarySchema = z.object({
         amount: z.number(),
         memo: z.string(),
         timestamp: z.number(),
+        costType: CostTypeSchema.optional(),
       }),
     ),
   ),

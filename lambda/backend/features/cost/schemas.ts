@@ -13,6 +13,7 @@ export const CreateCostDetailSchema = z.object({
   ]),
   memo: z.string(),
   price: z.number(),
+  costType: z.enum(["split", "charge"]).default("split"),
 });
 
 export const UpdateCostDetailSchema = z
