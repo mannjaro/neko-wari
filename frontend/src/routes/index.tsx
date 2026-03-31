@@ -2,7 +2,7 @@
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAppAuth } from "@/features/auth";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -10,7 +10,7 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const navigate = useNavigate();
-  const auth = useAuth();
+  const auth = useAppAuth();
 
   // ログイン済みの場合はダッシュボードへリダイレクト
   useEffect(() => {
