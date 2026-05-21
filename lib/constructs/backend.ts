@@ -15,9 +15,7 @@ export class Backend extends Construct {
     const db = new dynamodb.Table(this, "Table", {
       partitionKey: { name: "PK", type: dynamodb.AttributeType.STRING },
       sortKey: { name: "SK", type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PROVISIONED,
-      writeCapacity: 1,
-      readCapacity: 1,
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       timeToLiveAttribute: "TTL", // Updated to match facet pattern
       pointInTimeRecoverySpecification: {
         pointInTimeRecoveryEnabled: false,
@@ -29,8 +27,6 @@ export class Backend extends Construct {
       partitionKey: { name: "GSI1PK", type: dynamodb.AttributeType.STRING },
       sortKey: { name: "GSI1SK", type: dynamodb.AttributeType.STRING },
       projectionType: dynamodb.ProjectionType.ALL,
-      writeCapacity: 1,
-      readCapacity: 1,
     });
 
 
