@@ -1,14 +1,14 @@
 // src/utils/authUtils.ts
-import type { User } from "oidc-client-ts";
+import type { AppUser } from "@/features/auth";
 
 /**
  * Check if the access token is expired or about to expire
- * @param user - The OIDC user object
+ * @param user - The app user object
  * @param bufferSeconds - Number of seconds before expiration to consider the token as expired (default: 60)
  * @returns true if the token is expired or about to expire
  */
 export function isTokenExpired(
-  user: User | null | undefined,
+  user: AppUser | null | undefined,
   bufferSeconds = 60,
 ): boolean {
   if (!user || !user.expires_at) {
@@ -24,9 +24,9 @@ export function isTokenExpired(
 
 /**
  * Check if the refresh token is available
- * @param user - The OIDC user object
+ * @param user - The app user object
  * @returns true if a refresh token is available
  */
-export function hasRefreshToken(user: User | null | undefined): boolean {
+export function hasRefreshToken(user: AppUser | null | undefined): boolean {
   return !!user?.refresh_token;
 }

@@ -1,5 +1,5 @@
 // src/hooks/useAuthenticatedFetch.ts
-import { useAuth } from "react-oidc-context";
+import { useAppAuth } from "@/features/auth";
 import { useCallback } from "react";
 import { isTokenExpired, hasRefreshToken } from "@/utils/authUtils";
 
@@ -8,7 +8,7 @@ import { isTokenExpired, hasRefreshToken } from "@/utils/authUtils";
  * @returns An object containing the authenticated fetch function and auth state
  */
 export function useAuthenticatedFetch() {
-  const auth = useAuth();
+  const auth = useAppAuth();
 
   /**
    * Ensures a valid access token is available, refreshing if necessary
