@@ -110,7 +110,7 @@ export function MonthlyCostTable({
         onCompleteSettlement={handleCompleteSettlement}
       />
       <div className="flex justify-end mb-4">
-        <AddDetailDialog />
+        <AddDetailDialog year={year} month={month} />
       </div>
       <UserSummaryTable
         year={year}

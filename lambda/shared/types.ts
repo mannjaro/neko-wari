@@ -101,6 +101,7 @@ export const CreateCostDataSchema = z.object({
   memo: z.string(),
   price: z.number().gt(0),
   costType: CostTypeSchema.default("split"),
+  timestamp: z.number().optional(), // Epoch ms; defaults to now when omitted, allows recording past months
 });
 export type CreateCostData = z.infer<typeof CreateCostDataSchema>;
 
