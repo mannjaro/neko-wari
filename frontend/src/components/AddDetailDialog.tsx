@@ -42,7 +42,31 @@ import { listUsers } from "@/server/listUsers";
 
 type FormValues = z.infer<typeof CreateCostDataSchema>;
 
-function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
+function formatDateInput(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
+}
+
+function getDefaultDateForMonth(year: number, month: number): string {
+  const today = new Date();
+  const isCurrentMonth =
+    year === today.getFullYear() && month === today.getMonth() + 1;
+  if (isCurrentMonth) {
+    return formatDateInput(today);
+  }
+  return `${year}-${String(month).padStart(2, "0")}-01`;
+}
+
+function SubmitForm({
+  onSuccess,
+  year,
+  month,
+}: {
+  onSuccess?: () => void;
+  year: number;
+  month: number;
+}) {
   const auth = useAuth();
   const username = (auth.user?.profile.username as string)?.split("_")[1] ?? "";
   const lineUserId = username.charAt(0).toUpperCase() + username.slice(1);
@@ -57,6 +81,9 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
       costType: "split",
     },
   });
+  const [dateValue, setDateValue] = useState(() =>
+    getDefaultDateForMonth(year, month),
+  );
 
   const createCostDetail = useCreateCost();
 
@@ -75,10 +102,12 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
-      const result = await createCostDetail(data);
+      const timestamp = new Date(`${dateValue}T12:00:00Z`).getTime();
+      const result = await createCostDetail({ ...data, timestamp });
       toast("新しい項目が追加されました", {});
       console.log(result);
       form.reset();
+      setDateValue(getDefaultDateForMonth(year, month));
       onSuccess?.();
       return result;
     } catch (error) {
@@ -90,6 +119,20 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+        <FormItem>
+          <FormLabel htmlFor="cost-date">日付</FormLabel>
+          <FormControl>
+            <Input
+              id="cost-date"
+              type="date"
+              value={dateValue}
+              onChange={(e) => setDateValue(e.target.value)}
+            />
+          </FormControl>
+          <FormDescription>
+            過去の月の項目もこの日付を変更することで登録できます
+          </FormDescription>
+        </FormItem>
         <FormField
           control={form.control}
           name="category"
@@ -173,7 +216,13 @@ function SubmitForm({ onSuccess }: { onSuccess?: () => void }) {
   );
 }
 
-export function AddDetailDialog() {
+export function AddDetailDialog({
+  year,
+  month,
+}: {
+  year: number;
+  month: number;
+}) {
   const [open, setOpen] = useState(false);
 
   const handleSuccess = useCallback(() => {
@@ -197,7 +246,7 @@ export function AddDetailDialog() {
           </DialogDescription>
         </DialogHeader>
         <div>
-          <SubmitForm onSuccess={handleSuccess} />
+          <SubmitForm onSuccess={handleSuccess} year={year} month={month} />
         </div>
         <DialogFooter className="sm:justify-start">
           <DialogClose asChild>

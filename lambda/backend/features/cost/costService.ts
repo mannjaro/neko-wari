@@ -34,7 +34,7 @@ export class CostService {
     try {
       this.validateCreateCostData(data);
 
-      const timestamp = Date.now();
+      const timestamp = data.timestamp ?? Date.now();
       const now = new Date().toISOString();
       const date = new Date(timestamp);
       const yearMonth = `${date.getFullYear()}-${String(
@@ -279,6 +279,10 @@ export class CostService {
 
     if (!data.userId || data.userId.trim() === "") {
       throw new Error("User ID is required");
+    }
+
+    if (data.timestamp !== undefined && data.timestamp > Date.now()) {
+      throw new Error("Timestamp cannot be in the future");
     }
   }
 
