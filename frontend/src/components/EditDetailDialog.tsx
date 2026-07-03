@@ -45,7 +45,7 @@ function SubmitForm({
   amount,
   category,
   memo,
-  timestamp,
+  id,
   onSuccess,
 }: EditDetailDialogCloseButtonProps & { onSuccess?: () => void }) {
   const form = useForm<z.infer<typeof ExtendedUpdateCostDataSchema>>({
@@ -56,7 +56,7 @@ function SubmitForm({
       price: amount,
       uid: userId, // TODO: Get actual user ID
       updatedAt: new Date().toISOString(),
-      timestamp: String(timestamp),
+      id,
     },
   });
 
@@ -137,7 +137,7 @@ function SubmitForm({
 
 interface EditDetailDialogCloseButtonProps {
   userId: string;
-  timestamp: number;
+  id: string;
   category: PaymentCategory;
   memo: string;
   amount: number;
@@ -145,7 +145,7 @@ interface EditDetailDialogCloseButtonProps {
 
 export function EditDetailDialogCloseButton({
   userId,
-  timestamp,
+  id,
   category,
   memo,
   amount,
@@ -174,7 +174,7 @@ export function EditDetailDialogCloseButton({
             category={category}
             amount={amount}
             memo={memo}
-            timestamp={timestamp}
+            id={id}
             onSuccess={handleSuccess}
           />
         </div>

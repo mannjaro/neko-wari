@@ -14,15 +14,11 @@ export const createCostHandler = async (c: Context, req: CreateCostData) => {
 export const updateCostHandler = async (
   c: Context,
   userId: string,
-  timestamp: string,
+  id: string,
   req: UpdateCostData,
 ) => {
   try {
-    const result = await costService.updateCostDetail(
-      userId,
-      Number(timestamp),
-      req,
-    );
+    const result = await costService.updateCostDetail(userId, id, req);
     return c.json(result);
   } catch (error) {
     throw error;
@@ -32,10 +28,10 @@ export const updateCostHandler = async (
 export const deleteCostHandler = async (
   c: Context,
   userId: string,
-  timestamp: string,
+  id: string,
 ) => {
   try {
-    await costService.deleteCostDetail(userId, Number(timestamp));
+    await costService.deleteCostDetail(userId, id);
     return c.json({ success: true });
   } catch (error) {
     throw error;

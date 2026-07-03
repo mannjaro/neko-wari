@@ -7,7 +7,7 @@ import { env } from "cloudflare:workers";
 
 export const ExtendedUpdateCostDataSchema = UpdateCostDataSchema.extend({
   uid: z.string(),
-  timestamp: z.string(),
+  id: z.string(),
 });
 
 export type ExtendedUpdateCostData = z.infer<
@@ -20,13 +20,13 @@ export const updateCostDetail = createServerFn({
   .inputValidator(ExtendedUpdateCostDataSchema)
   .handler(async ({ data }) => {
     const client = hc<DetailUpdateType>(env.BACKEND_API);
-    const response = await client.user[":uid"].detail[":timestamp"].$put({
+    const response = await client.user[":uid"].detail[":id"].$put({
       json: {
         ...data,
       },
       param: {
         uid: data.uid,
-        timestamp: data.timestamp,
+        id: data.id,
       },
     });
     if (!response.ok) {

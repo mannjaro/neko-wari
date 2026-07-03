@@ -1,5 +1,6 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import * as changeCase from "change-case";
+import { randomBytes } from "node:crypto";
 import { DYNAMO_KEYS } from "../../../shared/constants";
 import type {
   CostDataItem,
@@ -35,6 +36,7 @@ export class CostService {
       this.validateCreateCostData(data);
 
       const timestamp = data.timestamp ?? Date.now();
+      const id = `${Date.now()}-${randomBytes(8).toString("hex")}`;
       const now = new Date().toISOString();
       const date = new Date(timestamp);
       const yearMonth = `${date.getFullYear()}-${String(
@@ -43,12 +45,13 @@ export class CostService {
 
       const costItem: CostDataItem = {
         PK: `${DYNAMO_KEYS.USER_PREFIX}${data.userId}`,
-        SK: `${DYNAMO_KEYS.COST_PREFIX}${timestamp}`,
+        SK: `${DYNAMO_KEYS.COST_PREFIX}${id}`,
         GSI1PK: `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
-        GSI1SK: `${DYNAMO_KEYS.USER_PREFIX}${data.userId}#${timestamp}`,
+        GSI1SK: `${DYNAMO_KEYS.USER_PREFIX}${data.userId}#${timestamp}#${id}`,
         EntityType: DYNAMO_KEYS.ENTITY_COST_DATA as "COST_DATA",
         CreatedAt: now,
         UpdatedAt: now,
+        Id: id,
         User: data.displayName,
         Category: data.category,
         Memo: data.memo,
@@ -81,6 +84,7 @@ export class CostService {
   async saveCostData(userId: string, state: UserState): Promise<void> {
     try {
       const timestamp = Date.now();
+      const id = `${Date.now()}-${randomBytes(8).toString("hex")}`;
       const now = new Date().toISOString();
       const date = new Date(timestamp);
       const yearMonth = `${date.getFullYear()}-${String(
@@ -96,12 +100,13 @@ export class CostService {
 
       const costItem: CostDataItem = {
         PK: `${DYNAMO_KEYS.USER_PREFIX}${userId}`,
-        SK: `${DYNAMO_KEYS.COST_PREFIX}${timestamp}`,
+        SK: `${DYNAMO_KEYS.COST_PREFIX}${id}`,
         GSI1PK: `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
-        GSI1SK: `${DYNAMO_KEYS.USER_PREFIX}${userId}#${timestamp}`,
+        GSI1SK: `${DYNAMO_KEYS.USER_PREFIX}${userId}#${timestamp}#${id}`,
         EntityType: DYNAMO_KEYS.ENTITY_COST_DATA as "COST_DATA",
         CreatedAt: now,
         UpdatedAt: now,
+        Id: id,
         User: state.user,
         Category: state.category,
         Memo: state.memo || "",
@@ -132,15 +137,15 @@ export class CostService {
    */
   async updateCostDetail(
     userId: string,
-    timestamp: number,
+    id: string,
     updateData: UpdateCostData,
   ): Promise<CostDataItemResponse> {
-    logger.debug("Updating cost detail", { userId, timestamp, updateData });
+    logger.debug("Updating cost detail", { userId, id, updateData });
 
     try {
       this.validateCostData(updateData);
 
-      const prevCostItem = await this.getCostDataItem(userId, timestamp);
+      const prevCostItem = await this.getCostDataItem(userId, id);
       const updateExpressions = this.buildUpdateExpression(updateData);
 
       const result = await this.repository.update<CostDataItem>(
@@ -159,13 +164,13 @@ export class CostService {
 
       logger.info("Cost detail updated successfully", {
         userId,
-        timestamp,
+        id,
         updatedFields: Object.keys(updateData),
       });
 
       return updatedItem;
     } catch (error) {
-      logger.error("Error updating cost detail", { error, userId, timestamp });
+      logger.error("Error updating cost detail", { error, userId, id });
       throw error;
     }
   }
@@ -173,18 +178,18 @@ export class CostService {
   /**
    * Delete cost data
    */
-  async deleteCostDetail(userId: string, timestamp: number): Promise<void> {
-    logger.debug("Deleting cost detail", { userId, timestamp });
+  async deleteCostDetail(userId: string, id: string): Promise<void> {
+    logger.debug("Deleting cost detail", { userId, id });
 
     try {
       const pk = `${DYNAMO_KEYS.USER_PREFIX}${userId}`;
-      const sk = `${DYNAMO_KEYS.COST_PREFIX}${timestamp}`;
+      const sk = `${DYNAMO_KEYS.COST_PREFIX}${id}`;
 
       await this.repository.delete(pk, sk);
 
-      logger.info("Cost detail deleted successfully", { userId, timestamp });
+      logger.info("Cost detail deleted successfully", { userId, id });
     } catch (error) {
-      logger.error("Error deleting cost detail", { error, userId, timestamp });
+      logger.error("Error deleting cost detail", { error, userId, id });
       throw error;
     }
   }
@@ -242,11 +247,11 @@ export class CostService {
    */
   private async getCostDataItem(
     userId: string,
-    timestamp: number,
+    id: string,
   ): Promise<CostDataItem> {
     try {
       const pk = `${DYNAMO_KEYS.USER_PREFIX}${userId}`;
-      const sk = `${DYNAMO_KEYS.COST_PREFIX}${timestamp}`;
+      const sk = `${DYNAMO_KEYS.COST_PREFIX}${id}`;
 
       const result = await this.repository.get<CostDataItem>(pk, sk);
 
@@ -259,7 +264,7 @@ export class CostService {
       logger.error("Error getting cost data item", {
         error,
         userId,
-        timestamp,
+        id,
       });
       throw error;
     }

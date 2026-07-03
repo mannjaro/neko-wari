@@ -101,25 +101,22 @@ export const monthlyGet = app.get(
 );
 
 export const detailUpdate = app.put(
-  "/user/:uid/detail/:timestamp",
+  "/user/:uid/detail/:id",
   zValidator("json", UpdateCostDetailSchema),
   async (c) => {
-    const { uid, timestamp } = c.req.param();
+    const { uid, id } = c.req.param();
     const body = await c.req.valid("json");
     const now = new Date().toISOString();
     const req = { ...body, updatedAt: now };
-    console.log(uid, timestamp, body);
-    return updateCostHandler(c, uid, timestamp, req);
+    console.log(uid, id, body);
+    return updateCostHandler(c, uid, id, req);
   },
 );
 
-export const detailDelete = app.delete(
-  "/user/:uid/detail/:timestamp",
-  async (c) => {
-    const { uid, timestamp } = c.req.param();
-    return deleteCostHandler(c, uid, timestamp);
-  },
-);
+export const detailDelete = app.delete("/user/:uid/detail/:id", async (c) => {
+  const { uid, id } = c.req.param();
+  return deleteCostHandler(c, uid, id);
+});
 
 app.post("/user", zValidator("json", CreateUserSchema), async (c) => {
   const body = c.req.valid("json");

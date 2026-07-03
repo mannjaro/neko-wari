@@ -16,13 +16,13 @@ import { useDeleteCost } from "@/hooks/useDeleteCost";
 
 interface DeleteDetailButtonProps {
   userId: string;
-  timestamp: number;
+  id: string;
   memo: string;
 }
 
 export function DeleteDetailButton({
   userId,
-  timestamp,
+  id,
   memo,
 }: DeleteDetailButtonProps) {
   const [open, setOpen] = useState(false);
@@ -34,7 +34,7 @@ export function DeleteDetailButton({
     try {
       await deleteCostDetail({
         uid: userId,
-        timestamp: String(timestamp),
+        id,
       });
       toast.success("削除が完了しました");
       setOpen(false);
@@ -44,7 +44,7 @@ export function DeleteDetailButton({
     } finally {
       setIsDeleting(false);
     }
-  }, [deleteCostDetail, userId, timestamp]);
+  }, [deleteCostDetail, userId, id]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

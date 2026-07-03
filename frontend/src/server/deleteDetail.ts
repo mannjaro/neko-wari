@@ -6,7 +6,7 @@ import { env } from "cloudflare:workers";
 
 export const DeleteCostDataSchema = z.object({
   uid: z.string(),
-  timestamp: z.string(),
+  id: z.string(),
 });
 
 export type DeleteCostData = z.infer<typeof DeleteCostDataSchema>;
@@ -17,10 +17,10 @@ export const deleteCostDetail = createServerFn({
   .inputValidator(DeleteCostDataSchema)
   .handler(async ({ data }) => {
     const client = hc<DetailDeleteType>(env.BACKEND_API);
-    const response = await client.user[":uid"].detail[":timestamp"].$delete({
+    const response = await client.user[":uid"].detail[":id"].$delete({
       param: {
         uid: data.uid,
-        timestamp: data.timestamp,
+        id: data.id,
       },
     });
     if (!response.ok) {

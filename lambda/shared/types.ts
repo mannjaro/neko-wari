@@ -80,9 +80,10 @@ export type UserStateItem = z.infer<typeof UserStateItemSchema>;
 export const CostDataItemSchema = BaseDynamoItemSchema.extend({
   EntityType: z.literal("COST_DATA"),
   PK: z.string(), // USER#{userId}
-  SK: z.string(), // COST#{timestamp}
+  SK: z.string(), // COST#{id}
   GSI1PK: z.string().optional(), // COST#{YYYY-MM}
-  GSI1SK: z.string().optional(), // USER#{userId}#{timestamp}
+  GSI1SK: z.string().optional(), // USER#{userId}#{timestamp}#{id}
+  Id: z.string(),
   User: z.string(),
   Category: PaymentCategorySchema,
   Memo: z.string(),
@@ -257,6 +258,7 @@ export const UserSummarySchema = z.object({
     PaymentCategorySchema,
     z.array(
       z.object({
+        id: z.string(),
         amount: z.number(),
         memo: z.string(),
         timestamp: z.number(),

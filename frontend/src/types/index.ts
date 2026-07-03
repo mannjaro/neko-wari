@@ -20,6 +20,7 @@ export interface UserSummary {
   transactionCount: number;
   categoryBreakdown: {
     [K in PaymentCategory]: {
+      id: string;
       amount: number;
       memo: string;
       timestamp: number;

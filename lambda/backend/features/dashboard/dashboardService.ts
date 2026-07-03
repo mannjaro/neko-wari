@@ -52,7 +52,13 @@ export class DashboardService {
     // Helper function to create empty category breakdown
     const createEmptyCategoryBreakdown = (): Record<
       PaymentCategory,
-      Array<{ amount: number; memo: string; timestamp: number; costType?: "split" | "charge" }>
+      Array<{
+        id: string;
+        amount: number;
+        memo: string;
+        timestamp: number;
+        costType?: "split" | "charge";
+      }>
     > => ({
       rent: [],
       utilities: [],
@@ -77,6 +83,7 @@ export class DashboardService {
         existing.transactionCount++;
 
         existing.categoryBreakdown[item.Category].push({
+          id: item.Id,
           amount: item.Price,
           memo: item.Memo || "",
           timestamp: item.Timestamp,
@@ -86,6 +93,7 @@ export class DashboardService {
         const categoryBreakdown = createEmptyCategoryBreakdown();
         categoryBreakdown[item.Category] = [
           {
+            id: item.Id,
             amount: item.Price,
             memo: item.Memo || "",
             timestamp: item.Timestamp,
@@ -141,7 +149,10 @@ export class DashboardService {
 
     const [user1, user2] = userSummaries;
     const splitDiff =
-      (user1.totalAmount - user1.chargeAmount - (user2.totalAmount - user2.chargeAmount)) / 2;
+      (user1.totalAmount -
+        user1.chargeAmount -
+        (user2.totalAmount - user2.chargeAmount)) /
+      2;
     const chargeDiff = user1.chargeAmount - user2.chargeAmount;
     const net = splitDiff + chargeDiff;
     const diff = Math.abs(net);
@@ -163,8 +174,7 @@ export class DashboardService {
 
     // Only create settlement for payer if not exists OR if existing is cancelled
     const shouldCreatePayerSettlement =
-      !payerSettlement ||
-      (payerSettlement.Status === "cancelled" && diff > 0);
+      !payerSettlement || (payerSettlement.Status === "cancelled" && diff > 0);
 
     if (shouldCreatePayerSettlement && diff > 0) {
       try {

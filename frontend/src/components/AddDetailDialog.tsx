@@ -1,11 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { type SubmitHandler, useForm } from "react-hook-form";
+import { useAuth } from "react-oidc-context";
 import { toast } from "sonner";
 import type { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogClose,
@@ -34,28 +36,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateCost } from "@/hooks/useCreateCost";
+import { listUsers } from "@/server/listUsers";
 import { CreateCostDataSchema, PaymentCategorySchema } from "@/types/shared";
 import { getCategoryName } from "@/utils/categoryNames";
 import { YenInput } from "./YenInput";
-import { useAuth } from "react-oidc-context";
-import { listUsers } from "@/server/listUsers";
 
 type FormValues = z.infer<typeof CreateCostDataSchema>;
 
-function formatDateInput(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-    date.getDate(),
-  ).padStart(2, "0")}`;
-}
-
-function getDefaultDateForMonth(year: number, month: number): string {
+function getDefaultDateForMonth(year: number, month: number): Date {
   const today = new Date();
   const isCurrentMonth =
     year === today.getFullYear() && month === today.getMonth() + 1;
   if (isCurrentMonth) {
-    return formatDateInput(today);
+    return today;
   }
-  return `${year}-${String(month).padStart(2, "0")}-01`;
+  return new Date(year, month - 1, 1);
 }
 
 function SubmitForm({
@@ -102,7 +97,12 @@ function SubmitForm({
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
-      const timestamp = new Date(`${dateValue}T12:00:00Z`).getTime();
+      const timestamp = Date.UTC(
+        dateValue.getFullYear(),
+        dateValue.getMonth(),
+        dateValue.getDate(),
+        12,
+      );
       const result = await createCostDetail({ ...data, timestamp });
       toast("新しい項目が追加されました", {});
       console.log(result);
@@ -122,11 +122,10 @@ function SubmitForm({
         <FormItem>
           <FormLabel htmlFor="cost-date">日付</FormLabel>
           <FormControl>
-            <Input
+            <DatePicker
               id="cost-date"
-              type="date"
               value={dateValue}
-              onChange={(e) => setDateValue(e.target.value)}
+              onChange={(date) => date && setDateValue(date)}
             />
           </FormControl>
           <FormDescription>
@@ -174,7 +173,9 @@ function SubmitForm({
                   <SelectItem value="split">折半</SelectItem>
                   <SelectItem value="charge">請求</SelectItem>
                 </SelectContent>
-                <FormDescription>折半: 2人で割り勘 / 請求: 全額を相手に請求</FormDescription>
+                <FormDescription>
+                  折半: 2人で割り勘 / 請求: 全額を相手に請求
+                </FormDescription>
                 <FormMessage />
               </Select>
             </FormItem>

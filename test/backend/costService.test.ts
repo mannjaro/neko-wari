@@ -47,12 +47,14 @@ describe("CostService", () => {
       //Then
       expect(result).toMatchObject({
         PK: "USER#user123",
-        SK: `COST#${MOCK_DATE.getTime()}`,
         Price: 2500,
         Category: 'daily' as const,
         Memo: "Lunch with team",
         Timestamp: MOCK_DATE.getTime()
       })
+      expect(result.SK).toMatch(/^COST#/)
+      expect(result.Id).toBeTruthy()
+      expect(result.SK).toBe(`COST#${result.Id}`)
 
       expect(mockRepo.put).toHaveBeenCalledTimes(1)
       // expect(mockRepo.put).toHaveBeenCalledWith(
@@ -62,6 +64,35 @@ describe("CostService", () => {
       //     Price: 1000
       //   })
       // )
+    })
+
+    it('同じ日付（同一timestamp）で複数登録しても互いに上書きされない', async () => {
+      // Given
+      const inputData = {
+        userId: 'user123',
+        displayName: "John Doe",
+        category: "daily" as const,
+        memo: 'Lunch with team',
+        price: 2500,
+        costType: "split" as const,
+        timestamp: new Date('2025-01-15T12:00:00Z').getTime(),
+      }
+
+      mockRepo.put.mockResolvedValue(undefined)
+
+      // When
+      const firstItem = await service.createCostDetail(inputData)
+      const secondItem = await service.createCostDetail({
+        ...inputData,
+        memo: 'Dinner with team',
+      })
+
+      // Then
+      expect(firstItem.Timestamp).toBe(secondItem.Timestamp)
+      expect(firstItem.Id).not.toBe(secondItem.Id)
+      expect(firstItem.SK).not.toBe(secondItem.SK)
+
+      expect(mockRepo.put).toHaveBeenCalledTimes(2)
     })
   })
 })

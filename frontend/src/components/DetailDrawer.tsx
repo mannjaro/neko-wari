@@ -58,7 +58,7 @@ export function DetailDrawer({
           <TableBody>
             {Object.entries(user.categoryBreakdown).map(([category, items]) =>
               items.map((item, _) => (
-                <TableRow key={`${item.timestamp}-${item.memo}-`}>
+                <TableRow key={item.id}>
                   <TableCell>
                     {getCategoryName(category as PaymentCategory)}
                   </TableCell>
@@ -82,13 +82,13 @@ export function DetailDrawer({
                       <EditDetailDialogCloseButton
                         userId={user.userId}
                         amount={item.amount}
-                        timestamp={item.timestamp}
+                        id={item.id}
                         memo={item.memo}
                         category={category as PaymentCategory}
                       />
                       <DeleteDetailButton
                         userId={user.userId}
-                        timestamp={item.timestamp}
+                        id={item.id}
                         memo={item.memo}
                       />
                     </div>
