@@ -44,7 +44,10 @@ export class InvitationService {
       return acceptedResult.length > 0;
     } catch (error) {
       logger.error("Error checking system initialization", { error });
-      return false; // Fail safe
+      // Do not mask query failures as "not initialized" - that would
+      // incorrectly show the first-time setup screen to existing users
+      // and could allow re-bootstrapping an already-initialized system.
+      throw error;
     }
   }
 

@@ -36,8 +36,24 @@ export const handler: PostAuthenticationTriggerHandler = async (event) => {
   console.log("PostAuthentication event:", JSON.stringify(event, null, 2));
 
   const identities = event.request.userAttributes?.identities;
-  const parsedIds = JSON.parse(identities);
-  const userId = parsedIds[0].userId;
+
+  if (!identities) {
+    console.error("Authentication failed: No federated identities found on user");
+    throw new Error("Unauthorized user - No federated identity found");
+  }
+
+  let userId: string | undefined;
+  try {
+    const parsedIds = JSON.parse(identities);
+    userId = parsedIds?.[0]?.userId;
+  } catch (error) {
+    console.error("Authentication failed: Could not parse identities", {
+      error,
+      identities,
+    });
+    throw new Error("Unauthorized user - Invalid identity data");
+  }
+
   console.log("Extracted LINE user ID from identities:", userId);
 
   if (!userId) {
