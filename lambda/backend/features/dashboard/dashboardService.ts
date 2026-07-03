@@ -1,3 +1,4 @@
+import { Logger } from "@aws-lambda-powertools/logger";
 import type {
   PaymentCategory,
   UserSummary,
@@ -11,6 +12,8 @@ import { DYNAMO_KEYS } from "../../../shared/constants";
 import { dynamoClient } from "../../lib/dynamoClient";
 import { invitationService } from "../invitation/invitationService";
 import { settlementService } from "../settlement/settlementService";
+
+const logger = new Logger({ serviceName: "dashboardService" });
 
 /**
  * Service for dashboard-related business logic
@@ -103,9 +106,18 @@ export class DashboardService {
 
     const userSummaries = Array.from(userSummaryMap.values());
 
-    // Auto-create settlement records if there are exactly 2 users
+    // Auto-create settlement records if there are exactly 2 users.
+    // This is a best-effort side effect - it must never take down the
+    // primary monthly summary response if it fails.
     if (userSummaries.length === 2) {
-      await this.autoCreateSettlements(yearMonth, userSummaries);
+      try {
+        await this.autoCreateSettlements(yearMonth, userSummaries);
+      } catch (error) {
+        logger.error("Failed to auto-create settlements", {
+          error,
+          yearMonth,
+        });
+      }
     }
 
     return {

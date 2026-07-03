@@ -57,7 +57,13 @@ export class Backend extends Construct {
         LINE_LOGIN_CHANNEL_SECRET: process.env.LINE_LOGIN_CHANNEL_SECRET || "",
       },
       bundling: {
-        externalModules: ["@aws-lambda-powertools/*", "@aws-sdk/*"],
+        // Only the Powertools layer's own package should be external - it
+        // is provided by the attached layer at /opt/nodejs/node_modules.
+        // Bundling @aws-sdk/* ourselves (instead of relying on the
+        // runtime-provided copy) avoids mixing it with the different
+        // @smithy/* versions the Powertools layer ships, which breaks
+        // DynamoDBDocumentClient's middleware stack at runtime.
+        externalModules: ["@aws-lambda-powertools/*"],
       },
     });
 
@@ -91,7 +97,13 @@ export class Backend extends Construct {
         LINE_CHANNEL_SECRET: process.env.LINE_CHANNEL_SECRET || "",
       },
       bundling: {
-        externalModules: ["@aws-lambda-powertools/*", "@aws-sdk/*"],
+        // Only the Powertools layer's own package should be external - it
+        // is provided by the attached layer at /opt/nodejs/node_modules.
+        // Bundling @aws-sdk/* ourselves (instead of relying on the
+        // runtime-provided copy) avoids mixing it with the different
+        // @smithy/* versions the Powertools layer ships, which breaks
+        // DynamoDBDocumentClient's middleware stack at runtime.
+        externalModules: ["@aws-lambda-powertools/*"],
       },
     });
 
