@@ -2,6 +2,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import * as changeCase from "change-case";
 import { randomBytes } from "node:crypto";
 import { DYNAMO_KEYS } from "../../../shared/constants";
+import { normalizeCostDataItem } from "../../../shared/costDataItem";
 import type {
   CostDataItem,
   CreateCostData,
@@ -160,7 +161,9 @@ export class CostService {
         throw new Error("Updated item is null");
       }
 
-      const updatedItem = costDataItemSchema.parse(result);
+      const updatedItem = costDataItemSchema.parse(
+        normalizeCostDataItem(result),
+      );
 
       logger.info("Cost detail updated successfully", {
         userId,
@@ -207,7 +210,7 @@ export class CostService {
         },
       );
 
-      return items;
+      return items.map(normalizeCostDataItem);
     } catch (error) {
       logger.error("Error getting monthly cost data", { error, yearMonth });
       throw error;
@@ -231,7 +234,7 @@ export class CostService {
         },
       );
 
-      return items;
+      return items.map(normalizeCostDataItem);
     } catch (error) {
       logger.error("Error getting user monthly cost data", {
         error,
@@ -259,7 +262,7 @@ export class CostService {
         throw new Error("Selected item is not exist");
       }
 
-      return result;
+      return normalizeCostDataItem(result);
     } catch (error) {
       logger.error("Error getting cost data item", {
         error,

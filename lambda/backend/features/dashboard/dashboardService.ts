@@ -9,6 +9,7 @@ import type {
   CostDataItem,
 } from "../../../shared/types";
 import { DYNAMO_KEYS } from "../../../shared/constants";
+import { normalizeCostDataItem } from "../../../shared/costDataItem";
 import { dynamoClient } from "../../lib/dynamoClient";
 import { invitationService } from "../invitation/invitationService";
 import { settlementService } from "../settlement/settlementService";
@@ -312,7 +313,7 @@ export class DashboardService {
         ":gsi1pk": `${DYNAMO_KEYS.COST_PREFIX}${yearMonth}`,
       },
     );
-    return items;
+    return items.map(normalizeCostDataItem);
   }
 
   /**
@@ -330,7 +331,7 @@ export class DashboardService {
         ":gsi1sk": `${DYNAMO_KEYS.USER_PREFIX}${userId}#`,
       },
     );
-    return items;
+    return items.map(normalizeCostDataItem);
   }
 }
 
