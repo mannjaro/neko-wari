@@ -2,6 +2,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import * as changeCase from "change-case";
 import { randomBytes } from "node:crypto";
 import { DYNAMO_KEYS } from "../../../shared/constants";
+import { appYearMonth, endOfAppDay } from "../../../shared/appTime";
 import { normalizeCostDataItem } from "../../../shared/costDataItem";
 import type {
   CostDataItem,
@@ -39,10 +40,7 @@ export class CostService {
       const timestamp = data.timestamp ?? Date.now();
       const id = `${Date.now()}-${randomBytes(8).toString("hex")}`;
       const now = new Date().toISOString();
-      const date = new Date(timestamp);
-      const yearMonth = `${date.getFullYear()}-${String(
-        date.getMonth() + 1,
-      ).padStart(2, "0")}`;
+      const yearMonth = appYearMonth(timestamp);
 
       const costItem: CostDataItem = {
         PK: `${DYNAMO_KEYS.USER_PREFIX}${data.userId}`,
@@ -87,10 +85,7 @@ export class CostService {
       const timestamp = Date.now();
       const id = `${Date.now()}-${randomBytes(8).toString("hex")}`;
       const now = new Date().toISOString();
-      const date = new Date(timestamp);
-      const yearMonth = `${date.getFullYear()}-${String(
-        date.getMonth() + 1,
-      ).padStart(2, "0")}`;
+      const yearMonth = appYearMonth(timestamp);
 
       if (state.user === undefined) {
         throw new Error("user is not provided");
@@ -289,7 +284,10 @@ export class CostService {
       throw new Error("User ID is required");
     }
 
-    if (data.timestamp !== undefined && data.timestamp > Date.now()) {
+    if (
+      data.timestamp !== undefined &&
+      data.timestamp > endOfAppDay(Date.now())
+    ) {
       throw new Error("Timestamp cannot be in the future");
     }
   }

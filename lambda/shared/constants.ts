@@ -96,6 +96,18 @@ export const DYNAMO_KEYS = {
   ENTITY_SETTLEMENT_STATUS: "SETTLEMENT_STATUS",
 } as const;
 
+/**
+ * The timezone this household's calendar runs on.
+ *
+ * Instants are always stored in UTC (epoch ms / ISO strings). This constant is
+ * only for calendar questions — which month an expense belongs to, whether a
+ * date is still in the future. Those answers differ by timezone, so they must
+ * be asked against a timezone we chose on purpose rather than whichever one the
+ * runtime happens to have. Lambda runs in UTC, which silently filed entries
+ * made between 00:00 and 09:00 JST on the 1st into the previous month.
+ */
+export const APP_TIME_ZONE = "Asia/Tokyo";
+
 // Session TTL in seconds (24 hours)
 export const SESSION_TTL_SECONDS = 24 * 60 * 60;
 
