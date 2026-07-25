@@ -95,4 +95,45 @@ describe("CostService", () => {
       expect(mockRepo.put).toHaveBeenCalledTimes(2)
     })
   })
+
+  describe('getMonthlyCostData', () => {
+    it('Idを持たない旧形式のレコードはSKからIdを補完する', async () => {
+      // Given: records written before the Id attribute existed
+      const legacyTimestamp = new Date('2025-01-15T12:00:00Z').getTime()
+      mockRepo.query.mockResolvedValue([
+        {
+          PK: 'USER#user123',
+          SK: `COST#${legacyTimestamp}`,
+          EntityType: 'COST_DATA',
+          User: 'John Doe',
+          Category: 'daily',
+          Memo: 'Lunch',
+          Price: 2500,
+          Timestamp: legacyTimestamp,
+          YearMonth: '2025-01',
+        },
+        {
+          PK: 'USER#user456',
+          SK: 'COST#1736942400000-abcdef0123456789',
+          EntityType: 'COST_DATA',
+          Id: '1736942400000-abcdef0123456789',
+          User: 'Jane Doe',
+          Category: 'rent',
+          Memo: '',
+          Price: 80000,
+          Timestamp: legacyTimestamp,
+          YearMonth: '2025-01',
+        },
+      ])
+
+      // When
+      const items = await service.getMonthlyCostData('2025-01')
+
+      // Then: the recovered Id round-trips back to the original sort key
+      expect(items[0].Id).toBe(String(legacyTimestamp))
+      expect(items[0].SK).toBe(`COST#${items[0].Id}`)
+      // records that already carry an Id are left untouched
+      expect(items[1].Id).toBe('1736942400000-abcdef0123456789')
+    })
+  })
 })
